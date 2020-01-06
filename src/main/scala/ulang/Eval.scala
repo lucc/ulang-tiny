@@ -1,7 +1,14 @@
 package ulang
 
-object Eval {
-  var dyn: Env = Map()
+import arse.backtrack
+import arse.Control
+
+object Env {
+  def empty: Env = Map()
+}
+
+class Eval(context: Context) {
+  import context._
 
   def equal(v1: Val, v2: Val): Boolean = {
     const(v1) == const(v2)
@@ -12,10 +19,10 @@ object Eval {
       env
     case Strict(pat) =>
       bind(pat, const(arg), env)
-    case id: Id if env contains id =>
+    case id: Var if env contains id =>
       if (equal(env(id), arg)) env
       else backtrack
-    case id: Id =>
+    case id: Var =>
       env + (id -> arg)
     case tag: Tag =>
       force(arg) match {
@@ -42,11 +49,11 @@ object Eval {
       norm(body, bind(pats, args, lex))
   }
 
-  def apply(fun: Curry, cases: List[Case], args: List[Val], lex: Env): Norm = cases match {
+  def apply(where: Any, cases: List[Case], args: List[Val], lex: Env): Norm = cases match {
     case Nil =>
-      sys.error("cannot apply " + fun + " to " + args.mkString(" "))
+      sys.error("no match: " + where + " for " + args.mkString(" "))
     case cs :: rest =>
-      { apply(cs, args, lex) } or { apply(fun, rest, args, lex) }
+      { apply(cs, args, lex) } or { apply(where, rest, args, lex) }
   }
 
   def apply(fun: Curry): Norm = {
@@ -72,7 +79,7 @@ object Eval {
   }
 
   def defer(expr: Expr, lex: Env): Val = {
-    Defer(expr, lex)
+    Defer(expr, lex, this)
   }
 
   def const(arg: Val): Data = arg match {
@@ -82,21 +89,26 @@ object Eval {
     case _ => sys.error("not constant: " + arg)
   }
 
+  def norm(exprs: List[Expr], lex: Env): List[Norm] = {
+    exprs map (norm(_, lex))
+  }
+
   def norm(expr: Expr, lex: Env): Norm = expr match {
     case tag: Tag =>
       tag
-    case id: Id =>
+    case id: Var =>
       if (lex contains id) force(lex(id))
-      else if (dyn contains id) force(dyn(id))
-      else sys.error("unbound identifier: " + id + " in " + lex + " and " + dyn)
+      else if (consts contains id) consts(id)
+      else if (funs contains id) Curry(funs(id), Nil, Env.empty)
+      else sys.error("unbound identifier: " + id)
     case Lam(cases) =>
       Curry(cases, Nil, lex)
     case App(fun, arg) =>
       push(norm(fun, lex), defer(arg, lex))
-    case Let(eqs, body) =>
-      ???
-    case Match(arg, cases) =>
-      ???
+    case let @ Let(_, body) =>
+      norm(body, bind(let.pats, norm(let.args, lex), lex))
+    case Match(args, cases) =>
+      apply(expr, cases, norm(args, lex), lex)
     case Ite(test, left, right) =>
       strict(test, lex) match {
         case True => norm(left, lex)
@@ -108,4 +120,40 @@ object Eval {
   def strict(expr: Expr, lex: Env): Norm = {
     const(norm(expr, lex))
   }
+
+  def exec(cmd: Cmd) = cmd match {
+    case Defs(defs) =>
+      for (Def(id, args, rhs) <- defs) {
+        if (args.isEmpty) {
+          if(consts contains id)
+            sys.error("already defined: " + id)
+            consts += id -> norm(rhs, Env.empty)
+        } else {
+          val cs = Case(args, rhs)
+          if (funs contains id) {
+            val cases = funs(id) ++ List(cs)
+            funs += id -> cases
+          } else {
+            funs += id -> List(cs)
+          }
+        }
+      }
+
+    case Evals(exprs) =>
+      for (expr <- exprs) {
+        val res = strict(expr, Env.empty)
+        println(expr)
+        println("  == " + res)
+      }
+
+    case _ =>
+
+  }
+
+  def exec(cmds: List[Cmd]) {
+    for (cmd <- cmds) {
+      exec(cmd)
+    }
+  }
+
 }
