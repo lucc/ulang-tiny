@@ -101,6 +101,10 @@ class Binary(val op: Id) {
   def apply(arg1: Expr, arg2: Expr): Expr = {
     App(App(op, arg1), arg2)
   }
+  
+  def apply(args: List[Expr]): Expr = {
+    args.reduce[Expr](apply)
+  }
 
   def apply(args: List[Expr], zero: Expr): Expr = {
     args.foldRight(zero)(apply)
@@ -113,7 +117,7 @@ class Binary(val op: Id) {
   def apply(arg1: Pat, arg2: Pat): Pat = {
     UnApp(UnApp(op, arg1), arg2)
   }
-
+  
   def apply(args: List[Pat], zero: Pat): Pat = {
     args.foldRight(zero)(apply)
   }

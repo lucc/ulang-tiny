@@ -19,6 +19,7 @@ class Context extends Syntax[String] {
 
   object parser extends ULangParser(this)
   object eval extends Eval(this)
+  object prove extends Prove(this)
 
   def isMixfix(id: Id): Boolean = {
     contains(id.name) || isBind(id)
@@ -37,6 +38,44 @@ class Context extends Syntax[String] {
     }
   }
 
+  def exec(cmd: Cmd) = cmd match {
+    case Defs(defs) =>
+      for (Def(id, args, rhs) <- defs) {
+        if (args.isEmpty) {
+          if (consts contains id)
+            sys.error("already defined: " + id)
+          consts += id -> eval.norm(rhs, Env.empty)
+        } else {
+          val cs = Case(args, rhs)
+          if (funs contains id) {
+            val cases = funs(id) ++ List(cs)
+            funs += id -> cases
+          } else {
+            funs += id -> List(cs)
+          }
+        }
+      }
+
+    case Evals(exprs) =>
+      for (expr <- exprs) {
+        val res = eval.strict(expr, Env.empty)
+        println(expr)
+        println("  == " + res)
+      }
+
+    case Thm(assume, show) =>
+      val rest = prove.prove(assume, show)
+      println(rest)
+
+    case _ =>
+  }
+
+  def exec(cmds: List[Cmd]) {
+    for (cmd <- cmds) {
+      exec(cmd)
+    }
+  }
+
   def parse(file: File): List[Cmd] = {
     val source = Source.fromFile(file)
     parse(source.mkString)
@@ -44,13 +83,13 @@ class Context extends Syntax[String] {
 
   def parse(string: String): List[Cmd] = {
     import parser._
-    script parse string
+    script parseAll string
   }
 
   def run(name: String) {
     val file = new File(name)
     val cmds = parse(file)
-    eval.exec(cmds)
+    exec(cmds)
   }
 }
 

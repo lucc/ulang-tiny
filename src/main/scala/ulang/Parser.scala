@@ -70,7 +70,7 @@ class ULangParser(context: Context) {
 
   val cs = Case(pat_arg.+ ~ "->" ~ expr)
   val css = cs ~+ "|"
-  val lam = Lam("\\" ~ css)
+  val lam = Lam("\\ " ~ css)
   val bind = Binder(id_bind ~ cs)
   val mtch = Match("match" ~ expr_arg.+ ~ "with" ~ css)
 
@@ -91,7 +91,7 @@ class ULangParser(context: Context) {
   def fix = name.+ ~ "[" ~ fixity ~ "]"
 
   val assume = section("assume", expr)
-  val show = "show" ~ expr
+  val show = "show" ~ expr ~ ";"
 
   def data_declare = name.+ map {
     names =>
@@ -111,7 +111,7 @@ class ULangParser(context: Context) {
   val evals = Evals(section("eval", expr))
   val datas = Datas(section("data", data_declare) map (_.flatten))
   val notation = Notation(section("notation", notation_declare))
-  val thm = Thm(assume ~ show)
+  val thm = Thm(assume ~ show) | Thm0(show)
 
   val script = cmd.*
 }

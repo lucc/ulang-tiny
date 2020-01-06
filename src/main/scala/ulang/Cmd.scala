@@ -25,3 +25,7 @@ case class Evals(exprs: List[Expr]) extends Cmd
 // case class Ind(cases: List[Expr]) extends Cmd
 
 case class Thm(assume: List[Expr], show: Expr) extends Cmd
+
+object Thm0 extends (Expr => Thm) {
+  def apply(show: Expr) = Thm(Nil, show)
+}

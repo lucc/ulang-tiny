@@ -3,10 +3,6 @@ package ulang
 import arse.backtrack
 import arse.Control
 
-object Env {
-  def empty: Env = Map()
-}
-
 class Eval(context: Context) {
   import context._
 
@@ -120,40 +116,4 @@ class Eval(context: Context) {
   def strict(expr: Expr, lex: Env): Norm = {
     const(norm(expr, lex))
   }
-
-  def exec(cmd: Cmd) = cmd match {
-    case Defs(defs) =>
-      for (Def(id, args, rhs) <- defs) {
-        if (args.isEmpty) {
-          if(consts contains id)
-            sys.error("already defined: " + id)
-            consts += id -> norm(rhs, Env.empty)
-        } else {
-          val cs = Case(args, rhs)
-          if (funs contains id) {
-            val cases = funs(id) ++ List(cs)
-            funs += id -> cases
-          } else {
-            funs += id -> List(cs)
-          }
-        }
-      }
-
-    case Evals(exprs) =>
-      for (expr <- exprs) {
-        val res = strict(expr, Env.empty)
-        println(expr)
-        println("  == " + res)
-      }
-
-    case _ =>
-
-  }
-
-  def exec(cmds: List[Cmd]) {
-    for (cmd <- cmds) {
-      exec(cmd)
-    }
-  }
-
 }
