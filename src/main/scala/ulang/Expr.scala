@@ -111,5 +111,6 @@ case class Curry(cases: List[Case], rargs: List[Val], lex: Env) extends Norm {
 }
 
 case class Defer(expr: Expr, lex: Env, eval: Eval) extends Val {
+  override def toString = expr.toString
   lazy val norm = eval.norm(expr, lex)
 }

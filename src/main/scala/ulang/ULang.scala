@@ -16,7 +16,9 @@ class Context extends Syntax[String] {
 
   var funs: Map[Var, List[Case]] = Map()
   var consts: Map[Var, Norm] = Map()
-
+  
+  var rewrites: Map[Var, List[Case]] = Map()
+  
   object parser extends ULangParser(this)
   object eval extends Eval(this)
   object prove extends Prove(this)

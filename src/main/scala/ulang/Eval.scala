@@ -21,10 +21,8 @@ class Eval(context: Context) {
     case id: Var =>
       env + (id -> arg)
     case tag: Tag =>
-      force(arg) match {
-        case `tag` => env
-        case _ => backtrack
-      }
+      if (tag == force(arg)) env
+      else backtrack
     case UnApp(pat1, pat2) =>
       force(arg) match {
         case Obj(arg1, arg2) => bind(pat2, arg2, bind(pat1, arg1, env))

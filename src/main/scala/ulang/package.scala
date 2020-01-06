@@ -5,6 +5,7 @@ package object ulang {
   object Env {
     def empty: Env = Map()
   }
+
   object Subst {
     def empty: Subst = Map()
   }
