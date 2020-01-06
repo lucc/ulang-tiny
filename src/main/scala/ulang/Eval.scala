@@ -85,19 +85,27 @@ object Eval {
   def norm(expr: Expr, lex: Env): Norm = expr match {
     case tag: Tag =>
       tag
-    case id: Id if lex contains id =>
-      force(lex(id))
-    case id: Id if dyn contains id =>
-      force(dyn(id))
     case id: Id =>
-      sys.error("unbound variable: " + id + " in " + lex + " and " + dyn)
+      if (lex contains id) force(lex(id))
+      else if (dyn contains id) force(dyn(id))
+      else sys.error("unbound identifier: " + id + " in " + lex + " and " + dyn)
     case Lam(cases) =>
       Curry(cases, Nil, lex)
     case App(fun, arg) =>
       push(norm(fun, lex), defer(arg, lex))
+    case Let(eqs, body) =>
+      ???
+    case Match(arg, cases) =>
+      ???
+    case Ite(test, left, right) =>
+      strict(test, lex) match {
+        case True => norm(left, lex)
+        case False => norm(right, lex)
+        case test => sys.error("not boolean: " + test + " = " + test)
+      }
   }
 
-  def eval(expr: Expr): Norm = {
-    const(norm(expr, Map()))
+  def strict(expr: Expr, lex: Env): Norm = {
+    const(norm(expr, lex))
   }
 }

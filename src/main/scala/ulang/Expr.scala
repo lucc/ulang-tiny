@@ -57,11 +57,10 @@ case class App(fun: Expr, arg: Expr) extends Expr {
   def subst(su: Map[Id, Expr]) = App(fun subst su, arg subst su)
 }
 
-object Apps extends (List[Expr] => Expr) {
-  def apply(exprs: List[Expr]): Expr = exprs match {
-    case expr :: Nil => expr
-    case fun :: args => args.foldLeft(fun)(App)
-  }
+case class Ite(test: Expr, left: Expr, right: Expr) extends Expr {
+  def free = test.free ++ left.free ++ right.free
+  def rename(re: Map[Id, Id]) = Ite(test rename re, left rename re, right rename re)
+  def subst(su: Map[Id, Expr]) = Ite(test subst su, left subst su, right subst su)
 }
 
 case class Case(pats: List[Pat], body: Expr) extends Expr.bind[Case] {
@@ -85,14 +84,15 @@ case class Match(expr: Expr, cases: List[Case]) extends Expr {
   def subst(su: Map[Id, Expr]) = Match(expr subst su, cases map (_ subst su))
 }
 
-case class Eq(x: Id, e: Expr) {
-  def free = e.free
-  def rename(a: Map[Id, Id], re: Map[Id, Id]) = Eq(x rename a, e rename re)
-  def subst(a: Map[Id, Id], su: Map[Id, Expr]) = Eq(x rename a, e subst su)
+case class Bind(pat: Pat, arg: Expr) {
+  def free = arg.free
+  def bound = pat.bound
+  def rename(a: Map[Id, Id], re: Map[Id, Id]) = Bind(pat rename a, arg rename re)
+  def subst(a: Map[Id, Id], su: Map[Id, Expr]) = Bind(pat rename a, arg subst su)
 }
 
-case class Let(eqs: List[Eq], body: Expr) extends Expr with Expr.bind[Let] {
-  def bound = Set(eqs map (_.x): _*)
+case class Let(eqs: List[Bind], body: Expr) extends Expr with Expr.bind[Let] {
+  def bound = Set(eqs flatMap (_.bound): _*)
   def free = Set(eqs flatMap (_.free): _*) -- bound
   def rename(a: Map[Id, Id], re: Map[Id, Id]) = Let(eqs map (_ rename (a, re)), body rename re)
   def subst(a: Map[Id, Id], su: Map[Id, Expr]) = Let(eqs map (_ subst (a, su)), body subst su)
