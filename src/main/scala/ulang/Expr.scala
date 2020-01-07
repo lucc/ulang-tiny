@@ -1,11 +1,13 @@
 package ulang
 
-sealed trait Pat {
+import arse._
+
+sealed trait Pat extends Pretty {
   def bound: Set[Var]
   def rename(re: Map[Var, Var]): Pat
 }
 
-sealed trait Expr extends Expr.term {
+sealed trait Expr extends Expr.term with Pretty {
   def free: Set[Var]
 }
 
@@ -14,19 +16,28 @@ object Expr extends Alpha[Expr, Var] {
 
 sealed trait Id extends Expr with Pat {
   def name: String
+  def fixity: Fixity
   def rename(re: Map[Var, Var]): Id
 }
 
-sealed trait Val
+object Id {
+  def unapply(id: Id) = id match {
+    case Var(name, fixity, None) => Some((name, fixity))
+    case Var(name, fixity, Some(index)) => Some((name + index, fixity))
+    case Tag(name, fixity) => Some((name, fixity))
+  }
+}
+
+sealed trait Val extends Pretty
 sealed trait Norm extends Val
 sealed trait Data extends Norm
 
-case class Var(name: String, index: Option[Int] = None) extends Id with Expr.x {
+case class Var(name: String, fixity: Fixity = Nilfix, index: Option[Int] = None) extends Id with Expr.x {
   def bound = Set(this)
-  def fresh(index: Int) = Var(name, Some(index))
+  def fresh(index: Int) = Var(name, fixity, Some(index))
 }
 
-case class Tag(name: String) extends Id with Data {
+case class Tag(name: String, fixity: Fixity = Nilfix) extends Id with Data {
   def free = Set()
   def bound = Set()
   def rename(re: Map[Var, Var]) = this
@@ -61,7 +72,7 @@ case class Ite(test: Expr, left: Expr, right: Expr) extends Expr {
   def subst(su: Map[Var, Expr]) = Ite(test subst su, left subst su, right subst su)
 }
 
-case class Case(pats: List[Pat], body: Expr) extends Expr.bind[Case] {
+case class Case(pats: List[Pat], body: Expr) extends Expr.bind[Case] with Pretty {
   def arity = pats.length
   def free = body.free -- bound
   def bound = Set(pats flatMap (_.bound): _*)
@@ -84,7 +95,7 @@ case class Match(args: List[Expr], cases: List[Case]) extends Expr {
   def subst(su: Map[Var, Expr]) = Match(args map (_ subst su), cases map (_ subst su))
 }
 
-case class Bind(pat: Pat, arg: Expr) {
+case class Bind(pat: Pat, arg: Expr) extends Pretty {
   def free = arg.free
   def bound = pat.bound
   def rename(a: Map[Var, Var], re: Map[Var, Var]) = Bind(pat rename a, arg rename re)

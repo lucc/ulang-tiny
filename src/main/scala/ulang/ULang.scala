@@ -9,6 +9,8 @@ import arse._
 class Context extends Syntax[String] {
   var data: Set[String] = Set()
 
+  var mixfix: Map[String, Fixity] = Map()
+
   var prefix_ops: Map[String, Int] = Map()
   var postfix_ops: Map[String, Int] = Map()
   var infix_ops: Map[String, (Assoc, Int)] = Map()
@@ -16,9 +18,9 @@ class Context extends Syntax[String] {
 
   var funs: Map[Var, List[Case]] = Map()
   var consts: Map[Var, Norm] = Map()
-  
+
   var rewrites: Map[Var, List[Case]] = Map()
-  
+
   object parser extends ULangParser(this)
   object eval extends Eval(this)
   object prove extends Prove(this)
@@ -32,6 +34,10 @@ class Context extends Syntax[String] {
   }
 
   def declare(names: List[String], fixity: Fixity) {
+    for (name <- names) {
+      mixfix += name -> fixity
+    }
+
     for (name <- names) fixity match {
       case Bindfix => bind_ops += name
       case Prefix(prec) => prefix_ops += name -> prec
@@ -63,6 +69,11 @@ class Context extends Syntax[String] {
         val res = eval.strict(expr, Env.empty)
         println(expr)
         println("  == " + res)
+      }
+
+    case Ind(cases) =>
+      for (cs <- cases) {
+        println(cs)
       }
 
     case Thm(assume, show) =>

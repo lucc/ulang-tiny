@@ -3,12 +3,12 @@ package ulang
 import arse._
 import arse.implicits._
 
-case object Bindfix extends Fixity
+case object Bindfix extends Fixity { def prec = 0 }
 
 class ULangParser(context: Context) {
   import context._
-  
-  val eq_prec = 6
+
+  val eq_prec = Eq.op.fixity.prec
 
   implicit object whitespace
     extends Whitespace("(\\s|(//.*\\n))*")
@@ -18,17 +18,20 @@ class ULangParser(context: Context) {
   }
 
   val keywords = Set(
-    "define", "data", "notation", "eval", "assume", "show", "proof",
+    "define", "data", "notation", "eval", "assume", "show", "proof", "inductive", "coinductive",
     ",", ";", "(", ")", "{", "}", "[", "]", "->", "|", "\\", "_",
     "if", "then", "else",
     "let", "in", "match", "with")
 
-  val s = S("""[^ \r\n\t\f()\[\],;\'\"]+""")
-  val name = P(s filterNot keywords)
+  val s = S("""[^ \r\n\t\f()\[\],;:\'\"]+""")
+  val c = L(":")
+  val n = s | c
+  val name = P(n filterNot keywords)
 
   object Id extends (String => Id) {
     def apply(name: String): Id = {
-      if (data contains name) Tag(name) else Var(name)
+      val fixity = if (mixfix contains name) mixfix(name) else Nilfix
+      if (data contains name) Tag(name, fixity) else Var(name, fixity)
     }
   }
 
@@ -105,13 +108,14 @@ class ULangParser(context: Context) {
       (names, fixity)
   }
 
-  val cmd: Parser[Cmd] = P(defs | evals | datas | notation | thm)
+  val cmd: Parser[Cmd] = P(defs | evals | datas | notation | thm | ind)
 
   val defs = Defs(section("define", df))
   val evals = Evals(section("eval", expr))
   val datas = Datas(section("data", data_declare) map (_.flatten))
   val notation = Notation(section("notation", notation_declare))
   val thm = Thm(assume ~ show) | Thm0(show)
+  val ind = Ind(section("inductive", expr))
 
   val script = cmd.*
 }

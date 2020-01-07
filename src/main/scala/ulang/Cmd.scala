@@ -2,7 +2,7 @@ package ulang
 
 import arse.Fixity
 
-sealed trait Cmd {
+sealed trait Cmd /* extends Pretty */ {
 
 }
 
@@ -21,8 +21,7 @@ case class Datas(names: List[String]) extends Cmd
 case class Notation(fixs: List[(List[String], Fixity)]) extends Cmd
 // case class Tests(tests: List[Test]) extends Cmd
 case class Evals(exprs: List[Expr]) extends Cmd
-// case class Thms(props: List[Thm]) extends Cmd
-// case class Ind(cases: List[Expr]) extends Cmd
+case class Ind(cases: List[Expr]) extends Cmd
 
 case class Thm(assume: List[Expr], show: Expr) extends Cmd
 

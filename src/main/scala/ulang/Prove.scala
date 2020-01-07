@@ -30,6 +30,8 @@ class Prove(context: Context) {
       prove(left :: assume, right)
     case Eqv(left, right) =>
       prove(right :: assume, left) ++ prove(left :: assume, right)
+    case Eq(left, right) if left == right =>
+      List()
     case _ =>
       List(show)
   }

@@ -1,0 +1,40 @@
+notation
+  :  [infix 6];
+  == != [infix 6];
+
+data
+  0 +1;
+
+notation
+  +1  [postfix 11];
+  + - [infixl   8];
+  
+define
+  1 == 0 +1;
+  inf == inf +1;
+  m + 0 == m;
+  m + (n +1) == (m + n) +1;
+
+notation
+  not [prefix 5];
+  /\  [infixr 4];
+  \/  [infixr 3];
+  ==> [infixr 2];
+  <=> [infix  1];
+
+eval
+  let x = 1, y = 1
+  in x + y;
+  
+  let f = (\ x -> x +1)
+  in f 0;
+
+  match 1 with
+    (n +1) -> n;
+
+inductive
+  0: Nat;
+  n: Nat ==> n +1: Nat;
+
+show p <=> p;
+show x == x;
