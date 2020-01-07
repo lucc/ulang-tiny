@@ -20,6 +20,7 @@ package object ulang {
   object Zero extends Tag("0")
   object Succ extends Unary(Tag("+1", Postfix(11)))
 
+  object Not extends Unary(Var("not", Infix(Right, 5)))
   object And extends Binary(Var("/\\", Infix(Right, 4)))
   object Or extends Binary(Var("\\/", Infix(Right, 3)))
   object Imp extends Binary(Var("==>", Infix(Right, 2)))

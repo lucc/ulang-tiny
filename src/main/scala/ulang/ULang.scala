@@ -48,18 +48,38 @@ class Context extends Syntax[String] {
 
   def exec(cmd: Cmd) = cmd match {
     case Defs(defs) =>
-      for (Def(id, args, rhs) <- defs) {
+      for (Def(id, args, rhs, attr) <- defs) {
+        val rewrite = attr contains "rewrite"
+
         if (args.isEmpty) {
+          val cs = Case(Nil, rhs)
           if (consts contains id)
             sys.error("already defined: " + id)
+
           consts += id -> eval.norm(rhs, Env.empty)
+
+          if (rewrite) {
+            if (rewrites contains id) {
+              rewrites += id -> (rewrites(id) ++ List(cs))
+            } else {
+              rewrites += id -> List(cs)
+            }
+          }
         } else {
           val cs = Case(args, rhs)
+
           if (funs contains id) {
-            val cases = funs(id) ++ List(cs)
-            funs += id -> cases
+            funs += id -> (funs(id) ++ List(cs))
           } else {
             funs += id -> List(cs)
+          }
+
+          if (rewrite) {
+            if (rewrites contains id) {
+              rewrites += id -> (rewrites(id) ++ List(cs))
+            } else {
+              rewrites += id -> List(cs)
+            }
           }
         }
       }

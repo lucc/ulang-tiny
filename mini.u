@@ -8,9 +8,9 @@ data
 notation
   +1  [postfix 11];
   + - [infixl   8];
-  
+
 define
-  1 == 0 +1;
+  1 == 0 +1 [rewrite];
   inf == inf +1;
   m + 0 == m;
   m + (n +1) == (m + n) +1;
@@ -38,3 +38,12 @@ inductive
 
 show p <=> p;
 show x == x;
+show 1 == 0 +1;
+show p /\ q <=> p;
+show p /\ q <=> q /\ p;
+
+assume
+  not true;
+show
+  P;
+

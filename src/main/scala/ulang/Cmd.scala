@@ -6,12 +6,12 @@ sealed trait Cmd /* extends Pretty */ {
 
 }
 
-case class Def(fun: Var, args: List[Pat], body: Expr)
+case class Def(fun: Var, args: List[Pat], body: Expr, attr: List[String])
 
-object Def extends ((Pat, Expr) => Def) {
-  def apply(lhs: Pat, rhs: Expr) = lhs match {
-    case id: Var => Def(id, Nil, rhs)
-    case UnApps(id: Var, args) => Def(id, args, rhs)
+object Def extends ((Pat, Expr, List[String]) => Def) {
+  def apply(lhs: Pat, rhs: Expr, attr: List[String]) = lhs match {
+    case id: Var => Def(id, Nil, rhs, attr)
+    case UnApps(id: Var, args) => Def(id, args, rhs, attr)
   }
 }
 

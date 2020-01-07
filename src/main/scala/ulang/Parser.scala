@@ -13,9 +13,8 @@ class ULangParser(context: Context) {
   implicit object whitespace
     extends Whitespace("(\\s|(//.*\\n))*")
 
-  def parens[A](p: Parser[A]) = {
-    "(" ~ p ~ ")"
-  }
+  def parens[A](p: Parser[A]) = "(" ~ p ~ ")"
+  def bracks[A](p: Parser[A]) = "[" ~ p ~ "]"
 
   val keywords = Set(
     "define", "data", "notation", "eval", "assume", "show", "proof", "inductive", "coinductive",
@@ -78,7 +77,9 @@ class ULangParser(context: Context) {
   val mtch = Match("match" ~ expr_arg.+ ~ "with" ~ css)
 
   val pat_high = pat above (eq_prec + 1)
-  val df = Def(pat_high ~ "==" ~ expr)
+  val attr = L("rewrite")
+  val attrs = bracks(attr.*) | ret(Nil)
+  val df = Def(pat_high ~ "==" ~ expr ~ attrs)
 
   def section[A](keyword: String, p: Parser[A]): Parser[List[A]] = {
     keyword ~ (p ~ ";").*
@@ -91,7 +92,7 @@ class ULangParser(context: Context) {
   val bindfix = Bindfix("binder")
 
   val fixity: Parser[Fixity] = prefix | postfix | infix | bindfix
-  def fix = name.+ ~ "[" ~ fixity ~ "]"
+  def fix = name.+ ~ bracks(fixity)
 
   val assume = section("assume", expr)
   val show = "show" ~ expr ~ ";"
