@@ -97,8 +97,11 @@ class Context extends Syntax[String] {
       }
 
     case Thm(assume, show) =>
-      val rest = prove.prove(assume, show)
-      println(rest)
+      println(cmd)
+      prove(assume, show) match {
+        case None => println("  qed")
+        case Some(rest) => println("  if " + rest)
+      }
 
     case _ =>
   }

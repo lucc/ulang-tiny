@@ -2,48 +2,137 @@ package ulang
 
 import arse._
 
-case class Ant(path: List[Expr], eqs: Subst) {
-  def ::(phi: Expr) = Ant(phi :: path, eqs)
-  def +(xe: (Var, Expr)) = Ant(path, eqs + xe)
-  def maps(x: Var) = eqs contains x
-  def apply(x: Var) = eqs(x)
-  def contains(expr: Expr) = path contains expr
+case object Closed extends Throwable
+
+sealed trait Pos { def unary_!(): Pos }
+case object Ant extends Pos { def unary_! = Suc }
+case object Suc extends Pos { def unary_! = Ant }
+
+case class Goal(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Pretty {
+  def ant = rant.reverse
+  def suc = rsuc.reverse
+
+  import Prove._
+
+  def contains(phi: Expr) = {
+    (rant contains phi) || (rsuc contains not(phi))
+  }
+
+  def assume(phi: Expr): Goal = phi match {
+    case True => this
+    case False => throw Closed
+    case _ if this contains not(phi) => throw Closed
+    case Not(phi) => this assert phi
+    case And(phi, psi) => this assume phi assume psi
+    case Eq(x: Var, e) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
+    case Eq(e, x: Var) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
+    case _ => copy(rant = phi :: rant)
+  }
+
+  def assert(phi: Expr): Goal = phi match {
+    case False => this
+    case True => throw Closed
+    case _ if this contains phi => throw Closed
+    case Not(phi) => this assume phi
+    case Imp(phi, psi) => this assume phi assert psi
+    case Or(phi, psi) => this assert phi assert psi
+    case _ => copy(rsuc = phi :: rsuc)
+  }
+
+  def assume(args: List[Expr]): Goal = {
+    args.foldLeft(this)(_ assume _)
+  }
+
+  def assert(args: List[Expr]): Goal = {
+    args.foldLeft(this)(_ assert _)
+  }
 }
 
-object Ant {
-  val empty = Ant(Nil, Subst.empty)
+object Goal {
+  val empty = Goal(Subst.empty, Nil, Nil)
 }
 
 class Prove(context: Context) {
+  import Prove._
   import context._
 
-  def prove(pre: List[Expr], show: Expr): Expr = {
-    val ant = assume(pre, Ant.empty)
-    prove(ant, show)
+  def apply(pre: List[Expr], show: Expr): Option[Goal] = {
+    try {
+      Some(prove(pre, show))
+    } catch {
+      case Closed => None
+    }
   }
 
-  def prove(ant: Ant, show: Expr): Expr = show match {
-    case True | False =>
-      show
-    case _ if ant contains False =>
+  def prove(ant: List[Expr], suc: Expr): Goal = {
+    init(ant, suc, Goal.empty)
+  }
+
+  def init(ant: List[Expr], suc: Expr, goal: Goal): Goal = ant match {
+    case Nil =>
+      val _suc = simp(suc, goal, Suc)
+      goal assert _suc
+    case phi :: rest =>
+      val _phi = simp(phi, goal, Ant)
+      init(rest, suc, goal assume _phi)
+  }
+
+  def simp(phi: Expr, goal: Goal, pos: Pos): Expr = phi match {
+    case True | False => phi
+    case _ if goal contains phi =>
       True
-    case _ if ant contains show =>
-      True
-    case Eq(left, right) if left == right =>
-      True
-    case Not(expr) =>
-      not(prove(ant, expr))
+    case _ if goal contains not(phi) =>
+      False
+    case Eq(left, right) =>
+      eqn(rewrite(left, goal), rewrite(right, goal))
+    case Not(phi) =>
+      val _phi = simp(phi, goal, !pos)
+      not(_phi)
     case And(left, right) =>
-      and(prove(ant, left), prove(assume(left, ant), right))
+      val _left = simp(left, goal, pos)
+      val _right = simp(right, goal assume _left, pos)
+      and(_left, _right)
     case Or(left, right) =>
-      or(prove(ant, left), prove(assert(left, ant), right))
+      val _left = simp(left, goal, pos)
+      val _right = simp(right, goal assert _left, pos)
+      or(_left, _right)
     case Imp(left, right) =>
-      imp(prove(ant, left), prove(assume(left, ant), right))
+      val _left = simp(left, goal, !pos)
+      val _right = simp(right, goal assume _left, pos)
+      imp(_left, _right)
     case Eqv(left, right) =>
-      val expr = And(Imp(left, right), Imp(right, left))
-      prove(ant, expr)
+      val phi = And(Imp(left, right), Imp(right, left))
+      simp(phi, goal, pos)
     case _ =>
-      show
+      rewrite(phi, goal)
+  }
+
+  def rewrite(expr: Expr, goal: Goal): Expr = {
+    rewrite(expr, goal.eqs)
+  }
+
+  def rewrite(exprs: List[Expr], eqs: Subst): List[Expr] = {
+    exprs map (rewrite(_, eqs))
+  }
+
+  def rewrite(expr: Expr, eqs: Subst): Expr = expr match {
+    case id: Var if eqs contains id =>
+      rewrite(eqs(id), eqs)
+    case id: Var => // avoid immediate recursion on fun in the next case as args.isEmpty
+      apply(id, Nil)
+    case Apps(fun, Nil) =>
+      expr
+    case Apps(fun, args) =>
+      apply(rewrite(fun, eqs), rewrite(args, eqs))
+    case _ =>
+      expr
+  }
+
+  def apply(fun: Expr, args: List[Expr]): Expr = fun match {
+    case id: Var if rewrites contains id =>
+      apply(fun, rewrites(id), args)
+    case _ =>
+      Apps(fun, args)
   }
 
   def apply(cs: Case, args: List[Expr]): Expr = cs match {
@@ -57,22 +146,6 @@ class Prove(context: Context) {
       Apps(fun, args)
     case cs :: rest =>
       { apply(cs, args) } or { apply(fun, rest, args) }
-  }
-
-  def apply(fun: Expr, args: List[Expr]): Expr = fun match {
-    case id: Var if rewrites contains id =>
-      apply(fun, rewrites(id), args map rewrite)
-    case _ =>
-      Apps(fun, args)
-  }
-
-  def rewrite(expr: Expr): Expr = expr match {
-    case id: Id => // avoid immediate recursion on fun in the next case as args.isEmpty
-      apply(id, Nil)
-    case Apps(fun, args) =>
-      apply(rewrite(fun), args map rewrite)
-    case _ =>
-      expr
   }
 
   def bind(pat: Pat, arg: Expr, env: Subst): Subst = pat match {
@@ -103,41 +176,13 @@ class Prove(context: Context) {
     case (pat :: pats, arg :: args) => bind(pats, args, bind(pat, arg, env))
     case _ => sys.error("argument length mismatch: " + pats.mkString(" ") + " and " + args.mkString(" "))
   }
+}
 
-  def assume(args: List[Expr], ant: Ant): Ant = {
-    args.foldRight(ant)(assume)
-  }
-
-  def assert(args: List[Expr], ant: Ant): Ant = {
-    args.foldRight(ant)(assert)
-  }
-
-  def assume(phi: Expr, ant: Ant): Ant = phi match {
-    case True =>
-      ant
-    case Not(psi) =>
-      assert(psi, ant)
-    case And(phi, psi) =>
-      assume(phi, assume(psi, ant))
-    case Eq(x: Var, e) if !(e.free contains x) =>
-      ant + (x -> e)
-    case Eq(e, x: Var) if !(e.free contains x) =>
-      ant + (x -> e)
-    case _ =>
-      phi :: ant
-  }
-
-  def assert(phi: Expr, ant: Ant): Ant = phi match {
-    case False =>
-      ant
-    case Not(psi) =>
-      assume(psi, ant)
-    case Imp(phi, psi) =>
-      assert(phi, assume(psi, ant))
-    case Or(phi, psi) =>
-      assert(phi, assert(psi, ant))
-    case _ =>
-      not(phi) :: ant
+object Prove {
+  def eqn(left: Expr, right: Expr) = (left, right) match {
+    case _ if left == right => True
+    case (Apps(tag1: Tag, _), Apps(tag2: Tag, _)) if tag1 != tag2 => False
+    case _ => Eq(left, right)
   }
 
   def not(expr: Expr) = expr match {

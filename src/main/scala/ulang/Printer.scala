@@ -28,8 +28,13 @@ object Printer {
     case Apps(fun, args) => print(fun, args)
   }
 
-  def print(cmd: Cmd): String = {
-    ???
+  def print(cmd: Cmd): String = cmd match {
+    case Defs(defs) => ???
+    case Datas(names) => ???
+    case Notation(fixs) => ???
+    case Evals(exprs) => ???
+    case Ind(cases) => ???
+    case Thm(assume, show) => print(assume, List(show))
   }
 
   def print(any: Val): String = any match {
@@ -38,12 +43,26 @@ object Printer {
     case Objs(fun, args) => print(fun, args)
   }
 
-  def print(cs: Case) = cs match {
+  def print(cs: Case): String = cs match {
     case Case(pats, body) => pats.mkString(" ") + " -> " + body
   }
 
-  def print(bn: Bind) = bn match {
+  def print(bn: Bind): String = bn match {
     case Bind(pat, arg) => pat + " = " + arg
+  }
+
+  def print(ant: List[Expr], suc: List[Expr]): String = {
+    if (ant.isEmpty)
+      "show " + suc.mkString(" \\/ ")
+    else
+      "assume " + ant.mkString("", "; ", ";") + " show " + suc.mkString(" \\/ ")
+  }
+
+  def print(goal: Goal): String = {
+    val eqs = goal.eqs map { case (l, r) => Eq(l, r) }
+    val ant = goal.ant
+    val suc = goal.suc
+    print(eqs.toList ++ ant, suc)
   }
 
   def print(pretty: Pretty): String = pretty match {
@@ -54,6 +73,7 @@ object Printer {
     case any: Val => print(any)
     case cs: Case => print(cs)
     case bn: Bind => print(bn)
-    // case cmd: Cmd => print(cmd)
+    case goal: Goal => print(goal)
+    case cmd: Cmd => print(cmd)
   }
 }

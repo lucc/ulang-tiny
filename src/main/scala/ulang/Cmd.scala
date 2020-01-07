@@ -2,7 +2,7 @@ package ulang
 
 import arse.Fixity
 
-sealed trait Cmd /* extends Pretty */ {
+sealed trait Cmd extends Pretty {
 
 }
 
