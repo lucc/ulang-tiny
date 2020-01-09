@@ -31,8 +31,21 @@ package object ulang {
   object Succ extends Unary(Tag("+1", Postfix(11)))
 
   object Not extends Unary(Var("not", Prefix(5)))
-  object And extends Binary(Var("/\\", Infix(Right, 4)))
-  object Or extends Binary(Var("\\/", Infix(Right, 3)))
+
+  object And extends Binary(Var("/\\", Infix(Right, 4))) {
+    def apply(args: List[Expr]): Expr = args match {
+      case Nil => True
+      case _ => args.reduce(apply(_, _))
+    }
+  }
+
+  object Or extends Binary(Var("\\/", Infix(Right, 3))){
+    def apply(args: List[Expr]): Expr = args match {
+      case Nil => False
+      case _ => args.reduce(apply(_, _))
+    }
+  }
+  
   object Imp extends Binary(Var("==>", Infix(Right, 2)))
   object Eqv extends Binary(Var("<=>", Infix(Non, 1)))
 

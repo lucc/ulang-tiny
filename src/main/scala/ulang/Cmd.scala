@@ -12,6 +12,7 @@ object Def extends ((Pat, Expr, List[String]) => Def) {
   def apply(lhs: Pat, rhs: Expr, attr: List[String]) = lhs match {
     case id: Var => Def(id, Nil, rhs, attr)
     case UnApps(id: Var, args) => Def(id, args, rhs, attr)
+    case _ => sys.error("invalid definition: " + lhs + " == ...")
   }
 }
 

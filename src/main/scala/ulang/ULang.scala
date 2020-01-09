@@ -16,7 +16,8 @@ class Context extends Syntax[String] {
   var infix_ops: Map[String, (Assoc, Int)] = Map()
   var bind_ops: Set[String] = Set()
 
-  var sig: Set[Var] = Set()
+  var sig: Set[Var] = Set(
+    Eq.op, Not.op, Or.op, And.op, Imp.op, Eqv.op)
 
   var funs: Map[Var, List[Case]] = Map()
   var consts: Map[Var, Norm] = Map()
@@ -84,8 +85,8 @@ class Context extends Syntax[String] {
   }
 
   def fix(pat: Pat) = {
-    val Some((_, kind, intros)) = fixs find (pat <= _._1)
-    (kind, intros)
+    val Some((gen, kind, intros)) = fixs find (pat <= _._1)
+    (gen, kind, intros)
   }
 
   def exec(cmd: Cmd) = cmd match {
@@ -130,8 +131,8 @@ class Context extends Syntax[String] {
 
     case Thm(assume, show, tactic) =>
       val proof = prove.prove(assume, show, tactic)
-      for(line <- Print.format(proof) if !proof.isClosed)
-          println(line)
+      for (line <- Print.format(proof))
+        println(line)
 
     case _ =>
   }

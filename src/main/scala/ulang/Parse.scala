@@ -23,7 +23,7 @@ class Parse(context: Context) {
     "let", "in", "match", "with")
 
   val s = S("""[^ \r\n\t\f()\[\],;:\'\"]+""")
-  val c = L(":")
+  val c = L("::", ":", "[]")
   val n = s | c
   val name = P(n filterNot keywords)
 

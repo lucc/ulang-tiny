@@ -57,7 +57,7 @@ object Objs extends ((Data, List[Val]) => Val) {
   }
 }
 
-class Unary(val op: Id) {
+class Unary[A <: Id](val op: A) {
   def unapply(p: Pat) = p match {
     case UnApp(`op`, arg) => Some(arg)
     case _ => None
@@ -82,7 +82,7 @@ class Unary(val op: Id) {
   }
 }
 
-class Binary(val op: Id) {
+class Binary[A <: Id](val op: A) {
   def unapply(p: Pat) = p match {
     case UnApp(UnApp(`op`, arg1), arg2) => Some((arg1, arg2))
     case _ => None
@@ -100,10 +100,6 @@ class Binary(val op: Id) {
 
   def apply(arg1: Expr, arg2: Expr): Expr = {
     App(App(op, arg1), arg2)
-  }
-  
-  def apply(args: List[Expr]): Expr = {
-    args.reduce[Expr](apply)
   }
 
   def apply(args: List[Expr], zero: Expr): Expr = {

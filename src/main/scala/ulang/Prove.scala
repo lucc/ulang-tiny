@@ -7,11 +7,13 @@ class Prove(context: Context) {
   import context._
 
   def prove(ant: List[Expr], suc: Expr, proof: Option[Tactic]): Proof = {
-    val goal = init(ant, suc, Goal.empty)
+    val goal = auto(ant, suc, Goal.empty)
 
     (goal, proof) match {
       case (open: Open, Some(tactic)) =>
         prove(open, tactic)
+      case (step @ Step(List(prem: Open), concl, auto), Some(tactic)) =>
+        Step(List(prove(prem, tactic)), concl, auto)
       case (_, Some(tactic)) =>
         sys.error("cannot apply: " + tactic + " (goal is closed)")
       case (goal, _) =>
@@ -19,7 +21,7 @@ class Prove(context: Context) {
     }
   }
 
-  def elim(intro: Intro, target: Expr, eqs: Subst, ant: List[Expr], suc: List[Expr], hyp: Boolean): Proof = {
+  def elim(intro: Intro, target: Expr, eqs: Subst, ant: List[Expr], suc: List[Expr], hyp: Option[Pat]): Proof = {
     val fresh = Expr.fresh(intro.free -- sig)
     val Intro(pre, post) = intro rename fresh
 
@@ -29,9 +31,31 @@ class Prove(context: Context) {
     assert(args1.length == args2.length)
 
     val eq = Eq.zip(args1, args2)
-    val _ant = eq ++ ant
     val _suc = Or(suc)
-    init(_ant, _suc, Open(eqs, Nil, Nil))
+
+    def collapse(left: List[Expr], right: List[Expr]): List[(Var, Expr)] = (left, right) match {
+      case (Nil, Nil) => Nil
+      case ((x: Var) :: left, e :: right) => (x, e) :: collapse(left, right)
+      case (Apps(fun1, args1) :: left, Apps(fun2, args2) :: right) if fun1 == fun2 => collapse(args1 ++ left, args2 ++ right)
+      case (x :: _, e :: _) if x != e => sys.error("can't instantiate inductive premise for: " + x + " == " + e)
+    }
+
+    hyp match {
+      case Some(pat) =>
+        val (found, rest) = searchAll(pat, pre)
+        val hyps = found map {
+          case (rec, env) =>
+            val Apps(fun0, args0) = rec
+            val inst = collapse(args2, args1)
+            // val req = Eq.zip(args2, args0)
+            val hyp = imp(And(ant), _suc)
+            val _hyp = hyp subst inst.toMap
+            _hyp
+        }
+        auto(eq ++ ant ++ hyps, _suc, Open(eqs, Nil, Nil))
+      case None =>
+        auto(eq ++ ant, _suc, Open(eqs, Nil, Nil))
+    }
   }
 
   def ind(pat: Pat, goal: Goal, hyp: Boolean): List[Proof] = {
@@ -39,19 +63,31 @@ class Prove(context: Context) {
     val (found, env, rest) = { search(pat, ant) } or { sys.error("no formula: " + pat) }
     // if (!env.isEmpty)
     //   sys.error("can't introduce new vars here: " + env.keys.mkString(" "))
-    val (kind, intros) = fix(pat)
-    intros map (elim(_, found, eqs, rest, suc, hyp))
+    val (gen, kind, intros) = fix(pat)
+    val rec = if (hyp) Some(gen) else None
+    intros map (elim(_, found, eqs, rest, suc, rec))
   }
 
   def prove(goal: Open, tactic: Tactic): Proof = tactic match {
-    case Ind(pat, Least) =>
-      val prems = ind(pat, goal, hyp = true)
-      Step(prems, goal, tactic)
     case Split(pat) =>
       val prems = ind(pat, goal, hyp = false)
       Step(prems, goal, tactic)
-    case _ =>
+    case Ind(pat, Least) =>
+      val prems = ind(pat, goal, hyp = true)
+      Step(prems, goal, tactic)
+    case Ind(pat, Greatest) =>
       ???
+  }
+
+  def auto(ant: List[Expr], suc: Expr, goal: Open): Proof = {
+    val Open(eqs, rant, rsuc) = goal
+    val prem = init(ant, suc, goal)
+    Step(List(prem), Open(eqs, ant ++ rant, suc :: rsuc), Auto)
+  }
+
+  def auto(goal: Goal): Proof = goal match {
+    case Closed => Closed
+    case Open(eqs, ant, suc) => auto(ant, Or(suc), Open(eqs, Nil, Nil))
   }
 
   def init(ant: List[Expr], suc: Expr, goal: Goal): Goal = ant match {
@@ -61,14 +97,6 @@ class Prove(context: Context) {
     case phi :: rest =>
       val _phi = simp(phi, goal, Ant)
       init(rest, suc, goal assume _phi)
-  }
-
-  def simp(goal: Goal): Goal = goal match {
-    case Closed =>
-      Closed
-
-    case Open(eqs, ant, suc) =>
-      init(ant, Or(suc), Open(eqs, Nil, Nil))
   }
 
   def simp(phi: Expr, goal: Goal, pos: Pos): Expr = goal match {
@@ -165,6 +193,20 @@ class Prove(context: Context) {
       } or {
         val (found, env, rest) = search(pat, exprs)
         (found, env, expr :: rest)
+      }
+  }
+
+  def searchAll(pat: Pat, exprs: List[Expr]): (List[(Expr, Subst)], List[Expr]) = exprs match {
+    case Nil =>
+      (Nil, Nil)
+    case expr :: exprs =>
+      val (found, rest) = searchAll(pat, exprs)
+
+      {
+        val env = bind(pat, expr, sig, Subst.empty)
+        ((expr, env) :: found, rest)
+      } or {
+        (found, expr :: rest)
       }
   }
 }

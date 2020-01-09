@@ -52,10 +52,9 @@ coinductive
   0: NatInf;
   n: NatInf ==> n +1: NatInf;
 
-
 assume k: Nat;
 show k < k +1;
-proof cases k: Nat;
+proof induction k: Nat;
 
 assume not True;
 show P;
@@ -78,3 +77,30 @@ show P n;
 proof cases n: Nat;
 
 
+data
+  [] ::;
+
+notation
+  :: [infixr 8];
+  ++ [infixr 7];
+
+inductive
+  []: List a;
+  x: a /\ xs: List a ==> (x :: xs): List a;
+
+define
+  [] ++ ys == ys [rewrite];
+  (x :: xs) ++ ys == x :: (xs ++ ys) [rewrite];
+
+assume
+  ys: List a;
+  xs: List a;
+show
+  xs ++ ys: List a;
+proof induction xs: List a;
+
+assume
+  xs: List a;
+show
+  (xs ++ ys) ++ zs == xs ++ (ys ++ zs);
+proof induction xs: List a;

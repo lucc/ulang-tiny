@@ -1,6 +1,7 @@
 package ulang
 
 sealed trait Tactic extends Pretty
+case object Auto extends Tactic
 case class Ind(pat: Pat, kind: FixKind) extends Tactic
 case class Split(pat: Pat) extends Tactic
 

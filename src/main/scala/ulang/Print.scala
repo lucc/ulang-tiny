@@ -84,10 +84,16 @@ object Print {
       val first = indent + concl
       val second = indent + "proof " + tactic
       val rest = prems filterNot (_ == Closed) flatMap (format(_, indent + "  "))
-      first :: second :: rest
+      if (rest.isEmpty) {
+        val third = indent + "  qed"
+        first :: second :: third :: Nil
+      } else {
+        first :: second :: rest
+      }
   }
 
   def print(tactic: Tactic): String = tactic match {
+    case Auto => "auto"
     case Split(pat) => "split " + pat
     case Ind(pat, Least) => "induction " + pat
     case Ind(pat, Greatest) => "coinduction " + pat
