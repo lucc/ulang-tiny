@@ -34,7 +34,7 @@ object Print {
     case Notation(fixs) => ???
     case Evals(exprs) => ???
     case Fix(cases, kind) => ???
-    case Thm(assume, show) => print(assume, List(show))
+    case Thm(assume, show, _) => print(assume, List(show))
   }
 
   def print(any: Val): String = any match {
@@ -58,7 +58,7 @@ object Print {
       "assume " + ant.mkString("", "; ", ";") + " show " + suc.mkString(" \\/ ")
   }
 
-  def print(goal: Goal): String = {
+  def print(goal: Open): String = {
     val eqs = goal.eqs map { case (l, r) => Eq(l, r) }
     val ant = goal.ant
     val suc = goal.suc
@@ -73,7 +73,7 @@ object Print {
     case any: Val => print(any)
     case cs: Case => print(cs)
     case bn: Bind => print(bn)
-    case goal: Goal => print(goal)
+    case goal: Open => print(goal)
     case cmd: Cmd => print(cmd)
   }
 }

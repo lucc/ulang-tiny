@@ -5,6 +5,12 @@ import arse._
 sealed trait Pat extends Pretty {
   def bound: Set[Var]
   def rename(re: Map[Var, Var]): Pat
+
+  def <=(that: Pat): Boolean = (this, that) match {
+    case _ if this == that => true
+    case (_, Wildcard) => true
+    case (UnApp(fun1, arg1), UnApp(fun2, arg2)) => fun1 <= fun2 && arg1 <= arg2
+  }
 }
 
 sealed trait Expr extends Expr.term with Pretty {

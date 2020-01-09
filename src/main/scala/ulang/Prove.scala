@@ -2,42 +2,17 @@ package ulang
 
 import arse._
 
-case object Closed extends Throwable
-
 sealed trait Pos { def unary_!(): Pos }
 case object Ant extends Pos { def unary_! = Suc }
 case object Suc extends Pos { def unary_! = Ant }
 
-case class Goal(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Pretty {
-  def ant = rant.reverse
-  def suc = rsuc.reverse
+sealed trait Proof {
+  def isClosed: Boolean
+}
 
-  import Prove._
-
-  def contains(phi: Expr) = {
-    (rant contains phi) || (rsuc contains not(phi))
-  }
-
-  def assume(phi: Expr): Goal = phi match {
-    case True => this
-    case False => throw Closed
-    case _ if this contains not(phi) => throw Closed
-    case Not(phi) => this assert phi
-    case And(phi, psi) => this assume phi assume psi
-    case Eq(x: Var, e) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
-    case Eq(e, x: Var) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
-    case _ => copy(rant = phi :: rant)
-  }
-
-  def assert(phi: Expr): Goal = phi match {
-    case False => this
-    case True => throw Closed
-    case _ if this contains phi => throw Closed
-    case Not(phi) => this assume phi
-    case Imp(phi, psi) => this assume phi assert psi
-    case Or(phi, psi) => this assert phi assert psi
-    case _ => copy(rsuc = phi :: rsuc)
-  }
+sealed trait Goal extends Proof {
+  def assume(phi: Expr): Goal
+  def assert(phi: Expr): Goal
 
   def assume(args: List[Expr]): Goal = {
     args.foldLeft(this)(_ assume _)
@@ -48,24 +23,88 @@ case class Goal(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Pretty {
   }
 }
 
+case object Closed extends Goal {
+  def isClosed = true
+  def assume(phi: Expr) = this
+  def assert(phi: Expr) = this
+}
+
+case class Step(prems: List[Proof], concl: Open, tactic: Tactic) extends Proof {
+  def isClosed = prems forall (_.isClosed)
+}
+
+case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal with Pretty {
+  def ant = rant.reverse
+  def suc = rsuc.reverse
+
+  def isClosed = false
+
+  import Prove._
+
+  def contains(phi: Expr) = {
+    (rant contains phi) || (rsuc contains not(phi))
+  }
+
+  def assume(phi: Expr): Goal = phi match {
+    case True => this
+    case False => Closed
+    case _ if this contains not(phi) => Closed
+    case Not(phi) => this assert phi
+    case And(phi, psi) => this assume phi assume psi
+    case Eq(x: Var, e) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
+    case Eq(e, x: Var) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
+    case _ => copy(rant = phi :: rant)
+  }
+
+  def assert(phi: Expr): Goal = phi match {
+    case False => this
+    case True => Closed
+    case _ if this contains phi => Closed
+    case Not(phi) => this assume phi
+    case Imp(phi, psi) => this assume phi assert psi
+    case Or(phi, psi) => this assert phi assert psi
+    case _ => copy(rsuc = phi :: rsuc)
+  }
+}
+
 object Goal {
-  val empty = Goal(Subst.empty, Nil, Nil)
+  val empty = Open(Subst.empty, Nil, Nil)
 }
 
 class Prove(context: Context) {
   import Prove._
   import context._
 
-  def apply(pre: List[Expr], show: Expr): Option[Goal] = {
-    try {
-      Some(prove(pre, show))
-    } catch {
-      case Closed => None
+  def prove(ant: List[Expr], suc: Expr, proof: Option[Tactic]): Proof = {
+    val goal = init(ant, suc, Goal.empty)
+
+    (goal, proof) match {
+      case (open: Open, Some(tactic)) =>
+        prove(open, tactic)
+      case (_, Some(tactic)) =>
+        sys.error("cannot apply: " + tactic + " (goal is closed)")
+      case (goal, _) =>
+        goal
     }
   }
 
-  def prove(ant: List[Expr], suc: Expr): Goal = {
-    init(ant, suc, Goal.empty)
+  def prove(goal: Open, tactic: Tactic): Proof = tactic match {
+    case Ind(pat, Least) =>
+      ???
+    case Split(pat) =>
+      val Open(eqs, ant, suc) = goal
+      val (found, env, rest) = { search(pat, ant) } or { sys.error("no formula: " + pat) }
+      val cases = context fixs pat
+      val prems = cases map {
+        case (pre, cs) =>
+          val _pre = pre map (_ subst env)
+          val _cs = cs subst env
+          val _ant = _cs :: _pre ::: ant
+          init(_ant, Or(suc), Open(eqs, Nil, Nil))
+      }
+      Step(prems, goal, tactic)
+    case _ =>
+      ???
   }
 
   def init(ant: List[Expr], suc: Expr, goal: Goal): Goal = ant match {
@@ -77,7 +116,20 @@ class Prove(context: Context) {
       init(rest, suc, goal assume _phi)
   }
 
-  def simp(phi: Expr, goal: Goal, pos: Pos): Expr = phi match {
+  def simp(goal: Goal): Goal = goal match {
+    case Closed =>
+      Closed
+
+    case Open(eqs, ant, suc) =>
+      init(ant, Or(suc), Open(eqs, Nil, Nil))
+  }
+
+  def simp(phi: Expr, goal: Goal, pos: Pos): Expr = goal match {
+    case Closed => True
+    case open: Open => simp(phi, open, pos)
+  }
+
+  def simp(phi: Expr, goal: Open, pos: Pos): Expr = phi match {
     case True | False => phi
     case _ if goal contains phi =>
       True
@@ -107,7 +159,7 @@ class Prove(context: Context) {
       rewrite(phi, goal)
   }
 
-  def rewrite(expr: Expr, goal: Goal): Expr = {
+  def rewrite(expr: Expr, goal: Open): Expr = {
     rewrite(expr, goal.eqs)
   }
 
@@ -146,6 +198,18 @@ class Prove(context: Context) {
       Apps(fun, args)
     case cs :: rest =>
       { apply(cs, args) } or { apply(fun, rest, args) }
+  }
+
+  def search(pat: Pat, exprs: List[Expr]): (Expr, Subst, List[Expr]) = exprs match {
+    case Nil =>
+      backtrack
+    case expr :: exprs =>
+      {
+        (expr, bind(pat, expr, Subst.empty), exprs)
+      } or {
+        val (found, env, rest) = search(pat, exprs)
+        (found, env, expr :: rest)
+      }
   }
 
   def bind(pat: Pat, arg: Expr, env: Subst): Subst = pat match {

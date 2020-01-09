@@ -27,8 +27,8 @@ case object Least extends FixKind
 case object Greatest extends FixKind
 case class Fix(cases: List[Expr], kind: FixKind) extends Cmd
 
-case class Thm(assume: List[Expr], show: Expr) extends Cmd
+case class Thm(assume: List[Expr], show: Expr, proof: Option[Tactic]) extends Cmd
 
-object Thm0 extends (Expr => Thm) {
-  def apply(show: Expr) = Thm(Nil, show)
+object Thm0 extends ((Expr, Option[Tactic]) => Thm) {
+  def apply(show: Expr, proof: Option[Tactic]) = Thm(Nil, show, proof)
 }

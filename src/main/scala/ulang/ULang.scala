@@ -23,6 +23,16 @@ class Context extends Syntax[String] {
   var coinds: Map[Pat, List[(List[Expr], Expr)]] = Map()
   var rewrites: Map[Var, List[Case]] = Map()
 
+  def fixs(pat: Pat): List[(List[Expr], Expr)] = {
+    for ((key, cases) <- inds) {
+      if (pat <= key) return cases
+    }
+    for ((key, cases) <- coinds) {
+      if (pat <= key) return cases
+    }
+    sys.error("no fixpoint for: " + pat)
+  }
+
   object parser extends Parse(this)
   object eval extends Eval(this)
   object prove extends Prove(this)
@@ -128,12 +138,10 @@ class Context extends Syntax[String] {
         case Greatest => coind(pat, imps)
       }
 
-    case Thm(assume, show) =>
+    case Thm(assume, show, tactic) =>
       println(cmd)
-      prove(assume, show) match {
-        case None => println("  qed")
-        case Some(rest) => println("  if " + rest)
-      }
+      val proof = prove.prove(assume, show, tactic)
+      println(proof)
 
     case _ =>
   }

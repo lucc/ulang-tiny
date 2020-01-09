@@ -76,6 +76,11 @@ class Parse(context: Context) {
   val bind = Binder(id_bind ~ cs)
   val mtch = Match("match" ~ expr_arg.+ ~ "with" ~ css)
 
+  val tactic: Parser[Tactic] = P(ind | coind | split)
+  val ind = Ind("induction" ~ pat ~ ret(Least))
+  val coind = Ind("induction" ~ pat ~ ret(Greatest))
+  val split = Split("cases" ~ pat)
+
   val pat_high = pat above (eq_prec + 1)
   val attr = L("rewrite")
   val attrs = bracks(attr.*) | ret(Nil)
@@ -109,15 +114,17 @@ class Parse(context: Context) {
       (names, fixity)
   }
 
-  val cmd: Parser[Cmd] = P(defs | evals | datas | notation | thm | ind | coind)
+  val cmd: Parser[Cmd] = P(defs | evals | datas | notation | thm | least | greatest)
 
   val defs = Defs(section("define", df))
   val evals = Evals(section("eval", expr))
   val datas = Datas(section("data", data_declare) map (_.flatten))
   val notation = Notation(section("notation", notation_declare))
-  val thm = Thm(assume ~ show) | Thm0(show)
-  val ind = Fix(section("inductive", expr) ~ ret(Least))
-  val coind = Fix(section("coinductive", expr) ~ ret(Greatest))
+  val least = Fix(section("inductive", expr) ~ ret(Least))
+  val greatest = Fix(section("coinductive", expr) ~ ret(Greatest))
+  
+  val proof = "proof" ~ tactic ~ ";"
+  val thm = Thm(assume ~ show ~ proof.?) | Thm0(show ~ proof.?)
 
   val script = cmd.*
 }
