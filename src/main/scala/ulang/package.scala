@@ -14,8 +14,8 @@ package object ulang {
 
   object Eq extends Binary(Var("==", Infix(Non, 6)))
 
-  object True extends Tag("true")
-  object False extends Tag("false")
+  object True extends Tag("True")
+  object False extends Tag("False")
 
   object Zero extends Tag("0")
   object Succ extends Unary(Tag("+1", Postfix(11)))

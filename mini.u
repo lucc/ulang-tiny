@@ -3,7 +3,6 @@ notation
   == != [infix 6];
 
 data
-  true false;
   0 +1;
 
 notation
@@ -37,9 +36,14 @@ inductive
   0: Nat;
   n: Nat ==> n +1: Nat;
 
-assume not true;
+coinductive
+  0: NatInf;
+  n: NatInf ==> n +1: NatInf;
+
+assume not True;
 show P;
 
+show True;
 show p <=> p;
 show x == x;
 show 1 == 0 +1;
@@ -49,7 +53,7 @@ show p /\ q <=> q /\ p;
 assume p; p ==> q; q ==> r;
 show   r;
 
-assume x == z; P z;
-show   P x;
+assume x == z; p z;
+show   p x;
 
 

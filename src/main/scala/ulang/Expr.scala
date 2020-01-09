@@ -9,6 +9,11 @@ sealed trait Pat extends Pretty {
 
 sealed trait Expr extends Expr.term with Pretty {
   def free: Set[Var]
+  def toPat: Pat = this match {
+    case id: Id => id
+    case App(fun, arg) => UnApp(fun.toPat, arg.toPat)
+    case _ => sys.error("not a pattern: " + this)
+  }
 }
 
 object Expr extends Alpha[Expr, Var] {

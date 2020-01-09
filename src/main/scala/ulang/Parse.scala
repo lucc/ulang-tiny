@@ -30,7 +30,7 @@ class Parse(context: Context) {
   object Id extends (String => Id) {
     def apply(name: String): Id = {
       val fixity = if (mixfix contains name) mixfix(name) else Nilfix
-      if (data contains name) Tag(name, fixity) else Var(name, fixity)
+      if ((data contains name) || (name.head.isUpper)) Tag(name, fixity) else Var(name, fixity)
     }
   }
 
@@ -109,14 +109,15 @@ class Parse(context: Context) {
       (names, fixity)
   }
 
-  val cmd: Parser[Cmd] = P(defs | evals | datas | notation | thm | ind)
+  val cmd: Parser[Cmd] = P(defs | evals | datas | notation | thm | ind | coind)
 
   val defs = Defs(section("define", df))
   val evals = Evals(section("eval", expr))
   val datas = Datas(section("data", data_declare) map (_.flatten))
   val notation = Notation(section("notation", notation_declare))
   val thm = Thm(assume ~ show) | Thm0(show)
-  val ind = Ind(section("inductive", expr))
+  val ind = Fix(section("inductive", expr) ~ ret(Least))
+  val coind = Fix(section("coinductive", expr) ~ ret(Greatest))
 
   val script = cmd.*
 }

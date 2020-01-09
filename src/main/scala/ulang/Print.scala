@@ -33,7 +33,7 @@ object Print {
     case Datas(names) => ???
     case Notation(fixs) => ???
     case Evals(exprs) => ???
-    case Ind(cases) => ???
+    case Fix(cases, kind) => ???
     case Thm(assume, show) => print(assume, List(show))
   }
 

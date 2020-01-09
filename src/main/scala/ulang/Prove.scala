@@ -224,4 +224,14 @@ object Prove {
     case (_, False) => not(left)
     case _ => Eqv(left, right)
   }
+
+  def merge(pats: List[Pat]): Pat = {
+    pats reduce merge
+  }
+
+  def merge(pat1: Pat, pat2: Pat): Pat = (pat1, pat2) match {
+    case _ if pat1 == pat2 => pat1
+    case (UnApp(fun1, arg1), UnApp(fun2, arg2)) => UnApp(merge(fun1, fun2), merge(arg1, arg2))
+    case _ => Wildcard
+  }
 }

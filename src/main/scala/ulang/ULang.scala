@@ -19,6 +19,8 @@ class Context extends Syntax[String] {
   var funs: Map[Var, List[Case]] = Map()
   var consts: Map[Var, Norm] = Map()
 
+  var inds: Map[Pat, List[(List[Expr], Expr)]] = Map()
+  var coinds: Map[Pat, List[(List[Expr], Expr)]] = Map()
   var rewrites: Map[Var, List[Case]] = Map()
 
   object parser extends Parse(this)
@@ -46,41 +48,52 @@ class Context extends Syntax[String] {
     }
   }
 
+  def const(id: Var, rhs: Norm) {
+    if (consts contains id)
+      sys.error("constant already defined: " + id)
+    consts += id -> rhs
+  }
+
+  def fun(id: Var, cs: Case) {
+    if (funs contains id) {
+      funs += id -> (funs(id) ++ List(cs))
+    } else {
+      funs += id -> List(cs)
+    }
+  }
+
+  def rewrite(id: Var, cs: Case) {
+    if (rewrites contains id) {
+      rewrites += id -> (rewrites(id) ++ List(cs))
+    } else {
+      rewrites += id -> List(cs)
+    }
+  }
+
+  def ind(pat: Pat, cases: List[(List[Expr], Expr)]) {
+    if (inds contains pat)
+      sys.error("induction already defined: " + pat)
+    inds += pat -> cases
+  }
+
+  def coind(pat: Pat, cases: List[(List[Expr], Expr)]) {
+    if (coinds contains pat)
+      sys.error("coinduction already defined: " + pat)
+    coinds += pat -> cases
+  }
+
   def exec(cmd: Cmd) = cmd match {
     case Defs(defs) =>
       for (Def(id, args, rhs, attr) <- defs) {
-        val rewrite = attr contains "rewrite"
-
         if (args.isEmpty) {
-          val cs = Case(Nil, rhs)
-          if (consts contains id)
-            sys.error("already defined: " + id)
-
-          consts += id -> eval.norm(rhs, Env.empty)
-
-          if (rewrite) {
-            if (rewrites contains id) {
-              rewrites += id -> (rewrites(id) ++ List(cs))
-            } else {
-              rewrites += id -> List(cs)
-            }
-          }
+          val res = eval.norm(rhs, Env.empty)
+          const(id, res)
         } else {
-          val cs = Case(args, rhs)
+          fun(id, Case(args, rhs))
+        }
 
-          if (funs contains id) {
-            funs += id -> (funs(id) ++ List(cs))
-          } else {
-            funs += id -> List(cs)
-          }
-
-          if (rewrite) {
-            if (rewrites contains id) {
-              rewrites += id -> (rewrites(id) ++ List(cs))
-            } else {
-              rewrites += id -> List(cs)
-            }
-          }
+        if (attr contains "rewrite") {
+          rewrite(id, Case(args, rhs))
         }
       }
 
@@ -91,9 +104,28 @@ class Context extends Syntax[String] {
         println("  == " + res)
       }
 
-    case Ind(cases) =>
-      for (cs <- cases) {
-        println(cs)
+    case Fix(cases, kind) =>
+      val imps = cases map {
+        case Imp(Apps(And.op, ant), suc) =>
+          (ant, suc)
+        case Imp(ant, suc) =>
+          (List(ant), suc)
+        case suc =>
+          (Nil, suc)
+      }
+
+      val sucs = imps map {
+        case (_, suc) =>
+          suc.toPat
+      }
+
+      val pat = Prove.merge(sucs)
+
+      println("fixpoint for " + pat)
+
+      kind match {
+        case Least => ind(pat, imps)
+        case Greatest => coind(pat, imps)
       }
 
     case Thm(assume, show) =>
