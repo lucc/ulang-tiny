@@ -21,7 +21,7 @@ class Context extends Syntax[String] {
 
   var rewrites: Map[Var, List[Case]] = Map()
 
-  object parser extends ULangParser(this)
+  object parser extends Parse(this)
   object eval extends Eval(this)
   object prove extends Prove(this)
 

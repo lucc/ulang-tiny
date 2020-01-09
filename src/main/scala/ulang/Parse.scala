@@ -5,7 +5,7 @@ import arse.implicits._
 
 case object Bindfix extends Fixity { def prec = 0 }
 
-class ULangParser(context: Context) {
+class Parse(context: Context) {
   import context._
 
   val eq_prec = Eq.op.fixity.prec

@@ -3,10 +3,10 @@ package ulang
 import arse._
 
 trait Pretty {
-  override def toString = Printer.print(this)
+  override def toString = Print.print(this)
 }
 
-object Printer {
+object Print {
   def print(fun: Pretty, args: List[Pretty]): String = (fun, args) match {
     case (Id(name, _: Prefix), List(arg)) => "(" + name + " " + arg + ")"
     case (Id(name, _: Postfix), List(arg)) => "(" + arg + " " + name + ")"
