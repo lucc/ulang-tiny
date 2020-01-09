@@ -121,7 +121,6 @@ class Context extends Syntax[String] {
       }
 
       val pat = Prove.merge(intros map (_.pat))
-      println("fixpoint for " + pat)
       pat match {
         case UnApps(fun: Var, args) =>
           fix(fun, pat, kind, intros)
@@ -130,12 +129,9 @@ class Context extends Syntax[String] {
       }
 
     case Thm(assume, show, tactic) =>
-      println(cmd)
       val proof = prove.prove(assume, show, tactic)
-      if(proof.isClosed)
-        println("  qed")
-      else
-        println("  " + proof)
+      for(line <- Print.format(proof) if !proof.isClosed)
+          println(line)
 
     case _ =>
   }

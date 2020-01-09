@@ -19,10 +19,10 @@ class Prove(context: Context) {
     }
   }
 
-  def elim(intro: Intro, target: Expr, eqs: Subst, ant: List[Expr], suc: List[Expr]): Proof = {
+  def elim(intro: Intro, target: Expr, eqs: Subst, ant: List[Expr], suc: List[Expr], hyp: Boolean): Proof = {
     val fresh = Expr.fresh(intro.free -- sig)
     val Intro(pre, post) = intro rename fresh
-    
+
     val Apps(fun1, args1) = post
     val Apps(fun2, args2) = target
     assert(fun1 == fun2) // satisifed from the pattern match
@@ -34,16 +34,21 @@ class Prove(context: Context) {
     init(_ant, _suc, Open(eqs, Nil, Nil))
   }
 
+  def ind(pat: Pat, goal: Goal, hyp: Boolean): List[Proof] = {
+    val Open(eqs, ant, suc) = goal
+    val (found, env, rest) = { search(pat, ant) } or { sys.error("no formula: " + pat) }
+    // if (!env.isEmpty)
+    //   sys.error("can't introduce new vars here: " + env.keys.mkString(" "))
+    val (kind, intros) = fix(pat)
+    intros map (elim(_, found, eqs, rest, suc, hyp))
+  }
+
   def prove(goal: Open, tactic: Tactic): Proof = tactic match {
     case Ind(pat, Least) =>
-      ???
+      val prems = ind(pat, goal, hyp = true)
+      Step(prems, goal, tactic)
     case Split(pat) =>
-      val Open(eqs, ant, suc) = goal
-      val (found, env, rest) = { search(pat, ant) } or { sys.error("no formula: " + pat) }
-      // if (!env.isEmpty)
-      //   sys.error("can't introduce new vars here: " + env.keys.mkString(" "))
-      val (kind, intros) = fix(pat)
-      val prems = intros map (elim(_, found, eqs, rest, suc))
+      val prems = ind(pat, goal, hyp = false)
       Step(prems, goal, tactic)
     case _ =>
       ???
@@ -109,7 +114,14 @@ class Prove(context: Context) {
     exprs map (rewrite(_, eqs))
   }
 
-  def rewrite(expr: Expr, eqs: Subst): Expr = expr match {
+  def rewrite(expr: Expr, eqs: Subst): Expr = {
+    val res = _rewrite(expr, eqs)
+    /* if (res != expr)
+      println("rewrite " + expr + " ~> " + (expr subst eqs) + " ~> " + res) */
+    res
+  }
+
+  def _rewrite(expr: Expr, eqs: Subst): Expr = expr match {
     case id: Var if eqs contains id =>
       rewrite(eqs(id), eqs)
     case id: Var => // avoid immediate recursion on fun in the next case as args.isEmpty
@@ -130,9 +142,11 @@ class Prove(context: Context) {
   }
 
   def apply(cs: Case, args: List[Expr]): Expr = cs match {
-    case Case(pats, body) =>
+    case Case(pats, body) if pats.length == args.length =>
       val env = bind(pats, args, sig, Subst.empty)
       body subst env
+    case _ =>
+      backtrack // partial application
   }
 
   def apply(fun: Expr, cases: List[Case], args: List[Expr]): Expr = cases match {
@@ -208,7 +222,7 @@ object Prove {
     case Strict(pat) =>
       bind(pat, arg, sig, env)
     case x: Var if sig contains x =>
-      if(x == arg) env
+      if (x == arg) env
       else backtrack
     case x: Var if env contains x =>
       if (env(x) == arg) env

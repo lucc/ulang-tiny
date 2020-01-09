@@ -51,18 +51,46 @@ object Print {
     case Bind(pat, arg) => pat + " = " + arg
   }
 
+  def assume(ant: List[Expr]): String = {
+    ant.mkString("assume ", "; ", ";")
+  }
+
+  def show(suc: List[Expr]): String = {
+    suc.mkString("show ", " \\/ ", ";")
+  }
+
   def print(ant: List[Expr], suc: List[Expr]): String = {
     if (ant.isEmpty)
-      "show " + suc.mkString(" \\/ ")
+      show(suc)
     else
-      "assume " + ant.mkString("", "; ", ";") + " show " + suc.mkString(" \\/ ")
+      assume(ant) + " " + show(suc)
   }
 
   def print(goal: Open): String = {
-    val eqs = goal.eqs map { case (l, r) => Eq(l, r) }
-    val ant = goal.ant
+    val ant = goal.pre
     val suc = goal.suc
-    print(eqs.toList ++ ant, suc)
+    print(ant, suc)
+  }
+
+  def format(proof: Proof, indent: String = ""): List[String] = proof match {
+    case Closed =>
+      List(indent + "qed")
+    case goal: Open =>
+      val first = indent + assume(goal.pre)
+      val second = indent + show(goal.suc)
+      val third = indent + "  sorry"
+      first :: second :: third :: Nil
+    case Step(prems, concl, tactic) =>
+      val first = indent + concl
+      val second = indent + "proof " + tactic
+      val rest = prems filterNot (_ == Closed) flatMap (format(_, indent + "  "))
+      first :: second :: rest
+  }
+
+  def print(tactic: Tactic): String = tactic match {
+    case Split(pat) => "split " + pat
+    case Ind(pat, Least) => "induction " + pat
+    case Ind(pat, Greatest) => "coinduction " + pat
   }
 
   def print(pretty: Pretty): String = pretty match {
@@ -75,5 +103,6 @@ object Print {
     case bn: Bind => print(bn)
     case goal: Open => print(goal)
     case cmd: Cmd => print(cmd)
+    case tactic: Tactic => print(tactic)
   }
 }

@@ -13,10 +13,14 @@ package object ulang {
   }
 
   object Eq extends Binary(Var("==", Infix(Non, 6))) {
-    def zip(left: List[Expr], right: List[Expr]) = {
+    def zip(left: List[Expr], right: List[Expr]): List[Expr] = {
       if (left.length != right.length)
         sys.error("length mismatch: " + left + " " + right)
-      left zip right map { case (a, b) => Eq(a, b) }
+      zip(left zip right)
+    }
+
+    def zip(pairs: Iterable[(Expr, Expr)]): List[Expr] = {
+      pairs map { case (a, b) => Eq(a, b) } toList
     }
   }
 

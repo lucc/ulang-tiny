@@ -8,12 +8,16 @@ data
 notation
   +1  [postfix 11];
   + - [infixl   8];
+  < <= > >= [infix 6];
 
 define
   1 == 0 +1 [rewrite];
   inf == inf +1;
   m + 0 == m;
   m + (n +1) == (m + n) +1;
+  (m < 0) == False [rewrite];
+  (0 < n +1) == True [rewrite];
+  (m +1 < n +1) == (m < n) [rewrite];
 
 notation
   not [prefix 5];
@@ -47,6 +51,11 @@ inductive
 coinductive
   0: NatInf;
   n: NatInf ==> n +1: NatInf;
+
+
+assume k: Nat;
+show k < k +1;
+proof cases k: Nat;
 
 assume not True;
 show P;

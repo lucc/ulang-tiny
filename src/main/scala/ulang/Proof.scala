@@ -1,6 +1,6 @@
 package ulang
 
-sealed trait Tactic
+sealed trait Tactic extends Pretty
 case class Ind(pat: Pat, kind: FixKind) extends Tactic
 case class Split(pat: Pat) extends Tactic
 
@@ -43,6 +43,7 @@ case class Step(prems: List[Proof], concl: Open, tactic: Tactic) extends Proof {
 }
 
 case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal with Pretty {
+  def pre = Eq.zip(eqs) ::: ant
   def ant = rant.reverse
   def suc = rsuc.reverse
 
