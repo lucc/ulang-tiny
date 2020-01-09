@@ -31,7 +31,15 @@ eval
 
   match 1 with
     (n +1) -> n;
-    
+
+inductive
+  True:  Bool;
+  False: Bool;
+
+assume b: Bool;
+show b == True \/ b == False;
+proof cases b: Bool;
+
 inductive
   0: Nat;
   n: Nat ==> n +1: Nat;

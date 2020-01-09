@@ -132,7 +132,10 @@ class Context extends Syntax[String] {
     case Thm(assume, show, tactic) =>
       println(cmd)
       val proof = prove.prove(assume, show, tactic)
-      println(proof)
+      if(proof.isClosed)
+        println("  qed")
+      else
+        println("  " + proof)
 
     case _ =>
   }
