@@ -10,6 +10,7 @@ sealed trait Pat extends Pretty {
     case _ if this == that => true
     case (_, Wildcard) => true
     case (UnApp(fun1, arg1), UnApp(fun2, arg2)) => fun1 <= fun2 && arg1 <= arg2
+    case _ => false
   }
 }
 
@@ -34,7 +35,7 @@ sealed trait Id extends Expr with Pat {
 object Id {
   def unapply(id: Id) = id match {
     case Var(name, fixity, None) => Some((name, fixity))
-    case Var(name, fixity, Some(index)) => Some((name + index, fixity))
+    case Var(name, fixity, Some(index)) => Some((name __ index, fixity))
     case Tag(name, fixity) => Some((name, fixity))
   }
 }

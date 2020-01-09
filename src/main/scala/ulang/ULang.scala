@@ -16,22 +16,13 @@ class Context extends Syntax[String] {
   var infix_ops: Map[String, (Assoc, Int)] = Map()
   var bind_ops: Set[String] = Set()
 
+  var sig: Set[Var] = Set()
+
   var funs: Map[Var, List[Case]] = Map()
   var consts: Map[Var, Norm] = Map()
 
-  var inds: Map[Pat, List[(List[Expr], Expr)]] = Map()
-  var coinds: Map[Pat, List[(List[Expr], Expr)]] = Map()
+  var fixs: List[(Pat, FixKind, List[Intro])] = List()
   var rewrites: Map[Var, List[Case]] = Map()
-
-  def fixs(pat: Pat): List[(List[Expr], Expr)] = {
-    for ((key, cases) <- inds) {
-      if (pat <= key) return cases
-    }
-    for ((key, cases) <- coinds) {
-      if (pat <= key) return cases
-    }
-    sys.error("no fixpoint for: " + pat)
-  }
 
   object parser extends Parse(this)
   object eval extends Eval(this)
@@ -61,35 +52,40 @@ class Context extends Syntax[String] {
   def const(id: Var, rhs: Norm) {
     if (consts contains id)
       sys.error("constant already defined: " + id)
+    sig += id
     consts += id -> rhs
   }
 
   def fun(id: Var, cs: Case) {
     if (funs contains id) {
+      sig += id
       funs += id -> (funs(id) ++ List(cs))
     } else {
+      sig += id
       funs += id -> List(cs)
     }
   }
 
   def rewrite(id: Var, cs: Case) {
     if (rewrites contains id) {
+      sig += id
       rewrites += id -> (rewrites(id) ++ List(cs))
     } else {
+      sig += id
       rewrites += id -> List(cs)
     }
   }
 
-  def ind(pat: Pat, cases: List[(List[Expr], Expr)]) {
-    if (inds contains pat)
-      sys.error("induction already defined: " + pat)
-    inds += pat -> cases
+  def fix(id: Var, pat: Pat, kind: FixKind, cases: List[Intro]) {
+    if (fixs exists (pat <= _._1))
+      sys.error("fixpoint already defined: " + pat)
+    sig += id
+    fixs ++= List((pat, kind, cases))
   }
 
-  def coind(pat: Pat, cases: List[(List[Expr], Expr)]) {
-    if (coinds contains pat)
-      sys.error("coinduction already defined: " + pat)
-    coinds += pat -> cases
+  def fix(pat: Pat) = {
+    val Some((_, kind, intros)) = fixs find (pat <= _._1)
+    (kind, intros)
   }
 
   def exec(cmd: Cmd) = cmd match {
@@ -115,27 +111,22 @@ class Context extends Syntax[String] {
       }
 
     case Fix(cases, kind) =>
-      val imps = cases map {
+      val intros = cases map {
         case Imp(Apps(And.op, ant), suc) =>
-          (ant, suc)
+          Intro(ant, suc)
         case Imp(ant, suc) =>
-          (List(ant), suc)
+          Intro(List(ant), suc)
         case suc =>
-          (Nil, suc)
+          Intro(Nil, suc)
       }
 
-      val sucs = imps map {
-        case (_, suc) =>
-          suc.toPat
-      }
-
-      val pat = Prove.merge(sucs)
-
+      val pat = Prove.merge(intros map (_.pat))
       println("fixpoint for " + pat)
-
-      kind match {
-        case Least => ind(pat, imps)
-        case Greatest => coind(pat, imps)
+      pat match {
+        case UnApps(fun: Var, args) =>
+          fix(fun, pat, kind, intros)
+        case _ =>
+          sys.error("not an inductive definition: " + pat)
       }
 
     case Thm(assume, show, tactic) =>

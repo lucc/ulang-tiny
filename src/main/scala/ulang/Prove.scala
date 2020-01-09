@@ -2,75 +2,6 @@ package ulang
 
 import arse._
 
-sealed trait Pos { def unary_!(): Pos }
-case object Ant extends Pos { def unary_! = Suc }
-case object Suc extends Pos { def unary_! = Ant }
-
-sealed trait Proof {
-  def isClosed: Boolean
-}
-
-sealed trait Goal extends Proof {
-  def assume(phi: Expr): Goal
-  def assert(phi: Expr): Goal
-
-  def assume(args: List[Expr]): Goal = {
-    args.foldLeft(this)(_ assume _)
-  }
-
-  def assert(args: List[Expr]): Goal = {
-    args.foldLeft(this)(_ assert _)
-  }
-}
-
-case object Closed extends Goal {
-  def isClosed = true
-  def assume(phi: Expr) = this
-  def assert(phi: Expr) = this
-}
-
-case class Step(prems: List[Proof], concl: Open, tactic: Tactic) extends Proof {
-  def isClosed = prems forall (_.isClosed)
-}
-
-case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal with Pretty {
-  def ant = rant.reverse
-  def suc = rsuc.reverse
-
-  def isClosed = false
-
-  import Prove._
-
-  def contains(phi: Expr) = {
-    (rant contains phi) || (rsuc contains not(phi))
-  }
-
-  def assume(phi: Expr): Goal = phi match {
-    case True => this
-    case False => Closed
-    case _ if this contains not(phi) => Closed
-    case Not(phi) => this assert phi
-    case And(phi, psi) => this assume phi assume psi
-    case Eq(x: Var, e) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
-    case Eq(e, x: Var) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
-    case _ => copy(rant = phi :: rant)
-  }
-
-  def assert(phi: Expr): Goal = phi match {
-    case False => this
-    case True => Closed
-    case _ if this contains phi => Closed
-    case Not(phi) => this assume phi
-    case Imp(phi, psi) => this assume phi assert psi
-    case Or(phi, psi) => this assert phi assert psi
-    case _ => copy(rsuc = phi :: rsuc)
-  }
-}
-
-object Goal {
-  val empty = Open(Subst.empty, Nil, Nil)
-}
-
 class Prove(context: Context) {
   import Prove._
   import context._
@@ -88,20 +19,31 @@ class Prove(context: Context) {
     }
   }
 
+  def elim(intro: Intro, target: Expr, eqs: Subst, ant: List[Expr], suc: List[Expr]): Proof = {
+    val fresh = Expr.fresh(intro.free -- sig)
+    val Intro(pre, post) = intro rename fresh
+    
+    val Apps(fun1, args1) = post
+    val Apps(fun2, args2) = target
+    assert(fun1 == fun2) // satisifed from the pattern match
+    assert(args1.length == args2.length)
+    
+    val eq = Eq.zip(args1, args2)
+    val _ant = eq ++ ant
+    val _suc = Or(suc)
+    init(_ant, _suc, Open(eqs, Nil, Nil))
+  }
+
   def prove(goal: Open, tactic: Tactic): Proof = tactic match {
     case Ind(pat, Least) =>
       ???
     case Split(pat) =>
       val Open(eqs, ant, suc) = goal
       val (found, env, rest) = { search(pat, ant) } or { sys.error("no formula: " + pat) }
-      val cases = context fixs pat
-      val prems = cases map {
-        case (pre, cs) =>
-          val _pre = pre map (_ subst env)
-          val _cs = cs subst env
-          val _ant = _cs :: _pre ::: ant
-          init(_ant, Or(suc), Open(eqs, Nil, Nil))
-      }
+      // if (!env.isEmpty)
+      //   sys.error("can't introduce new vars here: " + env.keys.mkString(" "))
+      val (kind, intros) = fix(pat)
+      val prems = intros map (elim(_, found, eqs, rest, suc))
       Step(prems, goal, tactic)
     case _ =>
       ???
@@ -182,9 +124,57 @@ class Prove(context: Context) {
 
   def apply(fun: Expr, args: List[Expr]): Expr = fun match {
     case id: Var if rewrites contains id =>
-      apply(fun, rewrites(id), args)
+      Prove.apply(fun, rewrites(id), args)
     case _ =>
       Apps(fun, args)
+  }
+}
+
+object Prove {
+  def eqn(left: Expr, right: Expr) = (left, right) match {
+    case _ if left == right => True
+    case (Apps(tag1: Tag, _), Apps(tag2: Tag, _)) if tag1 != tag2 => False
+    case _ => Eq(left, right)
+  }
+
+  def not(expr: Expr) = expr match {
+    case True => False
+    case False => True
+    case Not(expr) => expr
+    case _ => Not(expr)
+  }
+
+  def and(left: Expr, right: Expr) = (left, right) match {
+    case (True, _) => right
+    case (False, _) => False
+    case (_, True) => left
+    case (_, False) => False
+    case _ => And(left, right)
+  }
+
+  def or(left: Expr, right: Expr) = (left, right) match {
+    case (True, _) => True
+    case (False, _) => right
+    case (_, True) => True
+    case (_, False) => left
+    case _ => Or(left, right)
+  }
+
+  def imp(left: Expr, right: Expr) = (left, right) match {
+    case (True, _) => right
+    case (False, _) => True
+    case (_, True) => True
+    case (_, False) => not(left)
+    case _ => Imp(left, right)
+  }
+
+  def eqv(left: Expr, right: Expr) = (left, right) match {
+    case _ if left == right => True
+    case (True, _) => right
+    case (False, _) => not(right)
+    case (_, True) => left
+    case (_, False) => not(left)
+    case _ => Eqv(left, right)
   }
 
   def apply(cs: Case, args: List[Expr]): Expr = cs match {
@@ -239,54 +229,6 @@ class Prove(context: Context) {
     case (Nil, Nil) => env
     case (pat :: pats, arg :: args) => bind(pats, args, bind(pat, arg, env))
     case _ => sys.error("argument length mismatch: " + pats.mkString(" ") + " and " + args.mkString(" "))
-  }
-}
-
-object Prove {
-  def eqn(left: Expr, right: Expr) = (left, right) match {
-    case _ if left == right => True
-    case (Apps(tag1: Tag, _), Apps(tag2: Tag, _)) if tag1 != tag2 => False
-    case _ => Eq(left, right)
-  }
-
-  def not(expr: Expr) = expr match {
-    case True => False
-    case False => True
-    case Not(expr) => expr
-    case _ => Not(expr)
-  }
-
-  def and(left: Expr, right: Expr) = (left, right) match {
-    case (True, _) => right
-    case (False, _) => False
-    case (_, True) => left
-    case (_, False) => False
-    case _ => And(left, right)
-  }
-
-  def or(left: Expr, right: Expr) = (left, right) match {
-    case (True, _) => True
-    case (False, _) => right
-    case (_, True) => True
-    case (_, False) => left
-    case _ => Or(left, right)
-  }
-
-  def imp(left: Expr, right: Expr) = (left, right) match {
-    case (True, _) => right
-    case (False, _) => True
-    case (_, True) => True
-    case (_, False) => not(left)
-    case _ => Imp(left, right)
-  }
-
-  def eqv(left: Expr, right: Expr) = (left, right) match {
-    case _ if left == right => True
-    case (True, _) => right
-    case (False, _) => not(right)
-    case (_, True) => left
-    case (_, False) => not(left)
-    case _ => Eqv(left, right)
   }
 
   def merge(pats: List[Pat]): Pat = {
