@@ -67,7 +67,51 @@ class Context extends Syntax[String] {
     }
   }
 
-  def rewrite(id: Var, cs: Case) {
+  def calls(id: Var, cs: Case): List[(Id, List[Expr])] = {
+    if (cs.bound contains id) List()
+    else calls(id, cs.body)
+  }
+
+  def calls_(id: Var, cases: List[Case]): List[(Id, List[Expr])] = {
+    cases flatMap (calls(id, _))
+  }
+
+  def calls(id: Var, exprs: List[Expr]): List[(Id, List[Expr])] = {
+    exprs flatMap (calls(id, _))
+  }
+
+  def calls(id: Var, expr: Expr): List[(Id, List[Expr])] = expr match {
+    case Apps(`id`, args) => List((id, args)) ++ calls(id, args)
+    case Apps(_, args) => calls(id, args)
+    case Lam(cases) => calls_(id, cases)
+    case Match(args, cases) => calls(id, args) ++ calls_(id, cases)
+    case let: Let if !(let.bound contains id) => calls(id, let.body)
+    case _ => List()
+  }
+
+  def lex(expr: Expr, pat: Pat): Boolean = (expr, pat) match {
+    case (_, UnApps(_: Tag, args)) if (args contains expr) || (args exists (lex(expr, _))) => true
+    case _ => false
+  }
+
+  def lex(exprs: List[Expr], pats: List[Pat]): Boolean = {
+    (exprs zip pats) exists { case (expr, pat) => lex(expr, pat) }
+  }
+
+  def safeRewrite(id: Var, pats: List[Pat], rhs: Expr) {
+    if (pats.isEmpty) {
+      if (!(rhs.free contains id))
+        rewrite(id, pats, rhs)
+    } else {
+      val rec = calls(id, rhs)
+      val args = rec map (_._2)
+      if (args forall (lex(_, pats)))
+        rewrite(id, pats, rhs)
+    }
+  }
+
+  def rewrite(id: Var, args: List[Pat], rhs: Expr) {
+    val cs = Case(args, rhs)
     if (rewrites contains id) {
       sig += id
       rewrites += id -> (rewrites(id) ++ List(cs))
@@ -100,7 +144,9 @@ class Context extends Syntax[String] {
         }
 
         if (attr contains "rewrite") {
-          rewrite(id, Case(args, rhs))
+          rewrite(id, args, rhs)
+        } else {
+          safeRewrite(id, args, rhs)
         }
       }
 

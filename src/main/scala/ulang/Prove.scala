@@ -144,9 +144,12 @@ class Prove(context: Context) {
 
   def rewrite(expr: Expr, eqs: Subst): Expr = {
     val res = _rewrite(expr, eqs)
-    /* if (res != expr)
-      println("rewrite " + expr + " ~> " + (expr subst eqs) + " ~> " + res) */
-    res
+    if (res != expr) {
+      // println("rewrite " + expr + " ~> " + (expr subst eqs) + " ~> " + res)
+      rewrite(res, eqs)
+    } else {
+      res
+    }
   }
 
   def _rewrite(expr: Expr, eqs: Subst): Expr = expr match {

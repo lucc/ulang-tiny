@@ -4,6 +4,11 @@ object Binder extends ((Expr, Case) => App) {
   def apply(fun: Expr, cs: Case): App = {
     App(fun, Lam(List(cs)))
   }
+  
+  def unapply(expr: Expr) = expr match {
+    case App(fun, Lam(List(cs))) => Some(fun, cs)
+    case _ => None
+  }
 }
 
 object UnApps extends ((Pat, List[Pat]) => Pat) {

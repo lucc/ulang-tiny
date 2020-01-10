@@ -25,6 +25,7 @@ object Print {
     case Lam(cases) => cases.mkString("\\ ", " | ", "")
     case Match(args, cases) => "match " + args.mkString(" ") + " with " + cases.mkString(" | ")
     case Let(eqs, body) => "let " + eqs.mkString(", ") + " in " + body
+    case Binder(Id(name, Bindfix), cs) => "(" + name + " " + cs + ")"
     case Apps(fun, args) => print(fun, args)
   }
 
