@@ -120,7 +120,7 @@ show
 proof induction xs: List a;
 
 assume
-  forall x -> p;
+  forall x -> p x;
 show
   p y;
 

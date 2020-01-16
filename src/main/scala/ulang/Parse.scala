@@ -80,10 +80,11 @@ class Parse(context: Context) {
 
   val mtch = Match("match" ~ expr_arg.+ ~ "with" ~ css)
 
-  val tactic: Parser[Tactic] = P(ind | coind | split)
+  val tactic: Parser[Tactic] = P(ind | coind | split | have)
   val ind = Ind("induction" ~ pat ~ ret(Least))
   val coind = Ind("induction" ~ pat ~ ret(Greatest))
   val split = Split("cases" ~ pat)
+  val have = Have("have" ~ expr)
 
   val pat_high = pat above (eq_prec + 1)
   val attr = L("rewrite")

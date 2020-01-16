@@ -4,6 +4,7 @@ sealed trait Tactic extends Pretty
 case object Auto extends Tactic
 case class Ind(pat: Pat, kind: FixKind) extends Tactic
 case class Split(pat: Pat) extends Tactic
+case class Have(expr: Expr) extends Tactic
 
 sealed trait Pos { def unary_!(): Pos }
 case object Ant extends Pos { def unary_! = Suc }
