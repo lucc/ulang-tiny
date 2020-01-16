@@ -3,8 +3,6 @@ package ulang
 import arse._
 import arse.implicits._
 
-case object Bindfix extends Fixity { def prec = 0 }
-
 class Parse(context: Context) {
   import context._
 
@@ -20,7 +18,8 @@ class Parse(context: Context) {
     "define", "data", "notation", "eval", "assume", "show", "proof", "inductive", "coinductive",
     ",", ";", "(", ")", "{", "}", "[", "]", "->", "|", "\\", "_",
     "if", "then", "else",
-    "let", "in", "match", "with")
+    "let", "in", "match", "with",
+    "exists", "forall")
 
   val s = S("""[^ \r\n\t\f()\[\],;:\'\"]+""")
   val c = L("::", ":", "[]")
@@ -47,16 +46,16 @@ class Parse(context: Context) {
   }
 
   def id = P(Id(name))
+  def x = id collect { case x: Var => x }
 
   val id_nonmixfix = id filterNot isMixfix
-  val id_bind = id filter isBind
 
   val pat: Mixfix[String, Pat] = M(unapp, name, unapps, context)
   val pat_arg: Parser[Pat] = P(parens(pat_open) | wildcard | strict | id_nonmixfix)
   val pat_open = pat | id
 
   val expr: Mixfix[String, Expr] = M(app, name, apps, context)
-  val expr_arg: Parser[Expr] = P(parens(expr_open) | ite | let | lam | mtch | bind | id_nonmixfix)
+  val expr_arg: Parser[Expr] = P(parens(expr_open) | ite | let | lam | ex | all | mtch | id_nonmixfix)
   val expr_open = expr | id
 
   val wildcard = Wildcard("_")
@@ -66,14 +65,19 @@ class Parse(context: Context) {
   val app = Apps(expr_arg ~ expr_arg.*)
   val ite = Ite("if" ~ expr ~ "then" ~ expr ~ "else" ~ expr)
 
-  val eq = Bind(pat_arg ~ "=" ~ expr)
+  val eq = Case1(pat_arg ~ "=" ~ expr)
   val eqs = eq ~+ ","
   val let = Let("let" ~ eqs ~ "in" ~ expr)
 
   val cs = Case(pat_arg.+ ~ "->" ~ expr)
   val css = cs ~+ "|"
-  val lam = Lam("\\ " ~ css)
-  val bind = Binder(id_bind ~ cs)
+  val lam = Lam("lambda " ~ css)
+  // val bind = Binder(id_bind ~ cs)
+
+  val quant = x.+ ~ "->" ~ expr
+  val ex = Ex("exists" ~ quant)
+  val all = All("forall" ~ quant)
+
   val mtch = Match("match" ~ expr_arg.+ ~ "with" ~ css)
 
   val tactic: Parser[Tactic] = P(ind | coind | split)
@@ -94,9 +98,8 @@ class Parse(context: Context) {
   val prefix = Prefix("prefix" ~ int)
   val postfix = Postfix("postfix" ~ int)
   val infix = Infix(assoc ~ int)
-  val bindfix = Bindfix("binder")
 
-  val fixity: Parser[Fixity] = prefix | postfix | infix | bindfix
+  val fixity: Parser[Fixity] = prefix | postfix | infix
   def fix = name.+ ~ bracks(fixity)
 
   val assume = section("assume", expr)
@@ -122,7 +125,7 @@ class Parse(context: Context) {
   val notation = Notation(section("notation", notation_declare))
   val least = Fix(section("inductive", expr) ~ ret(Least))
   val greatest = Fix(section("coinductive", expr) ~ ret(Greatest))
-  
+
   val proof = "proof" ~ tactic ~ ";"
   val thm = Thm(assume ~ show ~ proof.?) | Thm0(show ~ proof.?)
 

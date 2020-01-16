@@ -14,7 +14,6 @@ class Context extends Syntax[String] {
   var prefix_ops: Map[String, Int] = Map()
   var postfix_ops: Map[String, Int] = Map()
   var infix_ops: Map[String, (Assoc, Int)] = Map()
-  var bind_ops: Set[String] = Set()
 
   var sig: Set[Var] = Set(
     Eq.op, Not.op, Or.op, And.op, Imp.op, Eqv.op)
@@ -30,11 +29,7 @@ class Context extends Syntax[String] {
   object prove extends Prove(this)
 
   def isMixfix(id: Id): Boolean = {
-    contains(id.name) || isBind(id)
-  }
-
-  def isBind(id: Id) = {
-    bind_ops contains id.name
+    contains(id.name)
   }
 
   def declare(names: List[String], fixity: Fixity) {
@@ -43,7 +38,6 @@ class Context extends Syntax[String] {
     }
 
     for (name <- names) fixity match {
-      case Bindfix => bind_ops += name
       case Prefix(prec) => prefix_ops += name -> prec
       case Postfix(prec) => postfix_ops += name -> prec
       case Infix(assoc, prec) => infix_ops += name -> (assoc, prec)

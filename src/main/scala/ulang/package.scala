@@ -39,13 +39,13 @@ package object ulang {
     }
   }
 
-  object Or extends Binary(Var("\\/", Infix(Right, 3))){
+  object Or extends Binary(Var("\\/", Infix(Right, 3))) {
     def apply(args: List[Expr]): Expr = args match {
       case Nil => False
       case _ => args.reduce(apply(_, _))
     }
   }
-  
+
   object Imp extends Binary(Var("==>", Infix(Right, 2)))
   object Eqv extends Binary(Var("<=>", Infix(Non, 1)))
 

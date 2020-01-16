@@ -92,6 +92,13 @@ case class Case(pats: List[Pat], body: Expr) extends Expr.bind[Case] with Pretty
   def subst(a: Map[Var, Var], su: Map[Var, Expr]) = Case(pats map (_ rename a), body subst su)
 }
 
+case class Case1(pat: Pat, arg: Expr) extends Pretty {
+  def free = arg.free
+  def bound = pat.bound
+  def rename(a: Map[Var, Var], re: Map[Var, Var]) = Case1(pat rename a, arg rename re)
+  def subst(a: Map[Var, Var], su: Map[Var, Expr]) = Case1(pat rename a, arg subst su)
+}
+
 case class Lam(cases: List[Case]) extends Expr {
   def free = Set(cases flatMap (_.free): _*)
   def bound = Set(cases flatMap (_.bound): _*)
@@ -107,20 +114,37 @@ case class Match(args: List[Expr], cases: List[Case]) extends Expr {
   def subst(su: Map[Var, Expr]) = Match(args map (_ subst su), cases map (_ subst su))
 }
 
-case class Bind(pat: Pat, arg: Expr) extends Pretty {
-  def free = arg.free
-  def bound = pat.bound
-  def rename(a: Map[Var, Var], re: Map[Var, Var]) = Bind(pat rename a, arg rename re)
-  def subst(a: Map[Var, Var], su: Map[Var, Expr]) = Bind(pat rename a, arg subst su)
-}
-
-case class Let(eqs: List[Bind], body: Expr) extends Expr with Expr.bind[Let] {
+case class Let(eqs: List[Case1], body: Expr) extends Expr with Expr.bind[Let] {
   def pats = eqs map (_.pat)
   val args = eqs map (_.arg)
   def bound = Set(eqs flatMap (_.bound): _*)
   def free = Set(eqs flatMap (_.free): _*) -- bound
   def rename(a: Map[Var, Var], re: Map[Var, Var]) = Let(eqs map (_ rename (a, re)), body rename re)
   def subst(a: Map[Var, Var], su: Map[Var, Expr]) = Let(eqs map (_ subst (a, su)), body subst su)
+}
+
+sealed trait Quant extends ((List[Var], Expr) => Expr) {
+  def apply(args: List[Var], body: Expr) = args match {
+    case Nil => body
+    case _ => Bind(this, args, body)
+  }
+
+  def unapply(expr: Expr) = expr match {
+    case Bind(quant, args, body) if quant == this =>
+      Some((args, body))
+    case _ =>
+      None
+  }
+}
+
+case object Ex extends Quant
+case object All extends Quant
+
+case class Bind(quant: Quant, args: List[Var], body: Expr) extends Expr with Expr.bind[Bind] {
+  def bound = args.toSet
+  def free = body.free -- bound
+  def rename(a: Map[Var, Var], re: Map[Var, Var]) = Bind(quant, args map (_ rename a), body rename re)
+  def subst(a: Map[Var, Var], su: Map[Var, Expr]) = Bind(quant, args map (_ rename a), body subst su)
 }
 
 case class Obj(fun: Data, arg: Val) extends Data

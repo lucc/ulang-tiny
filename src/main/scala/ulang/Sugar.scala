@@ -1,15 +1,15 @@
 package ulang
 
-object Binder extends ((Expr, Case) => App) {
+/* object Binder extends ((Expr, Case) => App) {
   def apply(fun: Expr, cs: Case): App = {
     App(fun, Lam(List(cs)))
   }
-  
+
   def unapply(expr: Expr) = expr match {
     case App(fun, Lam(List(cs))) => Some(fun, cs)
     case _ => None
   }
-}
+} */
 
 object UnApps extends ((Pat, List[Pat]) => Pat) {
   def apply(fun: Pat, args: List[Pat]): Pat = {
@@ -118,7 +118,7 @@ class Binary[A <: Id](val op: A) {
   def apply(arg1: Pat, arg2: Pat): Pat = {
     UnApp(UnApp(op, arg1), arg2)
   }
-  
+
   def apply(args: List[Pat], zero: Pat): Pat = {
     args.foldRight(zero)(apply)
   }

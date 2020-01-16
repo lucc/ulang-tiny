@@ -44,7 +44,7 @@ eval
   let x = 1, y = 1
   in x + y;
   
-  let f = (\ x -> x +1)
+  let f = (lambda x -> x +1)
   in f 0;
 
   match 1 with
@@ -119,12 +119,8 @@ show
   (xs ++ ys) ++ zs == xs ++ (ys ++ zs);
 proof induction xs: List a;
 
-define
-  (forall) p == (p == const True);
-  (exists) p == (p != const False);
-
 assume
-  (forall) p;
+  forall x -> p;
 show
   p y;
 

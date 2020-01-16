@@ -22,11 +22,12 @@ object Print {
 
   def print(expr: Expr): String = expr match {
     case Ite(test, left, right) => "if " + test + " then " + left + " else " + right
-    case Lam(cases) => cases.mkString("\\ ", " | ", "")
+    case Lam(cases) => cases.mkString("lambda ", " | ", "")
     case Match(args, cases) => "match " + args.mkString(" ") + " with " + cases.mkString(" | ")
     case Let(eqs, body) => "let " + eqs.mkString(", ") + " in " + body
-    case Binder(Id(name, Bindfix), cs) => "(" + name + " " + cs + ")"
-    case Apps(fun, args) => print(fun, args)
+    case All(xs, body) => "forall " + xs.mkString(" ") + " -> " + body
+    case Ex(xs, body) => "exists " + xs.mkString(" ") + " -> " + body
+    case Apps(fun, args) => assert(!args.isEmpty); print(fun, args)
   }
 
   def print(cmd: Cmd): String = cmd match {
@@ -48,8 +49,8 @@ object Print {
     case Case(pats, body) => pats.mkString(" ") + " -> " + body
   }
 
-  def print(bn: Bind): String = bn match {
-    case Bind(pat, arg) => pat + " = " + arg
+  def print(bn: Case1): String = bn match {
+    case Case1(pat, arg) => pat + " = " + arg
   }
 
   def assume(ant: List[Expr]): String = {
@@ -107,7 +108,7 @@ object Print {
     case expr: Expr => print(expr)
     case any: Val => print(any)
     case cs: Case => print(cs)
-    case bn: Bind => print(bn)
+    case bn: Case1 => print(bn)
     case goal: Open => print(goal)
     case cmd: Cmd => print(cmd)
     case tactic: Tactic => print(tactic)
