@@ -12,9 +12,9 @@ case object Suc extends Pos { def unary_! = Ant }
 
 case class Intro(pre: List[Expr], post: Expr) {
   def pat = post.toPat
-  def free = post.free ++ (pre flatMap (_.free))
-  def rename(re: Map[Var, Var]) = Intro(pre map (_ rename re), post rename re)
-  def subst(su: Map[Var, Expr]) = Intro(pre map (_ subst su), post subst su)
+  def free = pre.free ++ post.free
+  def rename(re: Map[Var, Var]) = Intro(pre rename re, post rename re)
+  def subst(su: Map[Var, Expr]) = Intro(pre subst su, post subst su)
 }
 
 sealed trait Proof {
@@ -48,6 +48,7 @@ case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal wit
   def pre = Eq.zip(eqs) ::: ant
   def ant = rant.reverse
   def suc = rsuc.reverse
+  def free = rant.free ++ rsuc.free
 
   def isClosed = false
 

@@ -4,6 +4,12 @@ package object ulang {
   type Env = Map[Var, Val]
   type Subst = Map[Var, Expr]
 
+  implicit def toVars(vars: List[Var]) = new Vars(vars)
+  implicit def toPats(pats: List[Pat]) = new Pats(pats)
+  implicit def toExprs(exprs: List[Expr]) = new Exprs(exprs)
+  implicit def toCases(cases: List[Case]) = new Cases(cases)
+  implicit def toCases1(cases: List[Case1]) = new Cases1(cases)
+
   object Env {
     def empty: Env = Map()
   }

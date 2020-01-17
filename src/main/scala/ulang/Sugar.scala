@@ -11,6 +11,37 @@ package ulang
   }
 } */
 
+class Vars(vars: List[Var]) {
+  def rename(re: Map[Var, Var]) = vars map (_ rename re)
+}
+
+class Pats(pats: List[Pat]) {
+  def bound = Set(pats flatMap (_.bound): _*)
+  def rename(re: Map[Var, Var]) = pats map (_ rename re)
+}
+
+class Exprs(exprs: List[Expr]) {
+  def free = Set(exprs flatMap (_.free): _*)
+  def rename(re: Map[Var, Var]) = exprs map (_ rename re)
+  def subst(su: Map[Var, Expr]) = exprs map (_ subst su)
+}
+
+class Cases(cases: List[Case]) {
+  def free = Set(cases flatMap (_.free): _*)
+  def bound = Set(cases flatMap (_.bound): _*)
+  def rename(re: Map[Var, Var]) = cases map (_ rename re)
+  def subst(su: Map[Var, Expr]) = cases map (_ subst su)
+}
+
+class Cases1(cases: List[Case1]) {
+  def pats = cases map (_.pat)
+  def args = cases map (_.arg)
+  def free = Set(cases flatMap (_.free): _*)
+  def bound = Set(cases flatMap (_.bound): _*)
+  def rename(a: Map[Var, Var], re: Map[Var, Var]) = cases map (_ rename (a, re))
+  def subst(a: Map[Var, Var], su: Map[Var, Expr]) = cases map (_ subst (a, su))
+}
+
 object UnApps extends ((Pat, List[Pat]) => Pat) {
   def apply(fun: Pat, args: List[Pat]): Pat = {
     args.foldLeft(fun)(UnApp)

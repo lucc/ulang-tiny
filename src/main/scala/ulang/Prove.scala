@@ -46,8 +46,7 @@ class Prove(context: Context) {
         val hyps = found map {
           case (rec, env) =>
             val Apps(fun0, args0) = rec
-            val inst = collapse(args2, args1)
-            // val req = Eq.zip(args2, args0)
+            val inst = collapse(args2, args0)
             val hyp = imp(And(ant), _suc)
             val _hyp = hyp subst inst.toMap
             _hyp
@@ -58,13 +57,14 @@ class Prove(context: Context) {
     }
   }
 
-  def ind(pat: Pat, goal: Goal, hyp: Boolean): List[Proof] = {
+  def ind(pat: Pat, goal: Open, hyp: Boolean): List[Proof] = {
     val Open(eqs, ant, suc) = goal
     val (found, env, rest) = { search(pat, ant) } or { sys.error("no formula: " + pat) }
     // if (!env.isEmpty)
     //   sys.error("can't introduce new vars here: " + env.keys.mkString(" "))
     val (gen, kind, intros) = fix(pat)
     val rec = if (hyp) Some(gen) else None
+    val free = goal.free
     intros map (elim(_, found, eqs, rest, suc, rec))
   }
 
@@ -104,7 +104,14 @@ class Prove(context: Context) {
     case open: Open => simp(phi, open, pos)
   }
 
-  def simp(phi: Expr, goal: Open, pos: Pos): Expr = phi match {
+  def simp(phi: Expr, goal: Open, pos: Pos): Expr = {
+    val res = _simp(phi, goal, pos)
+    if (phi != res)
+      println(phi + " ~> " + res)
+    res
+  }
+
+  def _simp(phi: Expr, goal: Open, pos: Pos): Expr = phi match {
     case True | False => phi
     case _ if goal contains phi =>
       True
