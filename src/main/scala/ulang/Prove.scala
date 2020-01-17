@@ -42,7 +42,7 @@ class Prove(context: Context) {
 
     hyp match {
       case Some(pat) =>
-        val (found, rest) = searchAll(pat, pre)
+        val (found, rest) = findAll(pat, pre, sig)
         val hyps = found map {
           case (rec, env) =>
             val Apps(fun0, args0) = rec
@@ -58,13 +58,13 @@ class Prove(context: Context) {
   }
 
   def ind(pat: Pat, goal: Open, hyp: Boolean): List[Proof] = {
+    val free = goal.free
     val Open(eqs, ant, suc) = goal
-    val (found, env, rest) = { search(pat, ant) } or { sys.error("no formula: " + pat) }
+    val (found, env, rest) = { find(pat, ant, sig ++ free) } or { sys.error("no formula: " + pat) }
     // if (!env.isEmpty)
     //   sys.error("can't introduce new vars here: " + env.keys.mkString(" "))
     val (gen, kind, intros) = fix(pat)
     val rec = if (hyp) Some(gen) else None
-    val free = goal.free
     intros map (elim(_, found, eqs, rest, suc, rec))
   }
 
@@ -193,32 +193,6 @@ class Prove(context: Context) {
     case cs :: rest =>
       { apply(cs, args) } or { apply(fun, rest, args) }
   }
-
-  def search(pat: Pat, exprs: List[Expr]): (Expr, Subst, List[Expr]) = exprs match {
-    case Nil =>
-      backtrack
-    case expr :: exprs =>
-      {
-        (expr, bind(pat, expr, sig, Subst.empty), exprs)
-      } or {
-        val (found, env, rest) = search(pat, exprs)
-        (found, env, expr :: rest)
-      }
-  }
-
-  def searchAll(pat: Pat, exprs: List[Expr]): (List[(Expr, Subst)], List[Expr]) = exprs match {
-    case Nil =>
-      (Nil, Nil)
-    case expr :: exprs =>
-      val (found, rest) = searchAll(pat, exprs)
-
-      {
-        val env = bind(pat, expr, sig, Subst.empty)
-        ((expr, env) :: found, rest)
-      } or {
-        (found, expr :: rest)
-      }
-  }
 }
 
 object Prove {
@@ -266,6 +240,32 @@ object Prove {
     case (_, True) => left
     case (_, False) => not(left)
     case _ => Eqv(left, right)
+  }
+
+  def find(pat: Pat, exprs: List[Expr], sig: Set[Var]): (Expr, Subst, List[Expr]) = exprs match {
+    case Nil =>
+      backtrack
+    case expr :: exprs =>
+      {
+        (expr, bind(pat, expr, sig, Subst.empty), exprs)
+      } or {
+        val (found, env, rest) = find(pat, exprs, sig)
+        (found, env, expr :: rest)
+      }
+  }
+
+  def findAll(pat: Pat, exprs: List[Expr], sig: Set[Var]): (List[(Expr, Subst)], List[Expr]) = exprs match {
+    case Nil =>
+      (Nil, Nil)
+    case expr :: exprs =>
+      val (found, rest) = findAll(pat, exprs, sig)
+
+      {
+        val env = bind(pat, expr, sig, Subst.empty)
+        ((expr, env) :: found, rest)
+      } or {
+        (found, expr :: rest)
+      }
   }
 
   def bind(pat: Pat, arg: Expr, sig: Set[Var], env: Subst): Subst = pat match {
