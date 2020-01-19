@@ -26,7 +26,8 @@ package object ulang {
     }
 
     def zip(pairs: Iterable[(Expr, Expr)]): List[Expr] = {
-      pairs map { case (a, b) => Eq(a, b) } toList
+      val eqs = pairs map { case (a, b) => Eq(a, b) }
+      eqs.toList
     }
   }
 

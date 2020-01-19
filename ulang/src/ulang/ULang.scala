@@ -161,7 +161,7 @@ class Context extends Syntax[String] {
           Intro(Nil, suc)
       }
 
-      val pat = Prove.merge(intros map (_.pat))
+      val pat = Prove.merge(intros map (_.pat.anon))
       pat match {
         case UnApps(fun: Var, args) =>
           fix(fun, pat, kind, intros)

@@ -6,6 +6,13 @@ sealed trait Pat extends Pretty {
   def bound: Set[Var]
   def rename(re: Map[Var, Var]): Pat
 
+  def anon: Pat = this match {
+    case Wildcard | _: Var => Wildcard
+    case _: Tag => this
+    case Strict(pat) => Strict(pat.anon)
+    case UnApp(fun, arg) => UnApp(fun.anon, arg.anon)
+  }
+
   def <=(that: Pat): Boolean = (this, that) match {
     case _ if this == that => true
     case (_, Wildcard) => true
@@ -114,7 +121,7 @@ case class Match(args: List[Expr], cases: List[Case]) extends Expr {
 
 case class Let(eqs: List[Case1], body: Expr) extends Expr with Expr.bind[Let] {
   def pats = eqs.pats
-  val args = eqs.args
+  def args = eqs.args
   def bound = eqs.bound
   def free = eqs.free -- bound
   def rename(a: Map[Var, Var], re: Map[Var, Var]) = Let(eqs rename (a, re), body rename re)
@@ -148,7 +155,7 @@ case class Bind(quant: Quant, args: List[Var], body: Expr) extends Expr with Exp
 case class Obj(fun: Data, arg: Val) extends Data
 
 case class Curry(cases: List[Case], rargs: List[Val], lex: Env) extends Norm {
-  assert(!cases.isEmpty)
+  assert(cases.nonEmpty)
   assert(cases forall (_.arity == arity))
   assert(rargs.length <= arity)
   def isComplete = arity == rargs.length

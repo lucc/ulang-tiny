@@ -16,10 +16,10 @@ class Parse(context: Context) {
 
   val keywords = Set(
     "define", "data", "notation", "eval", "assume", "show", "proof", "inductive", "coinductive",
-    ",", ";", "(", ")", "{", "}", "[", "]", "->", "|", "\\", "_",
+    ",", ";", "(", ")", "{", "}", "[", "]", "->", "|", "_",
     "if", "then", "else",
     "let", "in", "match", "with",
-    "exists", "forall")
+    "lambda", "exists", "forall")
 
   val s = S("""[^ \r\n\t\f()\[\],;:\'\"]+""")
   val c = L("::", ":", "[]")
