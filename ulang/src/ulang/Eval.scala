@@ -109,6 +109,8 @@ class Eval(context: Context) {
         case False => norm(right, lex)
         case test => sys.error("not boolean: " + test + " = " + test)
       }
+    case _: Bind =>
+      sys.error("unbounded quantifier: " + expr)
   }
 
   def strict(expr: Expr, lex: Env): Norm = {
