@@ -1,0 +1,23 @@
+notation
+  :  [infix 6];
+  == != [infix 6];
+  not [prefix 5];
+  /\  [infixr 4];
+  \/  [infixr 3];
+  ==> [infixr 2];
+  <=> [infix  1];
+
+define
+  step x y == undefined;
+
+inductive
+  steps x x;
+  step  x y /\ steps y z ==> steps x z;
+
+assume
+  steps y z;
+  steps x y;
+  P k x y z;
+show
+  steps x z;
+proof induction steps x y;

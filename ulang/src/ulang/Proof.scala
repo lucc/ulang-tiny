@@ -2,20 +2,13 @@ package ulang
 
 sealed trait Tactic extends Pretty
 case object Auto extends Tactic
-case class Ind(pat: Pat, kind: FixKind) extends Tactic
-case class Split(pat: Pat) extends Tactic
+case class Ind(pat: Expr, kind: Fix) extends Tactic
+case class Split(pat: Expr) extends Tactic
 case class Have(expr: Expr) extends Tactic
 
 sealed trait Pos { def unary_!(): Pos }
 case object Ant extends Pos { def unary_! = Suc }
 case object Suc extends Pos { def unary_! = Ant }
-
-case class Intro(pre: List[Expr], post: Expr) {
-  def pat = post.toPat
-  def free = pre.free ++ post.free
-  def rename(re: Map[Var, Var]) = Intro(pre rename re, post rename re)
-  def subst(su: Map[Var, Expr]) = Intro(pre subst su, post subst su)
-}
 
 sealed trait Proof {
   def isClosed: Boolean

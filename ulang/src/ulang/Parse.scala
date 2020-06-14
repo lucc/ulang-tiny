@@ -15,8 +15,8 @@ class Parse(context: Context) {
   def bracks[A](p: Parser[A]) = "[" ~ p ~ "]"
 
   val keywords = Set(
-    "define", "data", "notation", "eval", "assume", "show", "proof", "inductive", "coinductive",
-    ",", ";", "(", ")", "{", "}", "[", "]", "->", "|", "_",
+    "define", "data", "notation", "eval", "test", "assume", "show", "proof", "inductive", "coinductive",
+    ",", ";", "(", ")", "{", "}", "[", "]", "->", "|",
     "if", "then", "else",
     "let", "in", "match", "with",
     "lambda", "exists", "forall")
@@ -24,52 +24,28 @@ class Parse(context: Context) {
   val s = S("""[^ \r\n\t\f()\[\],;:\'\"]+""")
   val c = L("::", ":", "[]")
   val n = s | c
-  val name = P(n filterNot keywords)
+  val name = n filterNot keywords
+  val name_nonmixfix = name filterNot isMixfix
 
-  object Id extends (String => Id) {
-    def apply(name: String): Id = {
-      val fixity = if (mixfix contains name) mixfix(name) else Nilfix
-      if ((data contains name) || (name.head.isUpper)) Tag(name, fixity) else Var(name, fixity)
-    }
-  }
+  val apps = (fun: String, args: List[Expr]) =>
+    Apps(Raw(fun), args)
 
-  object unapps extends ((String, List[Pat]) => Pat) {
-    def apply(fun: String, args: List[Pat]) = {
-      UnApps(Id(fun), args)
-    }
-  }
-
-  object apps extends ((String, List[Expr]) => Expr) {
-    def apply(fun: String, args: List[Expr]) = {
-      Apps(Id(fun), args)
-    }
-  }
-
-  def id = P(Id(name))
-  def x = id collect { case x: Var => x }
-
-  val id_nonmixfix = id filterNot isMixfix
-
-  val pat: Mixfix[String, Pat] = M(unapp, name, unapps, context)
-  val pat_arg: Parser[Pat] = P(parens(pat_open) | wildcard | strict | id_nonmixfix)
-  val pat_open = pat | id
+  def id = P(Raw(name))
+  def x = P(Var(name))
+  val id_nonmixfix = P(Raw(name_nonmixfix))
 
   val expr: Mixfix[String, Expr] = M(app, name, apps, context)
   val expr_arg: Parser[Expr] = P(parens(expr_open) | ite | let | lam | ex | all | mtch | id_nonmixfix)
   val expr_open = expr | id
 
-  val wildcard = Wildcard("_")
-  val unapp = UnApps(pat_arg ~ pat_arg.*)
-  val strict = Strict("!" ~ pat_arg)
-
   val app = Apps(expr_arg ~ expr_arg.*)
   val ite = Ite("if" ~ expr ~ "then" ~ expr ~ "else" ~ expr)
 
-  val eq = Case1(pat_arg ~ "=" ~ expr)
+  val eq = Case1(expr_arg ~ "=" ~ expr)
   val eqs = eq ~+ ","
   val let = Let("let" ~ eqs ~ "in" ~ expr)
 
-  val cs = Case(pat_arg.+ ~ "->" ~ expr)
+  val cs = Case(expr_arg.+ ~ "->" ~ expr)
   val css = cs ~+ "|"
   val lam = Lam("lambda " ~ css)
   // val bind = Binder(id_bind ~ cs)
@@ -81,15 +57,15 @@ class Parse(context: Context) {
   val mtch = Match("match" ~ expr_arg.+ ~ "with" ~ css)
 
   val tactic: Parser[Tactic] = P(ind | coind | split | have)
-  val ind = Ind("induction" ~ pat ~ ret(Least))
-  val coind = Ind("induction" ~ pat ~ ret(Greatest))
-  val split = Split("cases" ~ pat)
+  val ind = Ind("induction" ~ expr ~ ret(Least))
+  val coind = Ind("induction" ~ expr ~ ret(Greatest))
+  val split = Split("cases" ~ expr)
   val have = Have("have" ~ expr)
 
-  val pat_high = pat above (eq_prec + 1)
   val attr = L("rewrite")
   val attrs = bracks(attr.*) | ret(Nil)
-  val df = Def(pat_high ~ "==" ~ expr ~ attrs)
+  val df = Def(expr ~ attrs)
+  val intro = Intro(expr)
 
   def section[A](keyword: String, p: Parser[A]): Parser[List[A]] = {
     keyword ~ (p ~ ";").*
@@ -118,14 +94,15 @@ class Parse(context: Context) {
       (names, fixity)
   }
 
-  val cmd: Parser[Cmd] = P(defs | evals | datas | notation | thm | least | greatest)
+  val cmd: Parser[Cmd] = P(defs | evals | tests | datas | notation | thm | least | greatest)
 
   val defs = Defs(section("define", df))
   val evals = Evals(section("eval", expr))
+  val tests = Tests(section("test", expr))
   val datas = Datas(section("data", data_declare) map (_.flatten))
   val notation = Notation(section("notation", notation_declare))
-  val least = Fix(section("inductive", expr) ~ ret(Least))
-  val greatest = Fix(section("coinductive", expr) ~ ret(Greatest))
+  val least = Intros(section("inductive", intro) ~ ret(Least))
+  val greatest = Intros(section("coinductive", intro) ~ ret(Greatest))
 
   val proof = "proof" ~ tactic ~ ";"
   val thm = Thm(assume ~ show ~ proof.?) | Thm0(show ~ proof.?)

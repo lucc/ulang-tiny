@@ -15,11 +15,6 @@ class Vars(vars: List[Var]) {
   def rename(re: Map[Var, Var]) = vars map (_ rename re)
 }
 
-class Pats(pats: List[Pat]) {
-  def bound = Set(pats flatMap (_.bound): _*)
-  def rename(re: Map[Var, Var]) = pats map (_ rename re)
-}
-
 class Exprs(exprs: List[Expr]) {
   def free = Set(exprs flatMap (_.free): _*)
   def rename(re: Map[Var, Var]) = exprs map (_ rename re)
@@ -40,23 +35,6 @@ class Cases1(cases: List[Case1]) {
   def bound = Set(cases flatMap (_.bound): _*)
   def rename(a: Map[Var, Var], re: Map[Var, Var]) = cases map (_ rename (a, re))
   def subst(a: Map[Var, Var], su: Map[Var, Expr]) = cases map (_ subst (a, su))
-}
-
-object UnApps extends ((Pat, List[Pat]) => Pat) {
-  def apply(fun: Pat, args: List[Pat]): Pat = {
-    args.foldLeft(fun)(UnApp)
-  }
-
-  def flatten(expr: Pat, args: List[Pat]): (Pat, List[Pat]) = expr match {
-    case UnApp(fun, arg) =>
-      flatten(fun, arg :: args)
-    case _ =>
-      (expr, args)
-  }
-
-  def unapply(expr: Pat): Option[(Pat, List[Pat])] = {
-    Some(flatten(expr, Nil))
-  }
 }
 
 object Apps extends ((Expr, List[Expr]) => Expr) {
@@ -94,11 +72,6 @@ object Objs extends ((Data, List[Val]) => Val) {
 }
 
 class Unary[A <: Id](val op: A) {
-  def unapply(p: Pat) = p match {
-    case UnApp(`op`, arg) => Some(arg)
-    case _ => None
-  }
-
   def unapply(e: Expr) = e match {
     case App(`op`, arg) => Some(arg)
     case _ => None
@@ -112,18 +85,9 @@ class Unary[A <: Id](val op: A) {
   def apply(arg: Expr) = {
     App(op, arg)
   }
-
-  def apply(arg: Pat) = {
-    UnApp(op, arg)
-  }
 }
 
 class Binary[A <: Id](val op: A) {
-  def unapply(p: Pat) = p match {
-    case UnApp(UnApp(`op`, arg1), arg2) => Some((arg1, arg2))
-    case _ => None
-  }
-
   def unapply(e: Expr) = e match {
     case App(App(`op`, arg1), arg2) => Some((arg1, arg2))
     case _ => None
@@ -143,18 +107,6 @@ class Binary[A <: Id](val op: A) {
   }
 
   def apply(zero: Expr, args: List[Expr]): Expr = {
-    args.foldLeft(zero)(apply)
-  }
-
-  def apply(arg1: Pat, arg2: Pat): Pat = {
-    UnApp(UnApp(op, arg1), arg2)
-  }
-
-  def apply(args: List[Pat], zero: Pat): Pat = {
-    args.foldRight(zero)(apply)
-  }
-
-  def apply(zero: Pat, args: List[Pat]): Pat = {
     args.foldLeft(zero)(apply)
   }
 }

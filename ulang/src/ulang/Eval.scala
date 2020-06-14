@@ -10,11 +10,9 @@ class Eval(context: Context) {
     const(v1) == const(v2)
   }
 
-  def bind(pat: Pat, arg: Val, env: Env): Env = pat match {
+  def bind(pat: Expr, arg: Val, env: Env): Env = pat match {
     case Wildcard =>
       env
-    case Strict(pat) =>
-      bind(pat, const(arg), env)
     case id: Var if env contains id =>
       if (equal(env(id), arg)) env
       else backtrack
@@ -23,7 +21,7 @@ class Eval(context: Context) {
     case tag: Tag =>
       if (tag == force(arg)) env
       else backtrack
-    case UnApp(pat1, pat2) =>
+    case App(pat1, pat2) =>
       force(arg) match {
         case Obj(arg1, arg2) => bind(pat2, arg2, bind(pat1, arg1, env))
         case _ => backtrack
@@ -32,7 +30,7 @@ class Eval(context: Context) {
       backtrack
   }
 
-  def bind(pats: List[Pat], args: List[Val], env: Env): Env = (pats, args) match {
+  def bind(pats: List[Expr], args: List[Val], env: Env): Env = (pats, args) match {
     case (Nil, Nil) => env
     case (pat :: pats, arg :: args) => bind(pats, args, bind(pat, arg, env))
     case _ => sys.error("argument length mismatch: " + pats.mkString(" ") + " and " + args.mkString(" "))

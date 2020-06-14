@@ -21,8 +21,8 @@ class Prove(context: Context) {
     }
   }
 
-  def elim(intro: Intro, target: Expr, eqs: Subst, ant: List[Expr], suc: List[Expr], hyp: Option[Pat]): Proof = {
-    val fresh = Expr.fresh(intro.free -- sig)
+  def elim(intro: Intro, target: Expr, eqs: Subst, ant: List[Expr], suc: List[Expr], hyp: Option[Expr]): Proof = {
+    val fresh = Expr.fresh(intro.free)
     val Intro(pre, post) = intro rename fresh
 
     val Apps(fun1, args1) = post
@@ -42,7 +42,7 @@ class Prove(context: Context) {
 
     hyp match {
       case Some(pat) =>
-        val (found, rest) = findAll(pat, pre, sig)
+        val (found, rest) = findAll(pat, pre)
         val hyps = found map {
           case (rec, env) =>
             val Apps(fun0, args0) = rec
@@ -57,15 +57,17 @@ class Prove(context: Context) {
     }
   }
 
-  def ind(pat: Pat, goal: Open, hyp: Boolean): List[Proof] = {
+  def ind(pat: Expr, goal: Open, hyp: Boolean): List[Proof] = {
     val free = goal.free
     val Open(eqs, ant, suc) = goal
-    val (found, env, rest) = { find(pat, ant, sig ++ free) } or { sys.error("no formula: " + pat) }
+    val (found, env, rest) = { find(pat, ant) } or { sys.error("no formula: " + pat) }
+    ??? // TODO ensure that free is not bound by env
     // if (!env.isEmpty)
     //   sys.error("can't introduce new vars here: " + env.keys.mkString(" "))
-    val (gen, kind, intros) = fix(pat)
-    val rec = if (hyp) Some(gen) else None
-    intros map (elim(_, found, eqs, rest, suc, rec))
+    // val (gen, kind, intros) = fix(pat)
+    // val rec = if (hyp) Some(gen) else None
+    // intros map (elim(_, found, eqs, rest, suc, rec))
+    ???
   }
 
   def prove(goal: Open, tactic: Tactic): Proof = tactic match {
@@ -181,7 +183,7 @@ class Prove(context: Context) {
 
   def apply(cs: Case, args: List[Expr]): Expr = cs match {
     case Case(pats, body) if pats.length == args.length =>
-      val env = bind(pats, args, sig, Subst.empty)
+      val env = bind(pats, args, Subst.empty)
       body subst env
     case _ =>
       backtrack // partial application
@@ -242,40 +244,37 @@ object Prove {
     case _ => Eqv(left, right)
   }
 
-  def find(pat: Pat, exprs: List[Expr], sig: Set[Var]): (Expr, Subst, List[Expr]) = exprs match {
+  def find(pat: Expr, exprs: List[Expr]): (Expr, Subst, List[Expr]) = exprs match {
     case Nil =>
       backtrack
     case expr :: exprs =>
       {
-        (expr, bind(pat, expr, sig, Subst.empty), exprs)
+        (expr, bind(pat, expr, Subst.empty), exprs)
       } or {
-        val (found, env, rest) = find(pat, exprs, sig)
+        val (found, env, rest) = find(pat, exprs)
         (found, env, expr :: rest)
       }
   }
 
-  def findAll(pat: Pat, exprs: List[Expr], sig: Set[Var]): (List[(Expr, Subst)], List[Expr]) = exprs match {
+  def findAll(pat: Expr, exprs: List[Expr]): (List[(Expr, Subst)], List[Expr]) = exprs match {
     case Nil =>
       (Nil, Nil)
     case expr :: exprs =>
-      val (found, rest) = findAll(pat, exprs, sig)
+      val (found, rest) = findAll(pat, exprs)
 
       {
-        val env = bind(pat, expr, sig, Subst.empty)
+        val env = bind(pat, expr, Subst.empty)
         ((expr, env) :: found, rest)
       } or {
         (found, expr :: rest)
       }
   }
 
-  def bind(pat: Pat, arg: Expr, sig: Set[Var], env: Subst): Subst = pat match {
+  def bind(pat: Expr, arg: Expr, env: Subst): Subst = pat match {
     case Wildcard =>
       env
-    case Strict(pat) =>
-      bind(pat, arg, sig, env)
-    case x: Var if sig contains x =>
-      if (x == arg) env
-      else backtrack
+    /* case Strict(pat) =>
+      bind(pat, arg, env) */
     case x: Var if env contains x =>
       if (env(x) == arg) env
       else backtrack
@@ -284,28 +283,18 @@ object Prove {
     case tag: Tag =>
       if (tag == arg) env
       else backtrack
-    case UnApp(pfun, parg) =>
+    case Apps(fun: Id, pats) =>
       arg match {
-        case App(vfun, varg) => bind(parg, varg, sig, bind(pfun, vfun, sig, env))
+        case Apps(`fun`, args) => bind(pats, args, env)
         case _ => backtrack
       }
     case _ =>
       backtrack
   }
 
-  def bind(pats: List[Pat], args: List[Expr], sig: Set[Var], env: Subst): Subst = (pats, args) match {
+  def bind(pats: List[Expr], args: List[Expr], env: Subst): Subst = (pats, args) match {
     case (Nil, Nil) => env
-    case (pat :: pats, arg :: args) => bind(pats, args, sig, bind(pat, arg, sig, env))
+    case (pat :: pats, arg :: args) => bind(pats, args, bind(pat, arg, env))
     case _ => sys.error("argument length mismatch: " + pats.mkString(" ") + " and " + args.mkString(" "))
-  }
-
-  def merge(pats: List[Pat]): Pat = {
-    pats reduce merge
-  }
-
-  def merge(pat1: Pat, pat2: Pat): Pat = (pat1, pat2) match {
-    case _ if pat1 == pat2 => pat1
-    case (UnApp(fun1, arg1), UnApp(fun2, arg2)) => UnApp(merge(fun1, fun2), merge(arg1, arg2))
-    case _ => Wildcard
   }
 }

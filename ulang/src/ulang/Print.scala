@@ -14,13 +14,8 @@ object Print {
     case (fun, args) => (fun :: args).mkString("(", " ", ")")
   }
 
-  def print(pat: Pat): String = pat match {
-    case Wildcard => "_"
-    case Strict(pat) => "!" + pat
-    case UnApps(fun, args) => print(fun, args)
-  }
-
   def print(expr: Expr): String = expr match {
+    case Wildcard => "_"
     case Ite(test, left, right) => "if " + test + " then " + left + " else " + right
     case Lam(cases) => cases.mkString("lambda ", " | ", "")
     case Match(args, cases) => "match " + args.mkString(" ") + " with " + cases.mkString(" | ")
@@ -35,7 +30,7 @@ object Print {
     case Datas(names) => ???
     case Notation(fixs) => ???
     case Evals(exprs) => ???
-    case Fix(cases, kind) => ???
+    case Intros(cases, kind) => ???
     case Thm(assume, show, _) => print(assume, List(show))
   }
 
@@ -104,7 +99,6 @@ object Print {
   def print(pretty: Pretty): String = pretty match {
     case Id(name, Nilfix) => name
     case Id(name, _) => "(" + name + ")"
-    case pat: Pat => print(pat)
     case expr: Expr => print(expr)
     case any: Val => print(any)
     case cs: Case => print(cs)

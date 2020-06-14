@@ -6,27 +6,41 @@ sealed trait Cmd extends Pretty {
 
 }
 
-case class Def(fun: Var, args: List[Pat], body: Expr, attr: List[String])
-
-object Def extends ((Pat, Expr, List[String]) => Def) {
-  def apply(lhs: Pat, rhs: Expr, attr: List[String]) = lhs match {
-    case id: Var => Def(id, Nil, rhs, attr)
-    case UnApps(id: Var, args) => Def(id, args, rhs, attr)
-    case _ => sys.error("invalid definition: " + lhs + " == ...")
-  }
-}
-
+case class Def(expr: Expr, attr: List[String])
 case class Defs(defs: List[Def]) extends Cmd
 
 case class Datas(names: List[String]) extends Cmd
 case class Notation(fixs: List[(List[String], Fixity)]) extends Cmd
-// case class Tests(tests: List[Test]) extends Cmd
+
+case class Tests(tests: List[Expr]) extends Cmd
 case class Evals(exprs: List[Expr]) extends Cmd
 
-sealed trait FixKind
-case object Least extends FixKind
-case object Greatest extends FixKind
-case class Fix(cases: List[Expr], kind: FixKind) extends Cmd
+case class Intro(pre: List[Expr], post: Expr) {
+  def free = pre.free ++ post.free
+  def rename(re: Map[Var, Var]) = Intro(pre rename re, post rename re)
+  def subst(su: Map[Var, Expr]) = Intro(pre subst su, post subst su)
+}
+
+object Intro extends (Expr => Intro) {
+  def apply(expr: Expr): Intro = expr match {
+    case Imp(Apps(And.op, ant), suc) =>
+      Intro(ant, suc)
+    case Imp(ant, suc) =>
+      Intro(List(ant), suc)
+    case suc =>
+      Intro(Nil, suc)
+  }
+}
+
+sealed trait Fix
+case object Least extends Fix
+case object Greatest extends Fix
+
+case class Intros(cases: List[Intro], kind: Fix) extends Cmd {
+  def pat: Expr = {
+    ???
+  }
+}
 
 case class Thm(assume: List[Expr], show: Expr, proof: Option[Tactic]) extends Cmd
 
