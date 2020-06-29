@@ -16,22 +16,30 @@ class Context extends Syntax[String] {
   var postfix_ops: Map[String, Int] = Map()
   var infix_ops: Map[String, (Assoc, Int)] = Map()
 
-  var funs: Map[Fun, List[Case]] = Map()
-  var consts: Map[Fun, Norm] = Map()
+  var funs: Map[Id, List[Case]] = Map()
+  var consts: Map[Id, Norm] = Map()
 
   var fixs: List[(Expr, Fix, List[Intro])] = List()
-  var rewrites: Map[Fun, List[Case]] = Map()
+  var rewrites: Map[Id, List[Case]] = Map()
 
-  object parser extends Parse(this)
-  object eval extends Eval(this)
-  object exec extends Exec(this)
-  object prove extends Prove(this)
+  def isTag(id: Id): Boolean = {
+    val name = id.name
+    name.head.isUpper || (data contains name)
+  }
 
   def isMixfix(name: String): Boolean = {
     mixfix contains name
   }
 
-  def declare(names: List[String], fixity: Fixity) {
+  def declare(name: String) {
+    sig += name
+  }
+
+  def declare(names: List[String]) {
+    sig ++= names
+  }
+
+  def notation(names: List[String], fixity: Fixity) {
     for (name <- names) {
       mixfix += name -> fixity
     }
@@ -43,64 +51,42 @@ class Context extends Syntax[String] {
     }
   }
 
-  def define(fun: Fun, rhs: Norm) {
-    if (consts contains fun)
-      sys.error("constant already defined: " + fun)
-    sig += fun.name
+  def define(fun: Id, rhs: Norm) {
+    ensure(
+      sig contains fun.name,
+      "constant not decalred: " + fun)
+    prevent(
+      consts contains fun,
+      "constant already defined: " + fun)
+
     consts += fun -> rhs
   }
 
-  def define(fun: Fun, cs: Case) {
+  def define(fun: Id, cs: Case) {
+    ensure(
+      sig contains fun.name,
+      "function not decalred: " + fun)
+
     if (funs contains fun) {
-      sig += fun.name
       funs += fun -> (funs(fun) ++ List(cs))
     } else {
-      sig += fun.name
       funs += fun -> List(cs)
     }
   }
 
-  def resolve(bound: List[Var], name: String): Id = {
-    val fixity = mixfix.getOrElse(name, Nilfix)
-
-    if (bound exists (_.name == name))
-      Var(name, fixity)
-    else if (data contains name)
-      Tag(name, fixity)
-    else if (name.head.isUpper)
-      Tag(name, fixity)
-    else if (sig contains name)
-      Fun(name, fixity)
-    else
-      Var(name, fixity)
+  /* def calls(fun: Id, cs: Case): List[(Id, List[Expr])] = {
+    calls(fun, cs.body)
   }
 
-  def resolve(bound: List[Var], expr: Expr): Expr = expr match {
-    case Wildcard => Wildcard
-    case id: Id => id
-    case Raw(name) => resolve(bound, name)
-    case App(fun, arg) => App(resolve(bound, fun), resolve(bound, arg))
-    case Bind(quant, args, body) => Bind(quant, args, resolve(bound ++ args, body))
-    case Ite(test, left, right) => Ite(resolve(bound, test), resolve(bound, left), resolve(bound, right))
-    // case lam
-    // case let
-    // case Match
-  }
-
-  def calls(fun: Fun, cs: Case): List[(Fun, List[Expr])] = {
-    if (cs.bound contains fun) List()
-    else calls(fun, cs.body)
-  }
-
-  def calls_(fun: Fun, cases: List[Case]): List[(Fun, List[Expr])] = {
+  def calls_(fun: Id, cases: List[Case]): List[(Id, List[Expr])] = {
     cases flatMap (calls(fun, _))
   }
 
-  def calls(fun: Fun, exprs: List[Expr]): List[(Fun, List[Expr])] = {
+  def calls(fun: Id, exprs: List[Expr]): List[(Id, List[Expr])] = {
     exprs flatMap (calls(fun, _))
   }
 
-  def calls(fun: Fun, expr: Expr): List[(Fun, List[Expr])] = expr match {
+  def calls(fun: Id, expr: Expr): List[(Id, List[Expr])] = expr match {
     case Apps(`fun`, args) => List((fun, args)) ++ calls(fun, args)
     case Apps(_, args) => calls(fun, args)
     case Lam(cases) => calls_(fun, cases)
@@ -118,7 +104,7 @@ class Context extends Syntax[String] {
     (exprs zip pats) exists { case (expr, pat) => lex(expr, pat) }
   }
 
-  def safeRewrite(fun: Fun, pats: List[Expr], rhs: Expr) {
+  def safeRewrite(fun: Id, pats: List[Expr], rhs: Expr) {
     if (pats.isEmpty) {
       if (!(rhs.funs contains fun))
         rewrite(fun, pats, rhs)
@@ -128,20 +114,22 @@ class Context extends Syntax[String] {
       if (args forall (lex(_, pats)))
         rewrite(fun, pats, rhs)
     }
-  }
+  } */
 
-  def rewrite(fun: Fun, args: List[Expr], rhs: Expr) {
+  def rewrite(fun: Id, args: List[Expr], rhs: Expr) {
+    ensure(
+      sig contains fun.name,
+      "function not decalred: " + fun)
+
     val cs = Case(args, rhs)
     if (rewrites contains fun) {
-      sig += fun.name
       rewrites += fun -> (rewrites(fun) ++ List(cs))
     } else {
-      sig += fun.name
       rewrites += fun -> List(cs)
     }
   }
 
-  def fix(id: Var, pat: Expr, kind: Fix, cases: List[Intro]) {
+  def fix(id: Id, pat: Expr, kind: Fix, cases: List[Expr]) {
     ???
     /*
     if (fixs exists (pat <= _._1))

@@ -7,11 +7,18 @@ trait Pretty {
 }
 
 object Print {
-  def print(fun: Pretty, args: List[Pretty]): String = (fun, args) match {
-    case (Id(name, _: Prefix), List(arg)) => "(" + name + " " + arg + ")"
-    case (Id(name, _: Postfix), List(arg)) => "(" + arg + " " + name + ")"
-    case (Id(name, _: Infix), List(arg1, arg2)) => "(" + arg1 + " " + name + " " + arg2 + ")"
-    case (fun, args) => (fun :: args).mkString("(", " ", ")")
+  import context._
+
+  def print(name: String, args: List[Pretty], fixity: Fixity): String = (args, fixity) match {
+    case (List(arg), _: Prefix) => "(" + name + " " + arg + ")"
+    case (List(arg), _: Postfix) => "(" + arg + " " + name + ")"
+    case (List(arg1, arg2), _: Infix) => "(" + arg1 + " " + name + " " + arg2 + ")"
+  }
+  
+  def print(fun: Pretty, args: List[Pretty]): String = fun match {
+    case Id(name, None) if isMixfix(name) =>
+      print(name, args, mixfix(name))
+    case _ => (fun :: args).mkString("(", " ", ")")
   }
 
   def print(expr: Expr): String = expr match {
@@ -22,7 +29,7 @@ object Print {
     case Let(eqs, body) => "let " + eqs.mkString(", ") + " in " + body
     case All(xs, body) => "forall " + xs.mkString(" ") + " -> " + body
     case Ex(xs, body) => "exists " + xs.mkString(" ") + " -> " + body
-    case Apps(fun, args) => assert(!args.isEmpty); print(fun, args)
+    case Apps(fun, args) => print(fun, args)
   }
 
   def print(cmd: Cmd): String = cmd match {
@@ -36,7 +43,7 @@ object Print {
 
   def print(any: Val): String = any match {
     case Curry(fun, rargs, lex) => "[closure]"
-    case Defer(expr, lex, _) => "[" + expr + "]"
+    case Defer(expr, lex) => "[" + expr + "]"
     case Objs(fun, args) => print(fun, args)
   }
 
@@ -97,8 +104,8 @@ object Print {
   }
 
   def print(pretty: Pretty): String = pretty match {
-    case Id(name, Nilfix) => name
-    case Id(name, _) => "(" + name + ")"
+    case Id(name, index) if isMixfix(name) => "(" + (name __ index) + ")"
+    case Id(name, index) => name __ index
     case expr: Expr => print(expr)
     case any: Val => print(any)
     case cs: Case => print(cs)

@@ -2,7 +2,7 @@ package ulang
 
 import arse._
 
-class Prove(context: Context) {
+object Prove {
   import Prove._
   import context._
 
@@ -21,7 +21,7 @@ class Prove(context: Context) {
     }
   }
 
-  def elim(intro: Intro, target: Expr, eqs: Subst, ant: List[Expr], suc: List[Expr], hyp: Option[Expr]): Proof = {
+  /* def elim(intro: Intro, target: Expr, eqs: Subst, ant: List[Expr], suc: List[Expr], hyp: Option[Expr]): Proof = {
     val fresh = Expr.fresh(intro.free)
     val Intro(pre, post) = intro rename fresh
 
@@ -68,17 +68,18 @@ class Prove(context: Context) {
     // val rec = if (hyp) Some(gen) else None
     // intros map (elim(_, found, eqs, rest, suc, rec))
     ???
-  }
+  } */
 
   def prove(goal: Open, tactic: Tactic): Proof = tactic match {
-    case Split(pat) =>
+    /* case Split(pat) =>
       val prems = ind(pat, goal, hyp = false)
       Step(prems, goal, tactic)
     case Ind(pat, Least) =>
       val prems = ind(pat, goal, hyp = true)
       Step(prems, goal, tactic)
     case Ind(pat, Greatest) =>
-      ???
+      ??? */
+    case _ => ???
   }
 
   def auto(ant: List[Expr], suc: Expr, goal: Open): Proof = {
@@ -162,9 +163,9 @@ class Prove(context: Context) {
   }
 
   def _rewrite(expr: Expr, eqs: Subst): Expr = expr match {
-    case id: Var if eqs contains id =>
+    case id: Id if eqs contains id =>
       rewrite(eqs(id), eqs)
-    case id: Var => // avoid immediate recursion on fun in the next case as args.isEmpty
+    case id: Id => // avoid immediate recursion on fun in the next case as args.isEmpty
       apply(id, Nil)
     case Apps(fun, Nil) =>
       expr
@@ -175,7 +176,7 @@ class Prove(context: Context) {
   }
 
   def apply(fun: Expr, args: List[Expr]): Expr = fun match {
-    case id: Var if rewrites contains id =>
+    case id: Id if rewrites contains id =>
       apply(fun, rewrites(id), args)
     case _ =>
       Apps(fun, args)
@@ -195,12 +196,10 @@ class Prove(context: Context) {
     case cs :: rest =>
       { apply(cs, args) } or { apply(fun, rest, args) }
   }
-}
 
-object Prove {
   def eqn(left: Expr, right: Expr) = (left, right) match {
     case _ if left == right => True
-    case (Apps(tag1: Tag, _), Apps(tag2: Tag, _)) if tag1 != tag2 => False
+    case (Apps(tag1: Id, _), Apps(tag2: Id, _)) if isTag(tag1) && isTag(tag2) && tag1 != tag2 => False
     case _ => Eq(left, right)
   }
 
@@ -275,14 +274,14 @@ object Prove {
       env
     /* case Strict(pat) =>
       bind(pat, arg, env) */
-    case x: Var if env contains x =>
-      if (env(x) == arg) env
+    case id: Id if isTag(id) =>
+      if (id == arg) env
       else backtrack
-    case x: Var =>
-      env + (x -> arg)
-    case tag: Tag =>
-      if (tag == arg) env
+    case id: Id if env contains id =>
+      if (env(id) == arg) env
       else backtrack
+    case id: Id =>
+      env + (id -> arg)
     case Apps(fun: Id, pats) =>
       arg match {
         case Apps(`fun`, args) => bind(pats, args, env)

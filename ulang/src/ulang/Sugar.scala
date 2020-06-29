@@ -11,21 +11,21 @@ package ulang
   }
 } */
 
-class Vars(vars: List[Var]) {
-  def rename(re: Map[Var, Var]) = vars map (_ rename re)
+class Ids(ids: List[Id]) {
+  def rename(re: Map[Id, Id]) = ids map (_ rename re)
 }
 
 class Exprs(exprs: List[Expr]) {
   def free = Set(exprs flatMap (_.free): _*)
-  def rename(re: Map[Var, Var]) = exprs map (_ rename re)
-  def subst(su: Map[Var, Expr]) = exprs map (_ subst su)
+  def rename(re: Map[Id, Id]) = exprs map (_ rename re)
+  def subst(su: Map[Id, Expr]) = exprs map (_ subst su)
 }
 
 class Cases(cases: List[Case]) {
   def free = Set(cases flatMap (_.free): _*)
   def bound = Set(cases flatMap (_.bound): _*)
-  def rename(re: Map[Var, Var]) = cases map (_ rename re)
-  def subst(su: Map[Var, Expr]) = cases map (_ subst su)
+  def rename(re: Map[Id, Id]) = cases map (_ rename re)
+  def subst(su: Map[Id, Expr]) = cases map (_ subst su)
 }
 
 class Cases1(cases: List[Case1]) {
@@ -33,8 +33,8 @@ class Cases1(cases: List[Case1]) {
   def args = cases map (_.arg)
   def free = Set(cases flatMap (_.free): _*)
   def bound = Set(cases flatMap (_.bound): _*)
-  def rename(a: Map[Var, Var], re: Map[Var, Var]) = cases map (_ rename (a, re))
-  def subst(a: Map[Var, Var], su: Map[Var, Expr]) = cases map (_ subst (a, su))
+  def rename(a: Map[Id, Id], re: Map[Id, Id]) = cases map (_ rename (a, re))
+  def subst(a: Map[Id, Id], su: Map[Id, Expr]) = cases map (_ subst (a, su))
 }
 
 object Apps extends ((Expr, List[Expr]) => Expr) {
@@ -71,7 +71,9 @@ object Objs extends ((Data, List[Val]) => Val) {
   }
 }
 
-class Unary[A <: Id](val op: A) {
+class Unary(val op: Id) {
+  def this(name: String) = this(Id(name))
+  
   def unapply(e: Expr) = e match {
     case App(`op`, arg) => Some(arg)
     case _ => None
@@ -87,7 +89,9 @@ class Unary[A <: Id](val op: A) {
   }
 }
 
-class Binary[A <: Id](val op: A) {
+class Binary(val op: Id) {
+  def this(name: String) = this(Id(name))
+  
   def unapply(e: Expr) = e match {
     case App(App(`op`, arg1), arg2) => Some((arg1, arg2))
     case _ => None

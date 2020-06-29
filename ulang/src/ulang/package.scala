@@ -1,13 +1,27 @@
 package object ulang {
   import arse._
 
-  type Env = Map[Var, Val]
-  type Subst = Map[Var, Expr]
+  type Env = Map[Id, Val]
+  type Subst = Map[Id, Expr]
 
-  implicit def toVars(vars: List[Var]) = new Vars(vars)
+  implicit def toIds(ids: List[Id]) = new Ids(ids)
   implicit def toExprs(exprs: List[Expr]) = new Exprs(exprs)
   implicit def toCases(cases: List[Case]) = new Cases(cases)
   implicit def toCases1(cases: List[Case1]) = new Cases1(cases)
+
+  object context extends Context
+
+  def fail(msg: String) = {
+    sys.error(msg)
+  }
+
+  def ensure(test: Boolean, msg: String) = {
+    if (!test) fail(msg)
+  }
+
+  def prevent(test: Boolean, msg: String) = {
+    if (test) fail(msg)
+  }
 
   object Env {
     def empty: Env = Map()
@@ -17,7 +31,7 @@ package object ulang {
     def empty: Subst = Map()
   }
 
-  object Eq extends Binary(Var("==", Infix(Non, 6))) {
+  object Eq extends Binary("==") {
     def zip(left: List[Expr], right: List[Expr]): List[Expr] = {
       if (left.length != right.length)
         sys.error("length mismatch: " + left + " " + right)
@@ -28,32 +42,43 @@ package object ulang {
       val eqs = pairs map { case (a, b) => Eq(a, b) }
       eqs.toList
     }
+
+    def split(expr: Expr) = expr match {
+      case Eq(lhs, rhs) =>
+        (lhs, rhs)
+      case Eqv(lhs, rhs) =>
+        (lhs, rhs)
+      case Not(lhs) =>
+        (lhs, False)
+      case lhs =>
+        (lhs, True)
+    }
   }
 
-  object True extends Tag("True")
-  object False extends Tag("False")
+  object True extends Id("True")
+  object False extends Id("False")
 
-  object Zero extends Tag("0")
-  object Succ extends Unary(Tag("+1", Postfix(11)))
+  object Zero extends Id("0")
+  object Succ extends Unary("+1")
 
-  object Not extends Unary(Var("not", Prefix(5)))
+  object Not extends Unary("not")
 
-  object And extends Binary(Var("/\\", Infix(Right, 4))) {
+  object And extends Binary("/\\") {
     def apply(args: List[Expr]): Expr = args match {
       case Nil => True
       case _ => args.reduce(apply(_, _))
     }
   }
 
-  object Or extends Binary(Var("\\/", Infix(Right, 3))) {
+  object Or extends Binary("\\/") {
     def apply(args: List[Expr]): Expr = args match {
       case Nil => False
       case _ => args.reduce(apply(_, _))
     }
   }
 
-  object Imp extends Binary(Var("==>", Infix(Right, 2)))
-  object Eqv extends Binary(Var("<=>", Infix(Non, 1)))
+  object Imp extends Binary("==>")
+  object Eqv extends Binary("<=>")
 
   def group[A, B](xs: List[(A, B)]) = {
     xs.groupBy(_._1).map {

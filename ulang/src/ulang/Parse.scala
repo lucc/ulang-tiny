@@ -3,10 +3,8 @@ package ulang
 import arse._
 import arse.implicits._
 
-class Parse(context: Context) {
+object Parse {
   import context._
-
-  val eq_prec = Eq.op.fixity.prec
 
   implicit object whitespace
     extends Whitespace("(\\s|(//.*\\n))*")
@@ -27,12 +25,11 @@ class Parse(context: Context) {
   val name = n filterNot keywords
   val name_nonmixfix = name filterNot isMixfix
 
-  val apps = (fun: String, args: List[Expr]) =>
-    Apps(Raw(fun), args)
+  val apps = (name: String, args: List[Expr]) =>
+    Apps(Id(name), args)
 
-  def id = P(Raw(name))
-  def x = P(Var(name))
-  val id_nonmixfix = P(Raw(name_nonmixfix))
+  def id = P(Id(name))
+  val id_nonmixfix = P(Id(name_nonmixfix))
 
   val expr: Mixfix[String, Expr] = M(app, name, apps, context)
   val expr_arg: Parser[Expr] = P(parens(expr_open) | ite | let | lam | ex | all | mtch | id_nonmixfix)
@@ -50,7 +47,7 @@ class Parse(context: Context) {
   val lam = Lam("lambda " ~ css)
   // val bind = Binder(id_bind ~ cs)
 
-  val quant = x.+ ~ "->" ~ expr
+  val quant = id.+ ~ "->" ~ expr
   val ex = Ex("exists" ~ quant)
   val all = All("forall" ~ quant)
 
@@ -65,7 +62,6 @@ class Parse(context: Context) {
   val attr = L("rewrite")
   val attrs = bracks(attr.*) | ret(Nil)
   val df = Def(expr ~ attrs)
-  val intro = Intro(expr)
 
   def section[A](keyword: String, p: Parser[A]): Parser[List[A]] = {
     keyword ~ (p ~ ";").*
@@ -90,7 +86,7 @@ class Parse(context: Context) {
 
   val notation_declare = fix map {
     case (names, fixity) =>
-      context declare (names, fixity)
+      context notation (names, fixity)
       (names, fixity)
   }
 
@@ -101,8 +97,8 @@ class Parse(context: Context) {
   val tests = Tests(section("test", expr))
   val datas = Datas(section("data", data_declare) map (_.flatten))
   val notation = Notation(section("notation", notation_declare))
-  val least = Intros(section("inductive", intro) ~ ret(Least))
-  val greatest = Intros(section("coinductive", intro) ~ ret(Greatest))
+  val least = Intros(section("inductive", expr) ~ ret(Least))
+  val greatest = Intros(section("coinductive", expr) ~ ret(Greatest))
 
   val proof = "proof" ~ tactic ~ ";"
   val thm = Thm(assume ~ show ~ proof.?) | Thm0(show ~ proof.?)

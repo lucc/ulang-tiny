@@ -3,54 +3,59 @@ package ulang
 import scala.io.Source
 import java.io.File
 
-class Exec(context: Context) {
+object Exec {
   import context._
+  
+  def split(df: Def) = {
+    val (lhs, rhs) = Eq.split(df.expr)
+    val Apps(fun: Id, args) = lhs
+    (fun, args, rhs)
+  }
 
   def exec(cmd: Cmd) = cmd match {
-    /* case Defs(defs) =>
-      for (Def(Head(id, args), rhs, attr) <- defs) {
-        if (args.isEmpty) {
-          val res = eval.norm(rhs, Env.empty)
-          const(id, res)
-        } else {
-          fun(id, Case(args, rhs))
-        }
+    case Defs(defs) =>
+      val eqs = defs map split
 
-        if (attr contains "rewrite") {
-          rewrite(id, args, rhs)
+      for ((id, args, rhs) <- eqs) {
+        declare(id.name)
+        
+        if (args.isEmpty) {
+          val res = Eval.norm(rhs, Env.empty)
+          define(id, res)
         } else {
-          safeRewrite(id, args, rhs)
+          val cs = Case(args, rhs)
+          define(id, cs)
         }
-      } */
+      }
 
     case Evals(exprs) =>
       for (expr <- exprs) {
-        val res = eval.strict(expr, Env.empty)
+        val res = Eval.strict(expr, Env.empty)
         println(expr)
         println("  == " + res)
       }
 
     case Tests(tests) =>
       for (expr <- tests) {
-        /*
-        val actual = eval.strict(lhs, Env.empty)
-        val expected = eval.strict(rhs, Env.empty)
-        assert(actual == expected) */
+        val (lhs, rhs) = Eq.split(expr)
+        val actual = Eval.strict(lhs, Env.empty)
+        val expected = Eval.strict(rhs, Env.empty)
+        ensure(actual == expected, "test failed, actual: " + actual + ", expected: " + expected)
       }
 
-    case Intros(cases, kind) =>
+    /* case Intros(cases, kind) =>
       val pat = ??? // merge(cases map (_.patx))
       pat match {
         case Apps(fun: Var, args) =>
           fix(fun, pat, kind, cases)
         case _ =>
-          sys.error("not an inductive definition: " + pat)
+          fail("not an inductive definition: " + pat)
       }
 
     case Thm(assume, show, tactic) =>
       val proof = prove.prove(assume, show, tactic)
       for (line <- Print.format(proof))
-        println(line)
+        println(line) */
 
     case _ =>
   }
@@ -67,7 +72,7 @@ class Exec(context: Context) {
   }
 
   def parse(string: String): List[Cmd] = {
-    import parser._
+    import Parse._
     script parseAll string
   }
 

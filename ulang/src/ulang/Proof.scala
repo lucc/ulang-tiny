@@ -57,8 +57,8 @@ case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal wit
     case _ if this contains not(phi) => Closed
     case Not(phi) => this assert phi
     case And(phi, psi) => this assume phi assume psi
-    case Eq(x: Var, e) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
-    case Eq(e, x: Var) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
+    case Eq(x: Id, e) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
+    case Eq(e, x: Id) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
     case _ => copy(rant = phi :: rant)
   }
 
