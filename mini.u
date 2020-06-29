@@ -48,6 +48,9 @@ notation
   ==> [infixr 2];
   <=> [infix  1];
 
+show
+  A x == A y <=> x == y;
+
 inductive
   True:  Bool;
   False: Bool;

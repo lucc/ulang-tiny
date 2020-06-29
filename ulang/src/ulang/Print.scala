@@ -99,8 +99,8 @@ object Print {
   def print(tactic: Tactic): String = tactic match {
     case Auto => "auto"
     case Split(pat) => "split " + pat
-    case Ind(pat, Least) => "induction " + pat
-    case Ind(pat, Greatest) => "coinduction " + pat
+    case Induct(pat, Least) => "induction " + pat
+    case Induct(pat, Greatest) => "coinduction " + pat
   }
 
   def print(pretty: Pretty): String = pretty match {

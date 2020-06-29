@@ -79,7 +79,8 @@ object Prove {
       Step(prems, goal, tactic)
     case Ind(pat, Greatest) =>
       ??? */
-    case _ => ???
+    case _ =>
+      goal
   }
 
   def auto(ant: List[Expr], suc: Expr, goal: Open): Proof = {
