@@ -26,6 +26,14 @@ object Exec {
           val cs = Case(args, rhs)
           define(id, cs)
         }
+
+        if(args.isEmpty) {
+          if(Rewrite.isSafe(id, rhs))
+            rule(id, Nil, rhs)
+        } else {
+          if(Rewrite.isSafe(id, args, rhs))
+            rule(id, args, rhs)
+        }
       }
 
     case Evals(exprs) =>
@@ -50,12 +58,12 @@ object Exec {
           fix(fun, pat, kind, cases)
         case _ =>
           fail("not an inductive definition: " + pat)
-      }
+      } */
 
     case Thm(assume, show, tactic) =>
-      val proof = prove.prove(assume, show, tactic)
+      val proof = Prove.prove(assume, show, tactic)
       for (line <- Print.format(proof))
-        println(line) */
+        println(line)
 
     case _ =>
   }

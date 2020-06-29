@@ -27,6 +27,11 @@ class Context extends Syntax[String] {
     name.head.isUpper || (data contains name)
   }
 
+  def isVar(id: Id): Boolean = {
+    val name = id.name
+    !(sig contains name)
+  }
+
   def isMixfix(name: String): Boolean = {
     mixfix contains name
   }
@@ -74,49 +79,7 @@ class Context extends Syntax[String] {
     }
   }
 
-  /* def calls(fun: Id, cs: Case): List[(Id, List[Expr])] = {
-    calls(fun, cs.body)
-  }
-
-  def calls_(fun: Id, cases: List[Case]): List[(Id, List[Expr])] = {
-    cases flatMap (calls(fun, _))
-  }
-
-  def calls(fun: Id, exprs: List[Expr]): List[(Id, List[Expr])] = {
-    exprs flatMap (calls(fun, _))
-  }
-
-  def calls(fun: Id, expr: Expr): List[(Id, List[Expr])] = expr match {
-    case Apps(`fun`, args) => List((fun, args)) ++ calls(fun, args)
-    case Apps(_, args) => calls(fun, args)
-    case Lam(cases) => calls_(fun, cases)
-    case Match(args, cases) => calls(fun, args) ++ calls_(fun, cases)
-    // case let: Let if !(let.bound contains fun) => calls(fun, let.body)
-    case _ => List()
-  }
-
-  def lex(expr: Expr, pat: Expr): Boolean = (expr, pat) match {
-    case (_, Apps(_: Tag, args)) if (args contains expr) || (args exists (lex(expr, _))) => true
-    case _ => false
-  }
-
-  def lex(exprs: List[Expr], pats: List[Expr]): Boolean = {
-    (exprs zip pats) exists { case (expr, pat) => lex(expr, pat) }
-  }
-
-  def safeRewrite(fun: Id, pats: List[Expr], rhs: Expr) {
-    if (pats.isEmpty) {
-      if (!(rhs.funs contains fun))
-        rewrite(fun, pats, rhs)
-    } else {
-      val rec = calls(fun, rhs)
-      val args = rec map (_._2)
-      if (args forall (lex(_, pats)))
-        rewrite(fun, pats, rhs)
-    }
-  } */
-
-  def rewrite(fun: Id, args: List[Expr], rhs: Expr) {
+  def rule(fun: Id, args: List[Expr], rhs: Expr) {
     ensure(
       sig contains fun.name,
       "function not decalred: " + fun)
@@ -144,4 +107,5 @@ class Context extends Syntax[String] {
     val Some((gen, kind, intros)) = fixs find (pat <= _._1)
     (gen, kind, intros) */
   }
+  
 }

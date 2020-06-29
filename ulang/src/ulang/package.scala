@@ -77,7 +77,17 @@ package object ulang {
     }
   }
 
-  object Imp extends Binary("==>")
+  object Imp extends Binary("==>") {
+    def split(expr: Expr) = expr match {
+      case Imp(Apps(And.op, ant), suc) =>
+        (ant, suc)
+      case Imp(ant, suc) =>
+        (List(ant), suc)
+      case suc =>
+        (Nil, suc)
+    }
+  }
+
   object Eqv extends Binary("<=>")
 
   def group[A, B](xs: List[(A, B)]) = {

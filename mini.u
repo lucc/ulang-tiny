@@ -48,16 +48,6 @@ notation
   ==> [infixr 2];
   <=> [infix  1];
 
-eval
-  let x = 1, y = 1
-  in x + y;
-  
-  let f = (lambda x -> x +1)
-  in f 0;
-
-  match 1 with
-    (n +1) -> n;
-
 inductive
   True:  Bool;
   False: Bool;
