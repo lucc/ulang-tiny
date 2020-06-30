@@ -97,8 +97,8 @@ object Parse {
   val tests = Tests(section("test", expr))
   val datas = Datas(section("data", data_declare) map (_.flatten))
   val notation = Notation(section("notation", notation_declare))
-  val least = Intros(section("inductive", expr) ~ ret(Least))
-  val greatest = Intros(section("coinductive", expr) ~ ret(Greatest))
+  val least = Ind(section("inductive", expr) ~ ret(Least))
+  val greatest = Ind(section("coinductive", expr) ~ ret(Greatest))
 
   val proof = "proof" ~ tactic ~ ";"
   val thm = Thm(assume ~ show ~ proof.?) | Thm0(show ~ proof.?)

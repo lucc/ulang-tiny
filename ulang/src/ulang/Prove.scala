@@ -4,7 +4,7 @@ import arse._
 
 object Prove {
   import context._
-  import Rewrite._
+  import Simp._
 
   def prove(ant: List[Expr], suc: Expr, proof: Option[Tactic]): Proof = {
     val goal = auto(ant, suc, Goal.empty)
@@ -101,47 +101,5 @@ object Prove {
     case phi :: rest =>
       val _phi = simp(phi, goal, Ant)
       init(rest, suc, goal assume _phi)
-  }
-
-  def simp(phi: Expr, goal: Goal, pos: Pos): Expr = goal match {
-    case Closed => True
-    case open: Open => simp(phi, open, pos)
-  }
-
-  def simp(phi: Expr, goal: Open, pos: Pos): Expr = {
-    val res = _simp(phi, goal, pos)
-//    if (phi != res)
-//      println(phi + " ~> " + res)
-    res
-  }
-
-  def _simp(phi: Expr, goal: Open, pos: Pos): Expr = phi match {
-    case True | False => phi
-    case _ if goal contains phi =>
-      True
-    case _ if goal contains not(phi) =>
-      False
-    case Eq(left, right) =>
-      eqn(rewrite(left, goal), rewrite(right, goal))
-    case Not(phi) =>
-      val _phi = simp(phi, goal, !pos)
-      not(_phi)
-    case And(left, right) =>
-      val _left = simp(left, goal, pos)
-      val _right = simp(right, goal assume _left, pos)
-      and(_left, _right)
-    case Or(left, right) =>
-      val _left = simp(left, goal, pos)
-      val _right = simp(right, goal assert _left, pos)
-      or(_left, _right)
-    case Imp(left, right) =>
-      val _left = simp(left, goal, !pos)
-      val _right = simp(right, goal assume _left, pos)
-      imp(_left, _right)
-    case Eqv(left, right) =>
-      val phi = And(Imp(left, right), Imp(right, left))
-      simp(phi, goal, pos)
-    case _ =>
-      rewrite(phi, goal)
   }
 }

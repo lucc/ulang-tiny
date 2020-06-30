@@ -19,7 +19,7 @@ class Context extends Syntax[String] {
   var funs: Map[Id, List[Case]] = Map()
   var consts: Map[Id, Norm] = Map()
 
-  var fixs: List[(Expr, Fix, List[Intro])] = List()
+  var inds: List[(Expr, Fix, List[Intro])] = List()
   var rewrites: Map[Id, List[Case]] = Map()
 
   def isTag(id: Id): Boolean = {

@@ -66,7 +66,7 @@ case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal wit
 
   def isClosed = false
 
-  import Rewrite._
+  import Simp._
 
   def contains(phi: Expr) = {
     (rant contains phi) || (rsuc contains not(phi))

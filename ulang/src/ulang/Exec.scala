@@ -28,10 +28,10 @@ object Exec {
         }
 
         if(args.isEmpty) {
-          if(Rewrite.isSafe(id, rhs))
+          if(Simp.isSafe(id, rhs))
             rule(id, Nil, rhs)
         } else {
-          if(Rewrite.isSafe(id, args, rhs))
+          if(Simp.isSafe(id, args, rhs))
             rule(id, args, rhs)
         }
       }

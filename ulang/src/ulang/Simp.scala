@@ -2,8 +2,50 @@ package ulang
 
 import arse._
 
-object Rewrite {
+object Simp {
   import context._
+
+  def simp(phi: Expr, goal: Goal, pos: Pos): Expr = goal match {
+    case Closed => True
+    case open: Open => simp(phi, open, pos)
+  }
+
+  def simp(phi: Expr, goal: Open, pos: Pos): Expr = {
+    val res = _simp(phi, goal, pos)
+    //    if (phi != res)
+    //      println(phi + " ~> " + res)
+    res
+  }
+
+  def _simp(phi: Expr, goal: Open, pos: Pos): Expr = phi match {
+    case True | False => phi
+    case _ if goal contains phi =>
+      True
+    case _ if goal contains not(phi) =>
+      False
+    case Eq(left, right) =>
+      eqn(rewrite(left, goal), rewrite(right, goal))
+    case Not(phi) =>
+      val _phi = simp(phi, goal, !pos)
+      not(_phi)
+    case And(left, right) =>
+      val _left = simp(left, goal, pos)
+      val _right = simp(right, goal assume _left, pos)
+      and(_left, _right)
+    case Or(left, right) =>
+      val _left = simp(left, goal, pos)
+      val _right = simp(right, goal assert _left, pos)
+      or(_left, _right)
+    case Imp(left, right) =>
+      val _left = simp(left, goal, !pos)
+      val _right = simp(right, goal assume _left, pos)
+      imp(_left, _right)
+    case Eqv(left, right) =>
+      val phi = And(Imp(left, right), Imp(right, left))
+      simp(phi, goal, pos)
+    case _ =>
+      rewrite(phi, goal)
+  }
 
   def rewrite(expr: Expr, goal: Open): Expr = {
     rewrite(expr, goal.eqs)
@@ -157,7 +199,6 @@ object Rewrite {
     case (pat :: pats, arg :: args) => bind(pats, args, bind(pat, arg, env))
     case _ => fail("argument length mismatch: " + pats.mkString(" ") + " and " + args.mkString(" "))
   }
-  
 
   def lex(expr: Expr, pat: Expr): Boolean = (expr, pat) match {
     case (_, Apps(tag: Id, args)) if isTag(tag) && (args contains expr) || (args exists (lex(expr, _))) => true
@@ -167,11 +208,11 @@ object Rewrite {
   def lex(exprs: List[Expr], pats: List[Expr]): Boolean = {
     (exprs zip pats) exists { case (expr, pat) => lex(expr, pat) }
   }
-  
-  def isSafe(fun: Id, pats: List[Expr], exprs: List[Expr]): Boolean ={
+
+  def isSafe(fun: Id, pats: List[Expr], exprs: List[Expr]): Boolean = {
     exprs forall (isSafe(fun, pats, _))
   }
-  
+
   def isSafe(fun: Id, pats: List[Expr], rhs: Expr): Boolean = rhs match {
     case Apps(`fun`, args) =>
       lex(args, pats) && isSafe(fun, pats, args)
@@ -180,11 +221,11 @@ object Rewrite {
     case _ =>
       false
   }
-  
-  def isSafe(fun: Id, exprs: List[Expr]): Boolean ={
+
+  def isSafe(fun: Id, exprs: List[Expr]): Boolean = {
     exprs forall (isSafe(fun, _))
   }
-  
+
   def isSafe(fun: Id, rhs: Expr): Boolean = rhs match {
     case Apps(`fun`, _) =>
       false
