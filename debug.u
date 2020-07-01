@@ -1,0 +1,63 @@
+notation
+  :  [infix 6];
+  == != [infix 6];
+
+notation
+  not [prefix 5];
+  /\  [infixr 4];
+  \/  [infixr 3];
+  ==> [infixr 2];
+  <=> [infix  1];
+
+notation
+  +1  [postfix 11];
+  + - [infixl   8];
+  < <= > >= [infix 6];
+
+data
+  0 +1;
+
+inductive
+  0: Nat;
+  n: Nat ==> n +1: Nat;
+
+define
+  m + 0 == m;
+  m + (n +1) == (m + n) +1;
+  (m < 0) == False;
+  (0 < n +1) == True;
+  (m +1 < n +1) == (m < n);
+
+assume k: Nat;
+show k < k +1;
+proof induction k: Nat;
+
+assume n: Nat;
+show 0 + n == n;
+proof induction n: Nat;
+
+assume n: Nat;
+show (m +1) + n == (m + n) +1;
+proof induction n: Nat;
+
+data
+  [] ::;
+
+notation
+  :: [infixr 8];
+  ++ [infixr 7];
+
+
+inductive
+  []: List a;
+  x: a /\ xs: List a ==> (x :: xs): List a;
+
+define
+  [] ++ ys == ys;
+  (x :: xs) ++ ys == x :: (xs ++ ys);
+  
+assume
+  xs: List a;
+show
+  (xs ++ ys) ++ zs == xs ++ (ys ++ zs);
+proof induction xs: List a;
