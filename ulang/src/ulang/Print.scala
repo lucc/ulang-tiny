@@ -85,14 +85,15 @@ object Print {
       val third = indent + "  sorry"
       first :: second :: third :: Nil
     case Step(prems, concl, tactic) =>
-      val first = indent + concl
-      val second = indent + "proof " + tactic
+      val first = indent + assume(concl.pre)
+      val second = indent + show(concl.suc)
+      val third = indent + "proof " + tactic
       val rest = prems filterNot (_ == Closed) flatMap (format(_, indent + "  "))
       if (rest.isEmpty) {
-        val third = indent + "  qed"
-        first :: second :: third :: Nil
+        val fourth = indent + "  qed"
+        first :: second :: third :: fourth :: Nil
       } else {
-        first :: second :: rest
+        first :: second :: third :: rest
       }
   }
 

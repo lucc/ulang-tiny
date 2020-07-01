@@ -61,7 +61,7 @@ object Prove {
   def induct(pat: Expr, goal: Open, hyp: Boolean): List[Proof] = {
     val Open(eqs, ant, suc) = goal
     val (found, env, rest) = { find(pat, ant) } or { sys.error("no such formula: " + pat) }
-    println("found inductive focus " + found + " for " + pat + " with " + env)
+    // println("found inductive focus " + found + " for " + pat + " with " + env)
     val (gen, kind, intros) = unwrap(inds find (pat <= _._1), "no inductive rule for: " + pat)
     ensure(kind == Least, "not an inductive rule: " + kind)
     val rec = if (hyp) Some(gen) else None

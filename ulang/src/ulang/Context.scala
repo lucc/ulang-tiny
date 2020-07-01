@@ -88,8 +88,8 @@ class Context extends Syntax[String] {
       sig contains fun,
       "function not decalred: " + fun)
 
-    println("declaring rewrite rule")
-    println("  " + Apps(fun, args) + " == " + rhs)
+    // println("declaring rewrite rule")
+    // println("  " + Apps(fun, args) + " == " + rhs)
     val cs = Case(args, rhs)
     if (rewrites contains fun) {
       rewrites += fun -> (rewrites(fun) ++ List(cs))
