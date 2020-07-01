@@ -4,6 +4,15 @@ import arse._
 
 sealed trait Expr extends Expr.term with Pretty {
   def free: Set[Id]
+  
+  def <=(that: Expr): Boolean = (this, that) match {
+    case (_, Wildcard) =>
+      true
+    case (App(fun1,arg1), App(fun2, arg2)) =>
+      fun1 <= fun2 && arg1 <= arg2
+    case _ =>
+      this == that
+  }
 }
 
 object Expr extends Alpha[Expr, Id] {

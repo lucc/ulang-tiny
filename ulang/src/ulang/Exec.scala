@@ -5,11 +5,67 @@ import java.io.File
 
 object Exec {
   import context._
-  
+
   def split(df: Def) = {
     val (lhs, rhs) = Eq.split(df.expr)
+    // TODO: complain properly if fun is not Id
     val Apps(fun: Id, args) = lhs
     (fun, args, rhs)
+  }
+
+  def intro(expr: Expr) = {
+    val (ant, suc) = Imp.split(expr)
+    // TODO: complain properly if fun is not Id
+    val Apps(fun: Id, args) = suc
+    (ant, fun, args)
+  }
+
+  def anon(expr: Expr): Expr = expr match {
+    case id: Id if isTag(id) =>
+      id
+    case _: Id =>
+      Wildcard
+    case App(fun, arg) =>
+      App(anon(fun), anon(arg))
+    case _ =>
+      fail("not a pattern: " + expr)
+  }
+
+  def anon(exprs: List[Expr]): List[Expr] = {
+    exprs map anon
+  }
+
+  def merge(expr1: Expr, expr2: Expr): Expr = (expr1, expr2) match {
+    case (App(fun1, arg1), App(fun2, arg2)) =>
+      App(merge(fun1, fun2), merge(arg1, arg2))
+    case _ if expr1 == expr2 =>
+      expr1
+    case _ =>
+      Wildcard
+  }
+
+  def merge(exprs: List[Expr]): Expr = {
+    assert(exprs.nonEmpty)
+    exprs reduce merge
+  }
+
+  def split(ind: Ind) = {
+    val Ind(exprs, fix) = ind
+    val rules = exprs map Imp.split
+
+    val heads = for ((_, suc) <- rules) yield {
+      val Apps(fun: Id, args) = suc
+      Apps(fun, anon(args))
+    }
+
+    val pat = merge(heads)
+
+    val intros = for ((ant, suc) <- rules) yield {
+      val (rec, cond) = ant partition (_ <= pat)
+      Intro(rec, cond, suc)
+    }
+
+    (pat, fix, intros)
   }
 
   def exec(cmd: Cmd) = cmd match {
@@ -18,7 +74,7 @@ object Exec {
 
       for ((id, args, rhs) <- eqs) {
         declare(id.name)
-        
+
         if (args.isEmpty) {
           val res = Eval.norm(rhs, Env.empty)
           define(id, res)
@@ -27,11 +83,11 @@ object Exec {
           define(id, cs)
         }
 
-        if(args.isEmpty) {
-          if(Simp.isSafe(id, rhs))
+        if (args.isEmpty) {
+          if (Simp.isSafe(id, rhs))
             rule(id, Nil, rhs)
         } else {
-          if(Simp.isSafe(id, args, rhs))
+          if (Simp.isSafe(id, args, rhs))
             rule(id, args, rhs)
         }
       }
@@ -51,14 +107,14 @@ object Exec {
         ensure(actual == expected, "test failed, actual: " + actual + ", expected: " + expected)
       }
 
-    /* case Intros(cases, kind) =>
-      val pat = ??? // merge(cases map (_.patx))
-      pat match {
-        case Apps(fun: Var, args) =>
-          fix(fun, pat, kind, cases)
-        case _ =>
-          fail("not an inductive definition: " + pat)
-      } */
+    case ind: Ind =>
+      val (pat, fix, intros) = split(ind)
+      val Apps(id: Id, _) = pat
+      declare(id.name)
+      fixpoint(pat, fix, intros)
+//      println("declaring fixpoint for " + pat + " (" + fix + ")")
+//      for(intro <- intros)
+//        println("  " + intro)
 
     case Thm(assume, show, tactic) =>
       val proof = Prove.prove(assume, show, tactic)

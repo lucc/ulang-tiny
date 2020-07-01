@@ -14,9 +14,7 @@ sealed trait Proof {
   def isClosed: Boolean
 }
 
-
-// DUMMY
-sealed trait Intro
+case class Intro(rec: List[Expr], cond: List[Expr], suc: Expr)
 
 /* case class Intro(pre: List[Expr], post: Expr) {
   def free = pre.free ++ post.free

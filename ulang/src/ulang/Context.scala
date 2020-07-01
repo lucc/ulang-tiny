@@ -92,13 +92,9 @@ class Context extends Syntax[String] {
     }
   }
 
-  def fix(id: Id, pat: Expr, kind: Fix, cases: List[Expr]) {
-    ???
-    /*
-    if (fixs exists (pat <= _._1))
-      sys.error("fixpoint already defined: " + pat)
-    sig += id
-    fixs ++= List((pat, kind, cases)) */
+  def fixpoint(pat: Expr, kind: Fix, intros: List[Intro]) {
+    prevent(inds exists (pat <= _._1), "fixpoint already defined: " + pat)
+    inds ++= List((pat, kind, intros))
   }
 
   def fix(pat: Expr) = {
@@ -107,5 +103,5 @@ class Context extends Syntax[String] {
     val Some((gen, kind, intros)) = fixs find (pat <= _._1)
     (gen, kind, intros) */
   }
-  
+
 }
