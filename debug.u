@@ -55,7 +55,13 @@ inductive
 define
   [] ++ ys == ys;
   (x :: xs) ++ ys == x :: (xs ++ ys);
-  
+
+assume
+  xs: List a;
+show
+  xs ++ [] == xs;
+proof induction xs: List a;
+
 assume
   xs: List a;
 show
