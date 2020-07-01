@@ -99,11 +99,23 @@ object Simp {
     case cs :: rest =>
       { apply(cs, args) } or { apply(fun, rest, args) }
   }
+  
+  def eqns(left: List[Expr], right: List[Expr]): Expr = (left, right) match {
+    case (Nil, Nil) =>
+      True
+    case (arg1 :: left, arg2 :: right) =>
+      and(eqn(arg1, arg2), eqns(left, right))
+  }
 
-  def eqn(left: Expr, right: Expr) = (left, right) match {
+  def eqn(left: Expr, right: Expr): Expr = (left, right) match {
     case _ if left == right => True
-    case (Apps(tag1: Id, _), Apps(tag2: Id, _)) if isTag(tag1) && isTag(tag2) && tag1 != tag2 => False
-    case _ => Eq(left, right)
+    case (Apps(tag1: Id, args1), Apps(tag2: Id, args2)) if isTag(tag1) && isTag(tag2) =>
+      if(tag1 == tag2 && args1.length == args2.length)
+        eqns(args1, args2)
+        else
+          False
+    case _ =>
+      Eq(left, right)
   }
 
   def not(expr: Expr) = expr match {

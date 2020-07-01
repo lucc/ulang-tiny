@@ -102,6 +102,11 @@ object Print {
     case Induct(pat, Least) => "induction " + pat
     case Induct(pat, Greatest) => "coinduction " + pat
   }
+  
+  def print(intro: Intro): String = {
+    val Intro(rec, ant, suc) = intro
+    (rec ++ ant).mkString(" /\\ ") + " ==> " + suc
+  }
 
   def print(pretty: Pretty): String = pretty match {
     case Id(name, index) if isMixfix(name) => "(" + (name __ index) + ")"
@@ -112,6 +117,7 @@ object Print {
     case bn: Case1 => print(bn)
     case goal: Open => print(goal)
     case cmd: Cmd => print(cmd)
+    case intro: Intro => print(intro)
     case tactic: Tactic => print(tactic)
   }
 }

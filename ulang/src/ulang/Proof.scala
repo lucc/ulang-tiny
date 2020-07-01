@@ -14,7 +14,13 @@ sealed trait Proof {
   def isClosed: Boolean
 }
 
-case class Intro(rec: List[Expr], cond: List[Expr], suc: Expr)
+case class Intro(rec: List[Expr], cond: List[Expr], suc: Expr) extends Pretty {
+  val Apps(head: Id, args) = suc
+  def bound = args.free
+  def free = rec.free ++ cond.free ++ suc.free
+  def rename(re: Map[Id, Id]) = Intro(rec rename re, cond rename re, suc rename re)
+  def subst(su: Map[Id, Expr]) = Intro(rec subst su, cond subst su, suc subst su)
+}
 
 /* case class Intro(pre: List[Expr], post: Expr) {
   def free = pre.free ++ post.free
@@ -64,6 +70,7 @@ case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal wit
 
   def isClosed = false
 
+  import context._
   import Simp._
 
   def contains(phi: Expr) = {
@@ -76,8 +83,8 @@ case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal wit
     case _ if this contains not(phi) => Closed
     case Not(phi) => this assert phi
     case And(phi, psi) => this assume phi assume psi
-    case Eq(x: Id, e) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
-    case Eq(e, x: Id) if !(e.free contains x) => copy(eqs = eqs + (x -> e))
+    case Eq(x: Id, e) if isVar(x) && !(e.free contains x) => copy(eqs = eqs + (x -> e))
+    case Eq(e, x: Id) if isVar(x) && !(e.free contains x) => copy(eqs = eqs + (x -> e))
     case _ => copy(rant = phi :: rant)
   }
 

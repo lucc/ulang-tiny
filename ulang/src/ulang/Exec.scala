@@ -73,7 +73,7 @@ object Exec {
       val eqs = defs map split
 
       for ((id, args, rhs) <- eqs) {
-        declare(id.name)
+        declare(id)
 
         if (args.isEmpty) {
           val res = Eval.norm(rhs, Env.empty)
@@ -110,7 +110,7 @@ object Exec {
     case ind: Ind =>
       val (pat, fix, intros) = split(ind)
       val Apps(id: Id, _) = pat
-      declare(id.name)
+      declare(id)
       fixpoint(pat, fix, intros)
 //      println("declaring fixpoint for " + pat + " (" + fix + ")")
 //      for(intro <- intros)

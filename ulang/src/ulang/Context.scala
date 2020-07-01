@@ -8,7 +8,8 @@ import arse._
 
 class Context extends Syntax[String] {
   var data: Set[String] = Set()
-  var sig: Set[String] = Set("==", "not", "\\/", "/\\", "==>", "<=>")
+  var sig: Set[Id] = Set(
+    Eq.op, Not.op, And.op, Or.op, Imp.op, Eqv.op)
 
   var mixfix: Map[String, Fixity] = Map()
 
@@ -27,21 +28,24 @@ class Context extends Syntax[String] {
     name.head.isUpper || (data contains name)
   }
 
+  def isFun(id: Id): Boolean = {
+    (sig contains id)
+  }
+
   def isVar(id: Id): Boolean = {
-    val name = id.name
-    !(sig contains name)
+     !isTag(id) && !isFun(id)
   }
 
   def isMixfix(name: String): Boolean = {
     mixfix contains name
   }
 
-  def declare(name: String) {
-    sig += name
+  def declare(id: Id) {
+    sig += id
   }
 
-  def declare(names: List[String]) {
-    sig ++= names
+  def declare(ids: Iterable[Id]) {
+    sig ++= ids
   }
 
   def notation(names: List[String], fixity: Fixity) {
@@ -58,7 +62,7 @@ class Context extends Syntax[String] {
 
   def define(fun: Id, rhs: Norm) {
     ensure(
-      sig contains fun.name,
+      sig contains fun,
       "constant not decalred: " + fun)
     prevent(
       consts contains fun,
@@ -69,7 +73,7 @@ class Context extends Syntax[String] {
 
   def define(fun: Id, cs: Case) {
     ensure(
-      sig contains fun.name,
+      sig contains fun,
       "function not decalred: " + fun)
 
     if (funs contains fun) {
@@ -81,9 +85,11 @@ class Context extends Syntax[String] {
 
   def rule(fun: Id, args: List[Expr], rhs: Expr) {
     ensure(
-      sig contains fun.name,
+      sig contains fun,
       "function not decalred: " + fun)
 
+    println("declaring rewrite rule")
+    println("  " + Apps(fun, args) + " == " + rhs)
     val cs = Case(args, rhs)
     if (rewrites contains fun) {
       rewrites += fun -> (rewrites(fun) ++ List(cs))
@@ -96,12 +102,4 @@ class Context extends Syntax[String] {
     prevent(inds exists (pat <= _._1), "fixpoint already defined: " + pat)
     inds ++= List((pat, kind, intros))
   }
-
-  def fix(pat: Expr) = {
-    ???
-    /*
-    val Some((gen, kind, intros)) = fixs find (pat <= _._1)
-    (gen, kind, intros) */
-  }
-
 }

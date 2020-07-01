@@ -29,7 +29,9 @@ case object Wildcard extends Expr {
 }
 
 case class Id(name: String, index: Option[Int]) extends Expr with Data with Expr.x {
+  import context._
   def this(name: String) = this(name, None)
+  def free = if(isTag(this) || isFun(this)) Set() else Set(this)
   def fresh(index: Int) = Id(name, Some(index))
 }
 

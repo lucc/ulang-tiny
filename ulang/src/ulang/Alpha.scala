@@ -11,7 +11,6 @@ object Alpha {
   trait x[E, V <: E] extends term[E, V] {
     this: V =>
     def fresh(index: Int): V
-    def free = Set(this)
     def rename(re: Map[V, V]) = re.getOrElse(this, this)
     def subst(su: Map[V, E]) = su.getOrElse(this, this)
   }
