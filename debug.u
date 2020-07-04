@@ -67,3 +67,13 @@ assume
 show
   (xs ++ ys) ++ zs == xs ++ (ys ++ zs);
 proof induction xs: List a;
+
+assume
+  p 0;
+  forall k -> k: Nat /\ p k ==> p (k +1);
+  n: Nat;
+show
+  p n;
+proof
+  induction n: Nat;
+

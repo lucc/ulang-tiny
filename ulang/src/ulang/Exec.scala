@@ -26,7 +26,11 @@ object Exec {
     case _: Id =>
       Wildcard
     case App(fun, arg) =>
-      App(anon(fun), anon(arg))
+      def app(fun: Expr, arg: Expr) = (fun, arg) match {
+        case (Wildcard, Wildcard) => Wildcard
+        case _ => App(fun, arg)
+      }
+      app(anon(fun), anon(arg))
     case _ =>
       fail("not a pattern: " + expr)
   }
@@ -112,9 +116,10 @@ object Exec {
       val Apps(id: Id, _) = pat
       declare(id)
       fixpoint(pat, fix, intros)
-//      println("declaring fixpoint for " + pat + " (" + fix + ")")
-//      for(intro <- intros)
-//        println("  " + intro)
+      println("declaring fixpoint for " + pat + " (" + fix + ")")
+      for (intro <- intros)
+        println("  " + intro)
+      println()
 
     case Thm(assume, show, tactic) =>
       val proof = Prove.prove(assume, show, tactic)

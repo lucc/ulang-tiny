@@ -30,9 +30,11 @@ object Parse {
 
   def id = P(Id(name))
   val id_nonmixfix = P(Id(name_nonmixfix))
-
+  
+  val wild = Wildcard("_")
+  
   val expr: Mixfix[String, Expr] = M(app, name, apps, context)
-  val expr_arg: Parser[Expr] = P(parens(expr_open) | ite | let | lam | ex | all | mtch | id_nonmixfix)
+  val expr_arg: Parser[Expr] = P(parens(expr_open) | ite | let | lam | ex | all | mtch | wild | id_nonmixfix)
   val expr_open = expr | id
 
   val app = Apps(expr_arg ~ expr_arg.*)

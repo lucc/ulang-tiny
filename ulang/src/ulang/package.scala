@@ -22,8 +22,7 @@ package object ulang {
   def prevent(test: Boolean, msg: String) = {
     if (test) fail(msg)
   }
-  
-  
+
   def unwrap[A](a: Option[A], msg: String) = a match {
     case None => fail(msg)
     case Some(a) => a
@@ -119,6 +118,15 @@ package object ulang {
   implicit class SetOps[A](self: Set[A]) {
     def disjoint(that: Set[A]) = {
       (self & that).isEmpty
+    }
+  }
+
+  implicit class ListOps[A](self: List[A]) {
+    def extract(index: Int): (A, List[A]) = {
+      assert(0 <= index && index <= self.length)
+      val rest = (self take index) ++ (self drop (index + 1))
+      val at = self apply index
+      (at, rest)
     }
   }
 }

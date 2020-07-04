@@ -8,16 +8,18 @@ notation
   <=> [infix  1];
 
 define
-  step x y == undefined;
+  o x   == o x;
+  q x   == q x;
+  h x   == h x;
+  f x y == f x y;
+  g x y == g x y;
+  k x y == k x y;
 
 inductive
-  steps x x;
-  step  x y /\ steps y z ==> steps x z;
+  q (f x y) /\ p (k x y) ==> p (g x z);
 
 assume
-  steps y z;
-  steps x y;
-  P k x y z;
+  p (h a);
 show
-  steps x z;
-proof induction steps x y;
+  o a;
+proof induction p _;

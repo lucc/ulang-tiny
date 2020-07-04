@@ -21,7 +21,8 @@ object Prove {
     }
   }
 
-  def elim(intro: Intro, target: Expr, locals: Subst, ant: List[Expr], suc: List[Expr], hyp: Option[Expr]): Proof = {
+  def elim(intro: Intro, target: Expr, ant: List[Expr], suc: List[Expr], hyp: Option[Expr]): Proof = {
+    // all variables of the introduction rule need to be fresh
     val fresh = Expr.fresh(intro.free)
     val _intro = intro rename fresh
     val Intro(rec, pre, post) = _intro
@@ -31,27 +32,28 @@ object Prove {
     assert(fun1 == fun2) // satisifed from the pattern match
     assert(args1.length == args2.length)
 
-    val pairs = (args1 zip args2) ++ locals
-    val eqs = Eq.zip(pairs)
+    val eqs = Eq.zip(args1, args2)
+    val _ant = And(ant)
     val _suc = Or(suc)
 
-    def collapse(left: List[Expr], right: List[Expr]): List[(Id, Expr)] = (left, right) match {
-      case (Nil, Nil) => Nil
-      case ((x: Id) :: left, e :: right) => (x, e) :: collapse(left, right)
-      case (Apps(fun1, args1) :: left, Apps(fun2, args2) :: right) if fun1 == fun2 => collapse(args1 ++ left, args2 ++ right)
-      case (x :: _, e :: _) if x != e => sys.error("can't instantiate inductive premise for: " + x + " == " + e)
-    }
+    // variables that may be generalized in the induction
+    val free = ant.free ++ suc.free ++ target.free
 
     hyp match {
       case Some(pat) =>
         val hyps = rec map {
           prem =>
             val Apps(fun0, args0) = prem
-            val inst = collapse(args2, args0)
-            val hyp = imp(And(ant), _suc)
-            val _hyp = hyp subst inst.toMap
-            _hyp
+            assert(fun0 == fun2)
+            assert(args0.length == args2.length)
+            val req = Eq.zip(args0, args2)
+            val _eqs = And(req)
+            val hyp = All(free.toList, imp(and(_eqs, _ant), _suc))
+            println("premise:    " + prem)
+            println("hypothesis: " + hyp)
+            and(prem, hyp)
         }
+        println()
         auto(eqs ++ ant ++ hyps, _suc, Goal.empty)
       case None =>
         auto(eqs ++ ant, _suc, Goal.empty)
@@ -60,12 +62,17 @@ object Prove {
 
   def induct(pat: Expr, goal: Open, hyp: Boolean): List[Proof] = {
     val Open(eqs, ant, suc) = goal
-    val (found, env, rest) = { find(pat, ant) } or { sys.error("no such formula: " + pat) }
+
+    val pos = ant.indexWhere(_ <= pat)
+    ensure(pos >= 0, "no such formula: " + pat)
+    val (target, rest) = ant extract pos
+
     // println("found inductive focus " + found + " for " + pat + " with " + env)
-    val (gen, kind, intros) = unwrap(inds find (pat <= _._1), "no inductive rule for: " + pat)
+    val (gen, kind, intros) = unwrap(inds find (target <= _._1), "no inductive rule for: " + target)
     ensure(kind == Least, "not an inductive rule: " + kind)
+
     val rec = if (hyp) Some(gen) else None
-    intros map (elim(_, found, eqs ++ env, rest, suc, rec))
+    intros map (elim(_, target, rest ++ Eq.zip(eqs), suc, rec))
   }
 
   def prove(goal: Open, tactic: Tactic): Proof = tactic match {
