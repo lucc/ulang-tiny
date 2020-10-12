@@ -27,8 +27,8 @@ object Print {
     case Lam(cases) => cases.mkString("lambda ", " | ", "")
     case Match(args, cases) => "match " + args.mkString(" ") + " with " + cases.mkString(" | ")
     case Let(eqs, body) => "let " + eqs.mkString(", ") + " in " + body
-    case All(xs, body) => "forall " + xs.mkString(" ") + " -> " + body
-    case Ex(xs, body) => "exists " + xs.mkString(" ") + " -> " + body
+    case All(xs, body) => "forall " + xs.mkString(" ") + ". " + body
+    case Ex(xs, body) => "exists " + xs.mkString(" ") + ". " + body
     case Apps(fun, args) => print(fun, args)
   }
 

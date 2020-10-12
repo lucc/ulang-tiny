@@ -19,7 +19,7 @@ object Parse {
     "let", "in", "match", "with",
     "lambda", "exists", "forall")
 
-  val s = S("""[^ \r\n\t\f()\[\],;:\'\"]+""")
+  val s = S("""[^ \r\n\t\f()\[\].,;:\'\"]+""")
   val c = L("::", ":", "[]")
   val n = s | c
   val name = n filterNot keywords
@@ -49,7 +49,7 @@ object Parse {
   val lam = Lam("lambda " ~ css)
   // val bind = Binder(id_bind ~ cs)
 
-  val quant = id.+ ~ "->" ~ expr
+  val quant = id.+ ~ "." ~ expr
   val ex = Ex("exists" ~ quant)
   val all = All("forall" ~ quant)
 

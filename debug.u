@@ -70,7 +70,7 @@ proof induction xs: List a;
 
 assume
   p 0;
-  forall k -> k: Nat /\ p k ==> p (k +1);
+  forall k. k: Nat /\ p k ==> p (k +1);
   n: Nat;
 show
   p n;
