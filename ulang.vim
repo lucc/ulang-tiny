@@ -23,6 +23,8 @@ syntax keyword ulangLet        let in
 syntax keyword ulangLambda     lambda
 syntax match   ulangLambda     /->\||/
 
+syntax match   ulangComment    /\/\/.*/
+
 highlight link ulangQuantifier ulangInlineConstruct
 highlight link ulangIf         ulangInlineConstruct
 highlight link ulangMatch      ulangInlineConstruct
@@ -42,6 +44,7 @@ highlight link ulangTactic              Identifier
 highlight link ulangStatementTerminator Special
 highlight link ulangPrecedence          String
 highlight link ulangType                Type
+highlight link ulangComment             Comment
 
 let b:current_syntax = "ulang"
 
