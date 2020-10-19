@@ -6,6 +6,10 @@ import arse.implicits._
 object Parse {
   import context._
 
+  /**
+   * Any whitespace seerates tokens, two slashes start a "whitespace token"
+   * that extends to the next newline, effectively implementing comments.
+   */
   implicit object whitespace
     extends Whitespace("(\\s|(//.*\\n))*")
 
@@ -23,6 +27,7 @@ object Parse {
   val c = L("::", ":", "[]")
   val n = s | c
   val name = n filterNot keywords
+  // isMixfix depends on the current context!
   val name_nonmixfix = name filterNot isMixfix
 
   val apps = (name: String, args: List[Expr]) =>
@@ -30,9 +35,9 @@ object Parse {
 
   def id = P(Id(name))
   val id_nonmixfix = P(Id(name_nonmixfix))
-  
+
   val wild = Wildcard("_")
-  
+
   val expr: Mixfix[String, Expr] = M(app, name, apps, context)
   val expr_arg: Parser[Expr] = P(parens(expr_open) | ite | let | lam | ex | all | mtch | wild | id_nonmixfix)
   val expr_open = expr | id
@@ -65,6 +70,17 @@ object Parse {
   val attrs = bracks(attr.*) | ret(Nil)
   val df = Def(expr ~ attrs)
 
+  /**
+   * Generate a parser for a section from a parser for the individial
+   * statements in the section.
+   *
+   * Each section will hold a list of statements (of type A).  The statements
+   * are terminated by semicolons.  The section is started by a keyword.
+   *
+   * @param keyword the keyword from keywords above that starts this section
+   * @param p a parser for an individial statement in the section (terminating
+   * ";" is handled here and not in the p.
+   */
   def section[A](keyword: String, p: Parser[A]): Parser[List[A]] = {
     keyword ~ (p ~ ";").*
   }
