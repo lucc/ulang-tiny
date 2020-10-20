@@ -6,11 +6,22 @@ import scala.io.Source
 
 import arse._
 
+/**
+ * The current execution context of the ulang interpreter
+ *
+ * This class captures the execution context when the ulang interpreter is
+ * run.  It holds several mutable variables as the context can evolve over
+ * time.
+ */
 class Context extends Syntax[String] {
   var data: Set[String] = Set()
   var sig: Set[Id] = Set(
     Eq.op, Not.op, And.op, Or.op, Imp.op, Eqv.op)
 
+  /**
+   * mixfix is the union of prefix_ops, postfix_ops and infix_ops but is
+   * managed seperatly (for pperformance reasons?)
+   */
   var mixfix: Map[String, Fixity] = Map()
 
   var prefix_ops: Map[String, Int] = Map()
@@ -23,6 +34,11 @@ class Context extends Syntax[String] {
   var inds: List[(Expr, Fix, List[Intro])] = List()
   var rewrites: Map[Id, List[Case]] = Map()
 
+  /**
+   * Test if an identifier is a tag
+   *
+   * Tags are the "pseudo types" we use inside the unitpe of ulang
+   */
   def isTag(id: Id): Boolean = {
     val name = id.name
     name.head.isUpper || (data contains name)
@@ -32,6 +48,10 @@ class Context extends Syntax[String] {
     (sig contains id)
   }
 
+  /**
+   * Every identifier that is not in the currently defined signature is
+   * considered a variable
+   */
   def isVar(id: Id): Boolean = {
      !isTag(id) && !isFun(id)
   }
