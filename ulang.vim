@@ -13,7 +13,8 @@ set cpo&vim
 syntax keyword ulangCommand define eval test data notation inductive coinductive proof
 syntax keyword ulangCommand2 assume show
 "syntax keyword ulangFixity infix infixr infixl prefix postfix
-syntax keyword ulangTactic induction cases have
+syntax keyword ulangTactic induction cases have case
+syntax keyword ulangCommand3 qed use
 
 syntax keyword ulangQuantifier forall exists
 syntax match   ulangQuantifier /\./
@@ -25,7 +26,7 @@ syntax match   ulangLambda     /->\||/
 
 syntax match   ulangComment    /\/\/.*/
 
-highlight link ulangQuantifier ulangInlineConstruct
+highlight link ulangQuantifier Constant
 highlight link ulangIf         ulangInlineConstruct
 highlight link ulangMatch      ulangInlineConstruct
 highlight link ulangLet        ulangInlineConstruct
@@ -41,6 +42,7 @@ highlight link ulangCommand             Keyword
 highlight link ulangCommand2            Keyword
 highlight link ulangInlineConstruct     Identifier
 highlight link ulangTactic              Identifier
+highlight link ulangCommand3            Keyword
 highlight link ulangStatementTerminator Special
 highlight link ulangPrecedence          String
 highlight link ulangType                Type
