@@ -22,9 +22,12 @@ syntax keyword ulangIf         if then else
 syntax keyword ulangMatch      match with
 syntax keyword ulangLet        let in
 syntax keyword ulangLambda     lambda
-syntax match   ulangLambda     /->\||/
+syntax match   ulangLambda     /\s\zs->\||/
 
-syntax match   ulangComment    /\/\/.*/
+syntax region  ulangComment    start='//' end='$' contains=ulangTODO
+syntax case ignore
+syntax keyword ulangTODO       contained todo xxx fixme
+syntax case match
 
 highlight link ulangQuantifier Constant
 highlight link ulangIf         ulangInlineConstruct
@@ -47,6 +50,7 @@ highlight link ulangStatementTerminator Special
 highlight link ulangPrecedence          String
 highlight link ulangType                Type
 highlight link ulangComment             Comment
+highlight link ulangTODO                TODO
 
 let b:current_syntax = "ulang"
 
