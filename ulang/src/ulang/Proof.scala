@@ -10,6 +10,8 @@ sealed trait Pos { def unary_!(): Pos }
 case object Ant extends Pos { def unary_! = Suc }
 case object Suc extends Pos { def unary_! = Ant }
 
+// more formally this should be called a derivation, if it is closed it is a
+// proof
 sealed trait Proof {
   def isClosed: Boolean
 }
@@ -52,16 +54,20 @@ sealed trait Goal extends Proof {
   }
 }
 
+// blatt des Bweises
 case object Closed extends Goal {
   def isClosed = true
   def assume(phi: Expr) = this
   def assert(phi: Expr) = this
 }
 
+// damit bauen wir den baum
 case class Step(prems: List[Proof], concl: Open, tactic: Tactic) extends Proof {
   def isClosed = prems forall (_.isClosed)
 }
 
+// blatt des Bweises
+// ant und suc sind aus dem sequence calkül
 case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal with Pretty {
   def pre = Eq.zip(eqs) ::: ant
   def ant = rant.reverse
@@ -81,10 +87,11 @@ case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal wit
     case True => this
     case False => Closed
     case _ if this contains not(phi) => Closed
-    case Not(phi) => this assert phi
+    case Not(phi) => this assert phi   // klassische logic
     case And(phi, psi) => this assume phi assume psi
     case Eq(x: Id, e) if isVar(x) && !(e.free contains x) => copy(eqs = eqs + (x -> e))
     case Eq(e, x: Id) if isVar(x) && !(e.free contains x) => copy(eqs = eqs + (x -> e))
+    // all & exists fehelen noch
     case _ => copy(rant = phi :: rant)
   }
 
@@ -92,9 +99,10 @@ case class Open(eqs: Subst, rant: List[Expr], rsuc: List[Expr]) extends Goal wit
     case False => this
     case True => Closed
     case _ if this contains phi => Closed
-    case Not(phi) => this assume phi
+    case Not(phi) => this assume phi   // klassische logic
     case Imp(phi, psi) => this assume phi assert psi
     case Or(phi, psi) => this assert phi assert psi
+    // all & exists fehelen noch
     case _ => copy(rsuc = phi :: rsuc)
   }
 }

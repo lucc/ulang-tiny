@@ -4,7 +4,7 @@ import arse._
 
 sealed trait Expr extends Expr.term with Pretty {
   def free: Set[Id]
-  
+
   def <=(that: Expr): Boolean = (this, that) match {
     case (_, Wildcard) =>
       true
