@@ -1,0 +1,14 @@
+test 1 + 1 == 2;
+
+define
+  1 == 0 +1;
+  2 == 1 +1;
+  m + 0 == m;
+  m + (n +1) == (m + n) +1;
+
+data 0 +1;
+
+notation
+  == [infix 6];
+  +  [infix 7];
+  +1 [postfix 8];

@@ -1,0 +1,28 @@
+data 0 +1
+     [] ::;
+notation
+  +1  [postfix 40];
+  :   [infix 30];
+  ==  [infix 30];
+  \/  [infix 20];
+  /\  [infix 20];
+  ==> [infix 10];
+  ::  [infixr 35];
+
+inductive
+  0: Nat;
+  k: Nat ==> k +1: Nat;
+
+notation ++ [infix 10];
+eval a ++ b ;
+
+//inductive
+//  []: List a;
+//  x: a /\ xs: List a ==> (x :: xs): List a;
+//
+//inductive
+//  [] : (Arr 0 a);
+//  (x: a) /\ (n: Nat) /\ (xs: (Arr n a)) ==> ((x :: xs): (Arr (n +1) a));
+//
+//eval
+//  (Foo :: []) : (0 +1) ;

@@ -1,0 +1,47 @@
+notation
+  :  [infix 6];
+  == != [infix 6];
+  not [prefix 5];
+  /\  [infixr 4];
+  \/  [infixr 3];
+  ==> [infixr 2];
+  <=> [infix  1];
+
+data 0 +1;
+notation
+  +1  [postfix 11];
+  + - [infixl   8];
+  *   [infixl   9];
+  < <= > >= [infix 6];
+define
+  m + 0 == m;
+  m + (n +1) == (m + n) +1;
+  m * 0 == 0;
+  m * (n +1) == (m * n) + m;
+  (m < 0) == False;
+  (0 < n +1) == True;
+  (m +1 < n +1) == (m < n);
+inductive
+  0: Nat;
+  n: Nat ==> n +1: Nat;
+coinductive
+  0: NatInf;
+  n: NatInf ==> n +1: NatInf;
+
+
+show n : Nat ==> p n;
+proof induction n: Nat;
+//show n : Nat ==> p n;
+//proof coinduction n: Nat;
+
+show n : Nat ==> p n x;
+proof induction n: Nat;
+//show n : Nat ==> p n;
+//proof coinduction n: Nat;
+
+show n:Nat ==> n:NatInf;
+proof induction n: Nat;
+
+assume n:Nat;
+show n:NatInf;
+proof induction n: Nat;

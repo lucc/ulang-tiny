@@ -1,0 +1,16 @@
+notation
+  == != ==> [infix 6];
+data 1 2 3;
+
+define
+  f 1 == 2;
+  f x == f;
+
+eval
+  f 1;
+  f 2 2 1 3 ;
+
+  //A == B;
+  A ==> B;
+  f (a ==> b);
+
