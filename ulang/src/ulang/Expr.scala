@@ -13,6 +13,61 @@ sealed trait Expr extends Expr.term with Pretty {
     case _ =>
       this == that
   }
+
+  /** Check if this expression represents a formula */
+  def isFormula: Boolean = this match {
+    case True => true
+    case False => true
+    case Zero => false
+    // technically we could have a let statement that returns a formula
+    case Let(_, _) => false
+    case Match(_, _) => false
+    // technically we could have a lamda expression that returns a formula
+    // when applied correctly
+    case Lam(_) => false
+    case Bind(_, _, body) => body.isFormula
+    case Not(e) => e.isFormula
+    case Or(e1, e2) => e1.isFormula && e2.isFormula
+    case And(e1, e2) => e1.isFormula && e2.isFormula
+    case Imp(e1, e2) => e1.isFormula && e2.isFormula
+    case Eqv(e1, e2) => e1.isFormula && e2.isFormula
+    case App(fun, arg) => fun.isPredicate && !arg.isFormula
+  }
+
+  /** Check if this expression is a predicate name */
+  def isPredicate: Boolean = this match {
+    case Id(_, _) => true
+    case _ => false
+  }
+
+  def isProofTerm: Boolean = this match{
+    case Pair(e1, e2) =>
+      (e1.isProofTerm && e2.isProofTerm) || // proof term for AND
+      (e2.isProofTerm) // FIXME e1 should be the witness for an ∃ proof
+    case Left(e) => e isProofTerm
+    case Right(e) => e isProofTerm
+    case Lam(cases) => cases.forall(_.body.isProofTerm) // FIXME this is not really correct
+    case _ => false
+  }
+
+  /** Check if this expression represents a proof for the given formula
+   *
+   * We follow the description in Schwichtenberg & Wainer p314
+   */
+  def proves(e: Expr): Boolean = {
+    if (this.isProofTerm && e.isFormula) {
+      (this, e) match {
+        case (Pair(p1, p2), And(f1, f2)) => p1.proves(f1) && p2.proves(f2)
+        case (Left(p), Or(f, _)) => p proves f
+        case (Right(p), Or(_, f)) => p proves f
+        //case (Pair(p1, p2), Ex(f1, f2)) => p1.proves(f1) && p2.proves(f2)
+        case (Lam(cases), Imp(f1, f2)) => ???  // TODO
+        // ... TODO
+      }
+    } else {
+      false
+    }
+  }
 }
 
 object Expr extends Alpha[Expr, Id] {
