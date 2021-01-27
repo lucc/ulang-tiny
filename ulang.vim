@@ -37,7 +37,7 @@ highlight link ulangLambda     ulangInlineConstruct
 
 syntax match ulangStatementTerminator /;/
 syntax match ulangPrecedence /\[\(prefix\|infix[rl]\?\|postfix\)\s\+\d\+\]/
-syntax match ulangType /[A-Z][a-z]*/
+syntax match ulangType /\<[A-Z][A-Za-z]*/
 
 " Link the defined syntax groups to predefined groups so that they will
 " actually be highlighted.
