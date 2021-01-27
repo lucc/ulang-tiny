@@ -1,0 +1,9 @@
+eval
+  CamelCase A;
+
+define
+  camelCase A == B;
+
+eval
+  camelCase A;
+  CamelCase A;
