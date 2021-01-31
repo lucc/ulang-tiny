@@ -17,14 +17,19 @@ object Parse {
   def bracks[A](p: Parser[A]) = "[" ~ p ~ "]"
 
   val keywords = Set(
-    "define", "data", "notation", "eval", "test", "assume", "show", "proof", "inductive", "coinductive",
-    ",", ";", "(", ")", "{", "}", "[", "]", "->", "|",
+    "define", "data", "notation", "eval", "test", "assume", "show", "proof",
+    "inductive", "coinductive",
+    ";", "(", ")", "{", "}", "[", "]", "->", "|",
     "if", "then", "else",
     "let", "in", "match", "with",
     "lambda", "exists", "forall")
 
   val s = S("""[^ \r\n\t\f()\[\].,;:\'\"]+""")
-  val c = L("::", ":", "[]")
+  /**
+   * These special symbols do not need to be sourrounded by whitespace in
+   * order to be recognized as individual tokens.
+   */
+  val c = L("::", ":", "[]", ",")
   val n = s | c
   val name = n filterNot keywords
   // isMixfix depends on the current context!
@@ -46,7 +51,7 @@ object Parse {
   val ite = Ite("if" ~ expr ~ "then" ~ expr ~ "else" ~ expr)
 
   val eq = Case1(expr_arg ~ "=" ~ expr)
-  val eqs = eq ~+ ","
+  val eqs = eq ~+ ";"
   val let = Let("let" ~ eqs ~ "in" ~ expr)
 
   val cs = Case(expr_arg.+ ~ "->" ~ expr)
