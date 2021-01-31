@@ -22,7 +22,8 @@ syntax keyword ulangIf         if then else
 syntax keyword ulangMatch      match with
 syntax keyword ulangLet        let in
 syntax keyword ulangLambda     lambda
-syntax match   ulangLambda     /\s\zs->\||/
+syntax match   ulangLambda     /\s\zs|\ze\s/
+syntax match   ulangLambda     /\s\zs->\ze\s/
 
 syntax region  ulangComment    start='//' end='$' contains=ulangTODO
 syntax case ignore
