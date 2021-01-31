@@ -1,9 +1,7 @@
 name: Run the test suite
 on:
   push:
-    branches: [ develop, master ]
-  pull_request:
-    branches: [ develop, master ]
+    branches: "*"
 jobs:
   build:
     runs-on: ubuntu-latest
