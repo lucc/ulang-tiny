@@ -9,4 +9,12 @@ object ulang extends ScalaModule {
     }
 
     def ivyDeps = Agg(ivy"com.lihaoyi::sourcecode:0.2.0")
+
+    object test extends Tests {
+        def ivyDeps = Agg(
+            ivy"org.scalactic::scalactic:3.1.1",
+            ivy"org.scalatest::scalatest:3.1.1"
+        )
+        def testFrameworks = Seq("org.scalatest.tools.Framework")
+    }
 }
