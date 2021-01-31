@@ -72,29 +72,28 @@ sealed trait Expr extends Expr.term with Pretty {
 
 object Expr extends Alpha[Expr, Id] {
   /** Check a proof with context
+   *
+   *  TODO should we use Subst instead of Map[Id, Expr]?  They are the same
+   *  type but the name Subst does not fit here.
    */
-  def check(ctx: List[(Expr, Expr)], proof: Expr, goal: Expr): Boolean = {
-    if (ctx.contains((proof, goal))) {
-      true
-    } else {
-      (proof, goal) match {
-        case (_, False) => false
-        case (_, True) => true // TODO do we want to define one "trivial" proof term?
-        case (Pair(p1, p2), And(f1, f2)) => check(ctx, p1, f1) &&
-                                            check(ctx, p2, f2)
-        case (Left(p), Or(f, _)) => check(ctx, p, f)
-        case (Right(p), Or(_, f)) => check(ctx, p, f)
-        case (Pair(w@Id(_, _), p), Bind(Ex, List(v), body)) =>  // only for one variable
-          check(ctx, p, body.rename(Map(v -> w)))
-        case (p@Lam(_), Bind(All, List(v), body)) =>  // only for one variable
-          check(ctx, App(p, ???), ???)
-        case (p@Lam(_), Imp(f1, f2)) =>
-          check((Assumption, f1) :: ctx, App(p, Assumption), f2)
-          // ... TODO is there something missing?  <=> for example.  Why do we
-          // have all these syntactic sugar things?
-      }
+  def check(ctx: Map[Id, Expr], proof: Expr, goal: Expr): Boolean =
+    (proof, goal) match {
+      case (_, True) => true // TODO do we want to define one "trivial" proof term?
+      case (id@Id(_, _), g) => ctx.contains(id) && ctx(id) == g
+      case (_, False) => false
+      case (Pair(p1, p2), And(f1, f2)) => check(ctx, p1, f1) &&
+      check(ctx, p2, f2)
+      case (Left(p), Or(f, _)) => check(ctx, p, f)
+      case (Right(p), Or(_, f)) => check(ctx, p, f)
+      case (Pair(w@Id(_, _), p), Bind(Ex, List(v), body)) =>  // only for one variable
+        check(ctx, p, body.rename(Map(v -> w)))
+      case (p@Lam(_), Bind(All, List(v), body)) =>  // only for one variable
+        check(ctx, App(p, ???), ???)
+      case (p@Lam(_), Imp(f1, f2)) =>
+        check(ctx.updated(Assumption, f1), App(p, Assumption), f2)
+        // ... TODO is there something missing?  <=> for example.  Why do we
+        // have all these syntactic sugar things?
     }
-  }
 }
 
 sealed trait Val extends Pretty
