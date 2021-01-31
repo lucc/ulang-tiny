@@ -7,7 +7,7 @@ object Parse {
   import context._
 
   /**
-   * Any whitespace seerates tokens, two slashes start a "whitespace token"
+   * Any whitespace separates tokens, two slashes start a "whitespace token"
    * that extends to the next newline, effectively implementing comments.
    */
   implicit object whitespace
@@ -26,7 +26,7 @@ object Parse {
 
   val s = S("""[^ \r\n\t\f()\[\].,;:\'\"]+""")
   /**
-   * These special symbols do not need to be sourrounded by whitespace in
+   * These special symbols do not need to be surrounded by whitespace in
    * order to be recognized as individual tokens.
    */
   val c = L("::", ":", "[]", ",")
@@ -76,14 +76,14 @@ object Parse {
   val df = Def(expr ~ attrs)
 
   /**
-   * Generate a parser for a section from a parser for the individial
+   * Generate a parser for a section from a parser for the individual
    * statements in the section.
    *
    * Each section will hold a list of statements (of type A).  The statements
    * are terminated by semicolons.  The section is started by a keyword.
    *
    * @param keyword the keyword from keywords above that starts this section
-   * @param p a parser for an individial statement in the section (terminating
+   * @param p a parser for an individual statement in the section (terminating
    * ";" is handled here and not in the p.
    */
   def section[A](keyword: String, p: Parser[A]): Parser[List[A]] = {
