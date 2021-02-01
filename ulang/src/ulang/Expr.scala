@@ -72,6 +72,17 @@ sealed trait Expr extends Expr.term with Pretty {
   }
 }
 
+/**
+ * A pattern matching abbreviation for lambda expressions with just one
+ * pattern and one argument.
+ */
+object Lam1 {
+  def unapply(e: Expr) = e match {
+    case Lam(List(Case(List(pattern), body))) => Some((pattern, body))
+    case _ => None
+  }
+}
+
 object Expr extends Alpha[Expr, Id] {
   /** Check a proof with context
    *
