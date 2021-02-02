@@ -51,25 +51,6 @@ sealed trait Expr extends Expr.term with Pretty {
     case _ => false
   }
 
-  /** Check if this expression represents a proof for the given formula
-   *
-   * We follow the description in Schwichtenberg & Wainer p314
-   */
-  def proves(e: Expr): Boolean = {
-    if (this.isProofTerm && e.isFormula) {
-      (this, e) match {
-        case (Pair(p1, p2), And(f1, f2)) => p1.proves(f1) && p2.proves(f2)
-        // FIXME name confilict with the arse fixity constructors
-        //case (Left(p), Or(f, _)) => p proves f
-        //case (Right(p), Or(_, f)) => p proves f
-        //case (Pair(p1, p2), Ex(f1, f2)) => p1.proves(f1) && p2.proves(f2)
-        case (Lam(cases), Imp(f1, f2)) => ???  // TODO
-        // ... TODO
-      }
-    } else {
-      false
-    }
-  }
 }
 
 /**
