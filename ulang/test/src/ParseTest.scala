@@ -2,7 +2,10 @@ import org.scalatest.funspec.AnyFunSpec
 import ulang.{Parse => p}
 import arse.Input
 
-class ParseTest extends AnyFunSpec {
+class ParseCommentsTest extends AnyFunSpec {
+  // We put these test in a seerate class in order to seerate the imports for
+  // the implicit whitespace handling.  This class should explicitly test some
+  // features of this whitespace parser.
 
   def mkInput(string: String) = new Input(string, 0, p.whitespace)
 
@@ -12,10 +15,12 @@ class ParseTest extends AnyFunSpec {
         val input = mkInput("//eval Foo;\n")
         assert(p.script.parseAll(input) == Nil)
       }
+
       it("part two") {
-        val input1 = mkInput("//eval Foo;\neval Foo;")
-        val input2 = mkInput("eval Foo;")
-        assert(p.script.parseAll(input1) == p.script.parseAll(input2))
+        val input = mkInput("//eval Foo;\neval Foo;")
+        val actual = p.script.parseAll(input)
+        val expected = List(ulang.Evals(List(ulang.Id("Foo"))))
+        assert(actual == expected)
       }
     }
   }
