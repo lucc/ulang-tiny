@@ -16,5 +16,8 @@ object ulang extends ScalaModule {
             ivy"org.scalatest::scalatest:3.1.1"
         )
         def testFrameworks = Seq("org.scalatest.tools.Framework")
+        def unmanagedClasspath = T {
+          Agg.from(os.list(millSourcePath / os.up / "lib").map(PathRef(_)))
+        }
     }
 }
