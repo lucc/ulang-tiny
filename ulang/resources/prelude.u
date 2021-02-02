@@ -5,6 +5,9 @@
 // changed by user code.
 
 // These are the logical connectives
+data
+  == != not /\ \/ ==> <=>;
+
 notation
   ==  [infix 6];
   !=  [infix 6];
@@ -16,3 +19,13 @@ notation
 
 define
   (a <=> b) == ((a ==> b) /\ (b ==> a));
+
+// predefined functions
+notation
+  && || [infix 7];
+
+define
+  True && x == x;
+  False && _ == False;
+  True || _ == True;
+  False || x == x;
