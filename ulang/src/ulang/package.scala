@@ -9,11 +9,7 @@ package object ulang {
   implicit def toCases(cases: List[Case]) = new Cases(cases)
   implicit def toCases1(cases: List[Case1]) = new Cases1(cases)
 
-  object context extends Context /* {
-    // convenience ...
-    notation(List("==", "!="), Infix(Non, 6))
-    notation(List("==>") Infix(Non, 4))
-  } */
+  object context extends Context
 
   def fail(msg: String) = {
     sys.error(msg)
