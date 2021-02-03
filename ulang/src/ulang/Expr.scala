@@ -58,7 +58,7 @@ sealed trait Expr extends Expr.term with Pretty {
  */
 object Lam1 {
   def unapply(e: Expr) = e match {
-    case Lam(List(Case(List(pattern), body))) => Some((pattern, body))
+    case Lam(List(Case(List(id@Id(_, _)), body))) => Some((id, body))
     case _ => None
   }
 }
@@ -66,26 +66,44 @@ object Lam1 {
 object Expr extends Alpha[Expr, Id] {
   /** Check a proof with context
    *
+   *  This implements checking of proofs according to the
+   *  Brouwer-Heyting-Kolmogorov interpretation of proofs (see Schwichtenberg
+   *  & Wainer "Proofs and Computations", 2012, CUP, p313-314).
+   *
+   *  If a proof should be allowed to use axioms, they need to be present in
+   *  the context.
+   *
    *  TODO should we use Subst instead of Map[Id, Expr]?  They are the same
    *  type but the name Subst does not fit here.
    */
-  def check(ctx: Map[Id, Expr], proof: Expr, goal: Expr): Boolean =
+  def check(context: Map[Id, Expr], proof: Expr, goal: Expr): Boolean =
     (proof, goal) match {
+
+      // Proof by assumption has to be the first case, this makes it possible
+      // to match against any goal (even "False").
+      case (id@Id(_, _), goal) => context.contains(id) && context(id) == goal
+
+      // special cases
       case (_, True) => true // TODO do we want to define one "trivial" proof term?
-      case (id@Id(_, _), g) => ctx.contains(id) && ctx(id) == g
       case (_, False) => false
-      case (Pair(p1, p2), And(f1, f2)) => check(ctx, p1, f1) &&
-                                          check(ctx, p2, f2)
-      case (LeftE(p), Or(f, _)) => check(ctx, p, f)
-      case (RightE(p), Or(_, f)) => check(ctx, p, f)
+
+      // propositional logic
+      case (Pair(p1, p2), And(f1, f2)) => check(context, p1, f1) &&
+                                          check(context, p2, f2)
+      case (LeftE(p), Or(f, _)) => check(context, p, f)
+      case (RightE(p), Or(_, f)) => check(context, p, f)
+      case (Lam1(id, body), Imp(f1, f2)) =>
+        // FIXME do I need to generate a new name instead of id?  If I use id
+        // itself do I need to rename then?  I think no & no.
+        check(context.updated(id, f1), body.rename(Map(id -> id)), f2)
+
+      // predicate logic
       case (Pair(w@Id(_, _), p), Bind(Ex, List(v), body)) =>  // only for one variable
-        check(ctx, p, body.rename(Map(v -> w)))
-      case (p@Lam(_), Bind(All, List(v), body)) =>  // only for one variable
-        check(ctx, App(p, ???), ???)
-      case (p@Lam(_), Imp(f1, f2)) =>
-        check(ctx.updated(Assumption, f1), App(p, Assumption), f2)
-        // ... TODO is there something missing?  <=> for example.  Why do we
-        // have all these syntactic sugar things?
+        check(context, p, body.rename(Map(v -> w)))
+      case (Lam1(id, body1), Bind(All, List(v), body2)) =>  // only for one variable
+        // FIXME do I need to generate a new name instead of id?  If I use id
+        // itself do I need to rename on body1 then?  I think no & no.
+        check(context, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
     }
 }
 
