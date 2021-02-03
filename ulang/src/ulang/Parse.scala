@@ -101,12 +101,22 @@ object Parse {
   val assume = section("assume", expr)
   val show = "show" ~ expr ~ ";"
 
+  /**
+   * The parser for data blocks has the side effect of storing the defined
+   * data in the global context.  The mapped function is just the identity
+   * with the intended side effect.
+   */
   def data_declare = name.+ map {
     names =>
       data ++= names
       names
   }
 
+  /**
+   * The parser for notation blocks has the side effect of storing the defined
+   * fixity in the global context.  The mapped function is just the identity
+   * with the intended side effect.
+   */
   val notation_declare = fix map {
     case (names, fixity) =>
       context notation (names, fixity)

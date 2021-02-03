@@ -29,3 +29,7 @@ define
   False && _ == False;
   True || _ == True;
   False || x == x;
+
+// tuples as nested pairs
+notation
+  , [infixr 0];

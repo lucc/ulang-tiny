@@ -94,7 +94,7 @@ package object ulang {
   }
 
   object Eqv extends Binary("<=>")
-  object Pair extends Binary("Pair")
+  object Pair extends Binary(",")
   //object Left extends Unary("Left")
   //object Right extends Unary("Right")
   object Assumption extends Id("Assumption")

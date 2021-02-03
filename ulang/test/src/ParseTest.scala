@@ -107,4 +107,21 @@ class ParseTest extends AnyFunSpec {
       assert(actual == Lam(List(Case(List(Id("x")), Id("x")))))
     }
   }
+
+  describe("parser state") {
+    import ulang.{Notation, Evals, App, Id}
+    import arse.{Infix, Non}
+    it("without noatation + is just an Id") {
+      val actual = p.script.parseAll("eval A + B;")
+      val expected = List(Evals(List(App(App(Id("A"), Id("+")), Id("B")))))
+      assert(actual == expected)
+    }
+    it("fixity definitions are carried in a parse context") {
+      val List(actual_n, actual_e) = p.script.parseAll("notation + [infix 10]; eval A + B;")
+      val expected_n = Notation(List((List("+"), Infix(Non, 10))))
+      val expected_e = Evals(List(App(App(Id("+"), Id("A")), Id("B"))))
+      assert(actual_n == expected_n)
+      assert(actual_e == expected_e)
+    }
+  }
 }
