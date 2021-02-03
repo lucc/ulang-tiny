@@ -14,7 +14,7 @@ object Print {
     case (List(arg), _: Postfix) => "(" + arg + " " + name + ")"
     case (List(arg1, arg2), _: Infix) => "(" + arg1 + " " + name + " " + arg2 + ")"
   }
-  
+
   def print(fun: Pretty, args: List[Pretty]): String = fun match {
     case Id(name, None) if isMixfix(name) =>
       print(name, args, mixfix(name))
@@ -34,11 +34,12 @@ object Print {
 
   def print(cmd: Cmd): String = cmd match {
     case Defs(defs) => ???
-    case Datas(names) => ???
-    case Notation(fixs) => ???
-    case Evals(exprs) => ???
+    case Datas(names) => "data " + names.mkString(" ") + ";"
+    case Notation(fixs) => "notation " + fixs.mkString(";") + ";"
+    case Evals(exprs) => "eval " + exprs.mkString(";") + ";"
     case Ind(cases, kind) => ???
     case Thm(assume, show, _) => print(assume, List(show))
+    case Tests(tests) => "test " + tests.mkString(";") + ";"
   }
 
   def print(any: Val): String = any match {
@@ -103,7 +104,7 @@ object Print {
     case Induct(pat, Least) => "induction " + pat
     case Induct(pat, Greatest) => "coinduction " + pat
   }
-  
+
   def print(intro: Intro): String = {
     val Intro(rec, ant, suc) = intro
     (rec ++ ant).mkString(" /\\ ") + " ==> " + suc
