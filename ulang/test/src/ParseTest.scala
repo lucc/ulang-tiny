@@ -83,11 +83,20 @@ class ParseTest extends AnyFunSpec {
   }
 
   describe("match expressions") {
-    import ulang.{Match, Case, Id, App}
+    import ulang.{Match, Case, Id, App, Let, Case1}
     it("can match one case") {
       val actual = p.mtch.parse("match x with A -> B")
       assert(actual == Match(List(Id("x")),
                              List(Case(List(Id("A")), Id("B")))))
+    }
+    it("can be used in let bindings") {
+      val actual = p.let.parse("let a = match x with A -> B | C -> D in a")
+      val expected = Let(List(Case1(Id("a"),
+                                    Match(List(Id("x")),
+                                          List(Case(List(Id("A")), Id("B")),
+                                               Case(List(Id("C")), Id("D")))))),
+                         Id("a"))
+      assert(actual == expected)
     }
   }
 
