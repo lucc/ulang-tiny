@@ -44,9 +44,8 @@ sealed trait Expr extends Expr.term with Pretty {
     case Pair(e1, e2) =>
       (e1.isProofTerm && e2.isProofTerm) || // proof term for AND
       (e2.isProofTerm) // FIXME e1 should be the witness for an ∃ proof
-    // FIXME name confilict with the arse fixity constructors
-    //case Left(e) => e isProofTerm
-    //case Right(e) => e isProofTerm
+    case LeftE(e) => e isProofTerm
+    case RightE(e) => e isProofTerm
     case Lam(cases) => cases.forall(_.body.isProofTerm) // FIXME this is not really correct
     case _ => false
   }
@@ -76,10 +75,9 @@ object Expr extends Alpha[Expr, Id] {
       case (id@Id(_, _), g) => ctx.contains(id) && ctx(id) == g
       case (_, False) => false
       case (Pair(p1, p2), And(f1, f2)) => check(ctx, p1, f1) &&
-      check(ctx, p2, f2)
-      // FIXME name confilict with the arse fixity constructors
-      //case (Left(p), Or(f, _)) => check(ctx, p, f)
-      //case (Right(p), Or(_, f)) => check(ctx, p, f)
+                                          check(ctx, p2, f2)
+      case (LeftE(p), Or(f, _)) => check(ctx, p, f)
+      case (RightE(p), Or(_, f)) => check(ctx, p, f)
       case (Pair(w@Id(_, _), p), Bind(Ex, List(v), body)) =>  // only for one variable
         check(ctx, p, body.rename(Map(v -> w)))
       case (p@Lam(_), Bind(All, List(v), body)) =>  // only for one variable

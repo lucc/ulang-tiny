@@ -95,8 +95,8 @@ package object ulang {
 
   object Eqv extends Binary("<=>")
   object Pair extends Binary(",")
-  //object Left extends Unary("Left")
-  //object Right extends Unary("Right")
+  object LeftE extends Unary("Left")
+  object RightE extends Unary("Right")
   object Assumption extends Id("Assumption")
 
   def group[A, B](xs: List[(A, B)]) = {
