@@ -80,11 +80,14 @@ object Expr extends Alpha[Expr, Id] {
     (proof, goal) match {
 
       // Proof by assumption has to be the first case, this makes it possible
-      // to match against any goal (even "False").
-      case (id@Id(_, _), goal) => context.contains(id) && context(id) == goal
+      // to match against any goal (even "False").  If the given goal is not
+      // in the context we fall through to the other cases.
+      case (id@Id(_, _), goal)
+        if context.contains(id) && context(id) == goal
+          => true
 
       // special cases
-      case (_, True) => true // TODO do we want to define one "trivial" proof term?
+      case (True, True) => true // we use "True" to represent a trivial proof
       case (_, False) => false
 
       // propositional logic
