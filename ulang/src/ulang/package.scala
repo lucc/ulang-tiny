@@ -9,7 +9,23 @@ package object ulang {
   implicit def toCases(cases: List[Case]) = new Cases(cases)
   implicit def toCases1(cases: List[Case1]) = new Cases1(cases)
 
-  object context extends Context
+  object context extends Context {
+    /**
+     * Reset the context to its initial state, needed for tests
+     */
+    def clear() {
+      data = Set()
+      sig = Set(Eq.op, Not.op, And.op, Or.op, Imp.op, Eqv.op)
+      mixfix = Map()
+      prefix_ops = Map()
+      postfix_ops = Map()
+      infix_ops = Map()
+      funs = Map()
+      consts = Map()
+      inds = List()
+      rewrites = Map()
+    }
+  }
 
   def fail(msg: String) = {
     sys.error(msg)
