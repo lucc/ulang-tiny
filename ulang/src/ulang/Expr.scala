@@ -83,7 +83,7 @@ object Expr extends Alpha[Expr, Id] {
       // Proof by assumption has to be the first case, this makes it possible
       // to match against any goal (even "False").  If the given goal is not
       // in the context we fall through to the other cases.
-      case (id@Id(_, _), goal)
+      case (id: Id, goal)
         if context.contains(id) && context(id) == goal
           => true
 
@@ -99,17 +99,19 @@ object Expr extends Alpha[Expr, Id] {
       case (Lam1(id, body), Imp(f1, f2)) =>
         // FIXME do I need to generate a new name instead of id?  If I use id
         // itself do I need to rename then?  I think no & no.
+        // TODO How can I evaluate the body here?  Eval.norm produces a Norm
+        // which is not an Expr.
         check(context.updated(id, f1), body.rename(Map(id -> id)), f2)
 
       // predicate logic
-      case (Pair(w@Id(_, _), p), Bind(Ex, List(v), body)) =>  // only for one variable
+      case (Pair(w: Id, p), Bind(Ex, List(v), body)) =>  // only for one variable
         check(context, p, body.rename(Map(v -> w)))
       case (Lam1(id, body1), Bind(All, List(v), body2)) =>  // only for one variable
         // FIXME do I need to generate a new name instead of id?  If I use id
         // itself do I need to rename on body1 then?  I think no & no.
         check(context, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
 
-      // everything else is not a valid proof
+      // TODO everything else needs to be evaluated and then checked again
       //case _ => false
     }
 }
