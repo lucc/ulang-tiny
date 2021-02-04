@@ -77,14 +77,14 @@ object Expr extends Alpha[Expr, Id] {
    *  TODO should we use Subst instead of Map[Id, Expr]?  They are the same
    *  type but the name Subst does not fit here.
    */
-  def check(context: Map[Id, Expr], proof: Expr, goal: Expr): Boolean =
+  def check(assumptions: Map[Id, Expr], proof: Expr, goal: Expr): Boolean =
     (proof, goal) match {
 
       // Proof by assumption has to be the first case, this makes it possible
       // to match against any goal (even "False").  If the given goal is not
       // in the context we fall through to the other cases.
       case (id: Id, goal)
-        if context.contains(id) && context(id) == goal
+        if assumptions.contains(id) && assumptions(id) == goal
           => true
 
       // special cases
@@ -92,24 +92,24 @@ object Expr extends Alpha[Expr, Id] {
       case (_, False) => false
 
       // propositional logic
-      case (Pair(p1, p2), And(f1, f2)) => check(context, p1, f1) &&
-                                          check(context, p2, f2)
-      case (LeftE(p), Or(f, _)) => check(context, p, f)
-      case (RightE(p), Or(_, f)) => check(context, p, f)
+      case (Pair(p1, p2), And(f1, f2)) => check(assumptions, p1, f1) &&
+                                          check(assumptions, p2, f2)
+      case (LeftE(p), Or(f, _)) => check(assumptions, p, f)
+      case (RightE(p), Or(_, f)) => check(assumptions, p, f)
       case (Lam1(id, body), Imp(f1, f2)) =>
         // FIXME do I need to generate a new name instead of id?  If I use id
         // itself do I need to rename then?  I think no & no.
         // TODO How can I evaluate the body here?  Eval.norm produces a Norm
         // which is not an Expr.
-        check(context.updated(id, f1), body.rename(Map(id -> id)), f2)
+        check(assumptions.updated(id, f1), body.rename(Map(id -> id)), f2)
 
       // predicate logic
       case (Pair(w: Id, p), Bind(Ex, List(v), body)) =>  // only for one variable
-        check(context, p, body.rename(Map(v -> w)))
+        check(assumptions, p, body.rename(Map(v -> w)))
       case (Lam1(id, body1), Bind(All, List(v), body2)) =>  // only for one variable
         // FIXME do I need to generate a new name instead of id?  If I use id
         // itself do I need to rename on body1 then?  I think no & no.
-        check(context, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
+        check(assumptions, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
 
       // TODO everything else needs to be evaluated and then checked again
       //case _ => false
