@@ -73,6 +73,7 @@ object Expr extends Alpha[Expr, Id] {
    *  If a proof should be allowed to use axioms, they need to be present in
    *  the context.
    *
+   *  TODO use a rich return type like `type Error = Option[String]`
    *  TODO should we use Subst instead of Map[Id, Expr]?  They are the same
    *  type but the name Subst does not fit here.
    */
@@ -107,6 +108,9 @@ object Expr extends Alpha[Expr, Id] {
         // FIXME do I need to generate a new name instead of id?  If I use id
         // itself do I need to rename on body1 then?  I think no & no.
         check(context, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
+
+      // everything else is not a valid proof
+      //case _ => false
     }
 }
 
