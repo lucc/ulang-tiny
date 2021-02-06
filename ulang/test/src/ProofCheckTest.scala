@@ -1,5 +1,5 @@
 import org.scalatest.funspec.AnyFunSpec
-import ulang.Expr.check
+import ulang.ProofTermChecker.check
 import ulang.{True, False, Imp, And, Id, Expr}
 
 class ProofCheckTest extends AnyFunSpec {

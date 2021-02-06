@@ -52,18 +52,19 @@ sealed trait Expr extends Expr.term with Pretty {
 
 }
 
-/**
- * A pattern matching abbreviation for lambda expressions with just one
- * pattern and one argument.
- */
-object Lam1 {
-  def unapply(e: Expr) = e match {
-    case Lam(List(Case(List(id@Id(_, _)), body))) => Some((id, body))
-    case _ => None
-  }
-}
+object ProofTermChecker {
 
-object Expr extends Alpha[Expr, Id] {
+  /**
+   * A pattern matching abbreviation for lambda expressions with just one
+   * pattern and one argument.
+   */
+  object Lam1 {
+    def unapply(e: Expr) = e match {
+      case Lam(List(Case(List(id@Id(_, _)), body))) => Some((id, body))
+      case _ => None
+    }
+  }
+
   /** Check a proof with context
    *
    *  This implements checking of proofs according to the
@@ -114,7 +115,10 @@ object Expr extends Alpha[Expr, Id] {
       // TODO everything else needs to be evaluated and then checked again
       //case _ => false
     }
+
 }
+
+object Expr extends Alpha[Expr, Id]
 
 sealed trait Val extends Pretty
 sealed trait Norm extends Val
