@@ -1,16 +1,11 @@
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.BeforeAndAfter
 
-class PreludeTest extends AnyFunSpec with BeforeAndAfter {
+class PreludeTest extends AnyFunSpec with PreloadLoader {
 
   // We import the automatic conversion String -> arse.Input.
   import arse._
   implicit val w = ulang.Parse.whitespace
-
-  /** load the prelude file before each test */
-  before { ulang.Main.loadPrelude() }
-  /** reset the parsing and execution context after each test */
-  after { ulang.context.clear }
 
   describe("tuples") {
     import ulang.{Pair, Id}
