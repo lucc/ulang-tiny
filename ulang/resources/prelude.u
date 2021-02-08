@@ -31,5 +31,6 @@ define
   False || x == x;
 
 // tuples as nested pairs
+data ,;
 notation
   , [infixr 0];
