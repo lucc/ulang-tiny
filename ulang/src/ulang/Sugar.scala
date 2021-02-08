@@ -73,7 +73,7 @@ object Objs extends ((Data, List[Val]) => Val) {
 
 class Unary(val op: Id) {
   def this(name: String) = this(Id(name))
-  
+
   def unapply(e: Expr) = e match {
     case App(`op`, arg) => Some(arg)
     case _ => None
@@ -91,7 +91,7 @@ class Unary(val op: Id) {
 
 class Binary(val op: Id) {
   def this(name: String) = this(Id(name))
-  
+
   def unapply(e: Expr) = e match {
     case App(App(`op`, arg1), arg2) => Some((arg1, arg2))
     case _ => None
@@ -114,3 +114,66 @@ class Binary(val op: Id) {
     args.foldLeft(zero)(apply)
   }
 }
+
+object Eq extends Binary("==") {
+  def zip(left: List[Expr], right: List[Expr]): List[Expr] = {
+    if (left.length != right.length)
+      sys.error("length mismatch: " + left + " " + right)
+    zip(left zip right)
+  }
+
+  def zip(pairs: Iterable[(Expr, Expr)]): List[Expr] = {
+    val eqs = pairs map { case (a, b) => Eq(a, b) }
+    eqs.toList
+  }
+
+  def split(expr: Expr) = expr match {
+    case Eq(lhs, rhs) =>
+      (lhs, rhs)
+    case Eqv(lhs, rhs) =>
+      (lhs, rhs)
+    case Not(lhs) =>
+      (lhs, False)
+    case lhs =>
+      (lhs, True)
+  }
+}
+
+object True extends Id("True")
+object False extends Id("False")
+
+object Zero extends Id("0")
+object Succ extends Unary("+1")
+
+object Not extends Unary("not")
+
+object And extends Binary("/\\") {
+  def apply(args: List[Expr]): Expr = args match {
+    case Nil => True
+    case _ => args.reduce(apply(_, _))
+  }
+}
+
+object Or extends Binary("\\/") {
+  def apply(args: List[Expr]): Expr = args match {
+    case Nil => False
+    case _ => args.reduce(apply(_, _))
+  }
+}
+
+object Imp extends Binary("==>") {
+  def split(expr: Expr) = expr match {
+    case Imp(Apps(And.op, ant), suc) =>
+      (ant, suc)
+    case Imp(ant, suc) =>
+      (List(ant), suc)
+    case suc =>
+      (Nil, suc)
+  }
+}
+
+object Eqv extends Binary("<=>")
+object Pair extends Binary(",")
+object LeftE extends Unary("Left")
+object RightE extends Unary("Right")
+object Assumption extends Id("Assumption")

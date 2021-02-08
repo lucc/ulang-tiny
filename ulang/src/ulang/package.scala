@@ -34,69 +34,6 @@ package object ulang {
     def empty: Subst = Map()
   }
 
-  object Eq extends Binary("==") {
-    def zip(left: List[Expr], right: List[Expr]): List[Expr] = {
-      if (left.length != right.length)
-        sys.error("length mismatch: " + left + " " + right)
-      zip(left zip right)
-    }
-
-    def zip(pairs: Iterable[(Expr, Expr)]): List[Expr] = {
-      val eqs = pairs map { case (a, b) => Eq(a, b) }
-      eqs.toList
-    }
-
-    def split(expr: Expr) = expr match {
-      case Eq(lhs, rhs) =>
-        (lhs, rhs)
-      case Eqv(lhs, rhs) =>
-        (lhs, rhs)
-      case Not(lhs) =>
-        (lhs, False)
-      case lhs =>
-        (lhs, True)
-    }
-  }
-
-  object True extends Id("True")
-  object False extends Id("False")
-
-  object Zero extends Id("0")
-  object Succ extends Unary("+1")
-
-  object Not extends Unary("not")
-
-  object And extends Binary("/\\") {
-    def apply(args: List[Expr]): Expr = args match {
-      case Nil => True
-      case _ => args.reduce(apply(_, _))
-    }
-  }
-
-  object Or extends Binary("\\/") {
-    def apply(args: List[Expr]): Expr = args match {
-      case Nil => False
-      case _ => args.reduce(apply(_, _))
-    }
-  }
-
-  object Imp extends Binary("==>") {
-    def split(expr: Expr) = expr match {
-      case Imp(Apps(And.op, ant), suc) =>
-        (ant, suc)
-      case Imp(ant, suc) =>
-        (List(ant), suc)
-      case suc =>
-        (Nil, suc)
-    }
-  }
-
-  object Eqv extends Binary("<=>")
-  object Pair extends Binary(",")
-  object LeftE extends Unary("Left")
-  object RightE extends Unary("Right")
-  object Assumption extends Id("Assumption")
-
   def group[A, B](xs: List[(A, B)]) = {
     xs.groupBy(_._1).map {
       case (x, ys) => (x, ys.map(_._2))
