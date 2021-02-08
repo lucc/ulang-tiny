@@ -14,7 +14,9 @@ inductive
   k: Nat ==> k +1: Nat;
 
 notation ++ [infix 10];
-eval a ++ b ;
+define
+  [] ++ ys == ys;
+  (x::xs) ++ ys == x::(xs ++ ys);
 
 //inductive
 //  []: List a;

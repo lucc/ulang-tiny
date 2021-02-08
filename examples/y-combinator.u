@@ -2,7 +2,7 @@
 eval
   // version 1
   let y = lambda f -> (lambda x -> f (x x))￼(lambda x -> f (x x))
-  in y
+  in y;
   // version 2
   let y = (lambda f -> let x = f x in x)
-  in y
+  in y;;
