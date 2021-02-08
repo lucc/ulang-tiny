@@ -63,5 +63,11 @@ class ProofCheckTest extends AnyFunSpec {
   }
 
   describe("disjunction") {
+    it("is symmetric") {
+      val switch = u"""lambda ant -> match ant with (Left x) -> Right x
+                                                  | (Right x) -> Left x;"""
+      val sym = u"a \/ b ==> b \/ a"
+      assertProves(switch, sym)
+    }
   }
 }

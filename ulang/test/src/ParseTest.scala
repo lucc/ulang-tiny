@@ -89,6 +89,18 @@ class ParseTest extends AnyFunSpec {
       assert(actual == Match(List(Id("x")),
                              List(Case(List(Id("A")), Id("B")))))
     }
+    it("can match with variable bindings") {
+      val actual = p.mtch.parse("match x with (A y) -> B y")
+      assert(actual == Match(List(Id("x")),
+                             List(Case(List(App(Id("A"), Id("y"))),
+                                       App(Id("B"), Id("y"))))))
+    }
+    it("can match serveral cases") {
+      val actual = p.mtch.parse("match x with A -> B | C -> D")
+      assert(actual == Match(List(Id("x")),
+                             List(Case(List(Id("A")), Id("B")),
+                                  Case(List(Id("C")), Id("D")))))
+    }
     it("can be used in let bindings") {
       val actual = p.let.parse("let a = match x with A -> B | C -> D in a")
       val expected = Let(List(Case1(Id("a"),
