@@ -114,7 +114,7 @@ object ProofTermChecker {
         // itself do I need to rename then?  I think no & no.
         // TODO How can I evaluate the body here?  Eval.norm produces a Norm
         // which is not an Expr.
-        check(assumptions.updated(id, f1), body.rename(Map(id -> id)), f2)
+        check(assumptions + (id -> f1), body.rename(Map(id -> id)), f2)
 
       // predicate logic
       case (Pair(w: Id, p), Bind(Ex, List(v), body)) =>  // only for one variable
