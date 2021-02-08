@@ -1,8 +1,0 @@
-notation
-  == [infix 6];
-
-eval
-  // the following will result in an
-  // Exception in thread "main" java.lang.StackOverflowError
-  let omega = lambda x -> x x
-  in omega omega;

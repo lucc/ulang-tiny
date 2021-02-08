@@ -9,6 +9,5 @@ define
 data 0 +1;
 
 notation
-  == [infix 6];
   +  [infix 7];
   +1 [postfix 8];

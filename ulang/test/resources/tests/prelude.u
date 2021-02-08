@@ -1,0 +1,23 @@
+// Tests for things from the prelude.u file
+
+test
+
+  // the test block checks if the expressions evaluate to True
+  True;
+
+  // equality
+  True == True;
+  False == False;
+  A == A;
+  //a == a;
+
+  // inequality TODO
+  //True != False;
+  //A != B;
+
+  // && and || can accept anything on the right
+  True && Foo == Foo;
+  False || Bar == Bar;
+
+  // tuples are right associative
+  (A, B, C) == (A, (B, C));

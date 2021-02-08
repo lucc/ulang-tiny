@@ -1,0 +1,26 @@
+data +;
+
+define
+  // lower case name -> function
+  f X == Y;
+  // upper case name -> data / rewrite rule is ignored
+  F X == Y;
+  // data as name -> data / rewrite rule is ignored
+  + X == Y;
+  // symbol as name -> function
+  ++ X == Y;
+  // number as name -> function
+  42 X == Y;
+  // capital unicode letter -> data / rewrite rule is ignored
+  Λ X == Y;
+  // lower case unicode letter -> function
+  λ X == Y;
+
+test
+  f X == Y;
+  F X == F X;
+  + X == + X;
+  ++ X == Y;
+  42 X == Y;
+  Λ X == Λ X;
+  λ X == Y;

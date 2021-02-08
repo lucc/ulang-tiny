@@ -1,0 +1,10 @@
+test
+  // application is left associative
+  F A B == ((F A) B);
+
+  // partial application
+  (let f = (lambda x y z -> F (x y z));
+       g = (lambda x y -> G (x y));
+       h = (lambda x -> (H x))
+  in f g h BASE)  // TODO why do I need these parentheses
+  == F (G (H BASE));

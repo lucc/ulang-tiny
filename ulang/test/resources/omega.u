@@ -1,0 +1,6 @@
+// the untypable omega term from untyped lambda calculus should result in
+// excetion: java.lang.StackOverflowError
+
+test
+  let omega = lambda x -> x x
+  in (omega omega) == omega;

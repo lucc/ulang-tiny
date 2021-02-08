@@ -1,0 +1,33 @@
+// Pattern matching with nested pattern
+
+define
+
+  f1 x == match x with (A y) -> AA
+		     | (B y) -> BB
+		     | (C y) -> CC;
+
+  f2 (A y) == AA;
+  f2 (B y) == BB;
+  f2 (C y) == CC;
+
+test
+
+  f1 (A B) == AA;
+  f1 (B C) == BB;
+  f1 (C D) == CC;
+
+  f2 (A B) == AA;
+  f2 (B C) == BB;
+  f2 (C D) == CC;
+
+
+  (let f =
+    lambda x ->
+      match x with (A y) -> AA
+	         | (B y) -> BB
+	         | (C y) -> CC
+  in
+    (f (A B)),
+    (f (B C)),
+    (f (C D)))
+  == (AA, BB, CC);
