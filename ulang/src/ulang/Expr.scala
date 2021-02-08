@@ -88,9 +88,17 @@ object ProofTermChecker {
       // Proof by assumption has to be the first case, this makes it possible
       // to match against any goal (even "False").  If the given goal is not
       // in the context we fall through to the other cases.
-      case (id: Id, goal)
-        if assumptions.contains(id) && assumptions(id) == goal
-          => true
+      case (id: Id, _) if assumptions.contains(id) =>
+        assumptions(id) == goal
+      // TODO if the id was not found in the local assumptions we want to look
+      // at the gloablly available lemmas  (and axioms etc) or at defined
+      // functions which the user might use to proof something.
+      // Here local assumptions shadow lemmas which in turn shadow global
+      // functions.
+      //case (id: Id, _) if global_lemmas.contains(id) =>
+      //  canBeUnified(global_lemmas(id), goal)
+      //case (id: Id, _) if funs.contains(id) =>
+      //  canBeUnified(funs(id), goal)
 
       // special cases
       case (True, True) => true // we use "True" to represent a trivial proof
