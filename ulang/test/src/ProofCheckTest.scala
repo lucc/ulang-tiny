@@ -36,38 +36,48 @@ class ProofCheckTest extends AnyFunSpec {
       assertProves(cons, weakening)
     }
     it("flip function proof order innvariance in implications") {
+      pendingUntilFixed {
       val flip = u"lambda x -> lambda y -> lambda z -> x z y"
       val invariance = u"(a ==> b ==> c) ==> b ==> a ==> c"
       assertProves(flip, invariance)
+      }
     }
     it("function composition proves chaining") {
+      pendingUntilFixed {
       val composition = u"lambda f -> lambda g -> lambda x -> f (g x)"
       val chain = u"(b ==> c) ==> (a ==> b) ==> a ==> c"
       assertProves(composition, chain)
+      }
     }
     it("ex falso quodlibet") {
-      val foo = ???
+      pendingUntilFixed {
+      val foo = u"todo" // FIXME is this an axiom?
       val efq = u"a ==> (not a ==> b)"
       assertProves(foo, efq)
+      }
     }
   }
 
   describe("conjunction") {
     it("is symmetric") {
+      pendingUntilFixed {
       val switch1 = u"lambda (x,y) -> (y,x)"
       val switch2 = u"lambda p -> match p with (x,y) -> (y,x)"
       val sym = u"a /\ b ==> b /\ a"
       assertProves(switch1, sym)
       assertProves(switch2, sym)
+      }
     }
   }
 
   describe("disjunction") {
     it("is symmetric") {
+      pendingUntilFixed {
       val switch = u"""lambda ant -> match ant with (Left x) -> Right x
                                                   | (Right x) -> Left x;"""
       val sym = u"a \/ b ==> b \/ a"
       assertProves(switch, sym)
+      }
     }
   }
 }
