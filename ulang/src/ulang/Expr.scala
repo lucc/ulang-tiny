@@ -102,7 +102,6 @@ object ProofTermChecker {
 
       // special cases
       case (True, True) => true // we use "True" to represent a trivial proof
-      case (_, False) => false
 
       // propositional logic: introduction rules
       case (Pair(p1, p2), And(f1, f2)) => check(assumptions, p1, f1) &&
@@ -125,6 +124,7 @@ object ProofTermChecker {
         check(assumptions, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
 
       // TODO everything else needs to be evaluated and then checked again
+      // False is implicit here
       //case _ => false
     }
 
