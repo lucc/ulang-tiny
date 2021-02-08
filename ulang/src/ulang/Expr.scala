@@ -65,6 +65,12 @@ object ProofTermChecker {
     }
   }
 
+  /** Check a proof
+   *
+   *  The proof is assumed to have no global assumtions.
+   */
+  def check(proof: Expr, goal: Expr): Boolean = check(Map(), proof, goal)
+
   /** Check a proof with context
    *
    *  This implements checking of proofs according to the
@@ -75,8 +81,6 @@ object ProofTermChecker {
    *  the context.
    *
    *  TODO use a rich return type like `type Error = Option[String]`
-   *  TODO should we use Subst instead of Map[Id, Expr]?  They are the same
-   *  type but the name Subst does not fit here.
    */
   def check(assumptions: Map[Id, Expr], proof: Expr, goal: Expr): Boolean =
     (proof, goal) match {
@@ -92,7 +96,7 @@ object ProofTermChecker {
       case (True, True) => true // we use "True" to represent a trivial proof
       case (_, False) => false
 
-      // propositional logic
+      // propositional logic: introduction rules
       case (Pair(p1, p2), And(f1, f2)) => check(assumptions, p1, f1) &&
                                           check(assumptions, p2, f2)
       case (LeftE(p), Or(f, _)) => check(assumptions, p, f)

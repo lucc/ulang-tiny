@@ -8,7 +8,7 @@ class ProofCheckTest extends AnyFunSpec {
   ulang.Main.loadPrelude()
 
   def assertProves(proof: Expr, goal: Expr) {
-    assert(check(Map(), proof, goal), proof + " does not prove " + goal)
+    assert(check(proof, goal), proof + " does not prove " + goal)
   }
   /** A String interpolator to parse u"..." into Expr.  */
   implicit class UlangParser(val sc: StringContext) {
