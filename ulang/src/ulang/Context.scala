@@ -123,3 +123,21 @@ class Context extends Syntax[String] {
     inds ++= List((pat, kind, intros))
   }
 }
+
+object context extends Context {
+  /**
+   * Reset the context to its initial state, needed for tests
+   */
+  def clear() {
+    data = Set()
+    sig = Set(Eq.op, Not.op, And.op, Or.op, Imp.op, Eqv.op)
+    mixfix = Map()
+    prefix_ops = Map()
+    postfix_ops = Map()
+    infix_ops = Map()
+    funs = Map()
+    consts = Map()
+    inds = List()
+    rewrites = Map()
+  }
+}
