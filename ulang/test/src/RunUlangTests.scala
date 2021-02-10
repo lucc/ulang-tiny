@@ -3,12 +3,19 @@ import java.io.File
 
 class RunUlangTests extends AnyFunSpec with PreloadLoader {
 
-  val testFiles = new File(getClass.getResource("/tests").getFile()).listFiles(
-    (_, name) => name endsWith ".u").map(_.getAbsolutePath)
+  def testFiles(extension: String) =
+    new File(getClass.getResource("/tests").getFile()).listFiles(
+      (_, name) => name endsWith extension).map(_.getAbsolutePath)
 
   describe("run file") {
-    for (testFile <- testFiles)
+    for (testFile <- testFiles(".u"))
       it(testFile) { ulang.Exec.run(testFile) }
+    for (testFile <- testFiles(".u.pending"))
+      it(testFile) {
+        pendingUntilFixed {
+          ulang.Exec.run(testFile)
+        }
+      }
   }
 
   describe("special files") {
