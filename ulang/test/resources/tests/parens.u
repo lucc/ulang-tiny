@@ -1,0 +1,17 @@
+// Expressions can be put inside parens.  They will evaluate to the same
+// value.
+
+test
+
+  // simple terms
+  True == (True);
+
+  // applications
+  A B == (A B);
+
+  // application of == in parens
+  (A == A);
+
+  // let expressions
+  (let x = A in x == A);
+  (let x = A in x) == A;

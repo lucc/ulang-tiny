@@ -21,3 +21,5 @@ test
 
   // tuples are right associative
   (A, B, C) == (A, (B, C));
+  // the tuple constructor "comma" does not require whitespace
+  (A,B) == ( A , B );
