@@ -5,6 +5,7 @@ case object Auto extends Tactic
 case class Induct(pat: Expr, kind: Fix) extends Tactic
 case class Split(pat: Expr) extends Tactic
 case class Have(expr: Expr) extends Tactic
+case class Term(expr: Expr) extends Tactic
 
 sealed trait Pos { def unary_!(): Pos }
 case object Ant extends Pos { def unary_! = Suc }

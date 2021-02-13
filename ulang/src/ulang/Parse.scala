@@ -65,11 +65,12 @@ object Parse {
 
   val mtch = Match("match" ~ expr_arg.+ ~ "with" ~ css)
 
-  val tactic: Parser[Tactic] = P(ind | coind | split | have)
+  val tactic: Parser[Tactic] = P(ind | coind | split | have | term)
   val ind = Induct("induction" ~ expr ~ ret(Least))
   val coind = Induct("induction" ~ expr ~ ret(Greatest))
   val split = Split("cases" ~ expr)
   val have = Have("have" ~ expr)
+  val term = Term("term" ~ expr)
 
   val df = Def(expr)
 

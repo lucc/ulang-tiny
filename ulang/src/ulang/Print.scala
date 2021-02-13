@@ -103,6 +103,8 @@ object Print {
     case Split(pat) => "split " + pat
     case Induct(pat, Least) => "induction " + pat
     case Induct(pat, Greatest) => "coinduction " + pat
+    case Have(expr) => "have " + expr
+    case Term(expr) => "term " + expr
   }
 
   def print(intro: Intro): String = {

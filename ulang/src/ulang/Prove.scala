@@ -76,6 +76,16 @@ object Prove {
   }
 
   def prove(goal: Open, tactic: Tactic): Proof = tactic match {
+    case Term(pt) =>
+      val Open(eqs, ant, suc) = goal
+      val ant_ = ant.foldRight(True: Expr)(And(_, _))
+      val suc_ = suc.foldRight(False: Expr)(Or(_, _))
+      val goal_ = Imp(ant_, suc_)
+      if (ProofTermChecker.check(pt, goal_)) {
+        Closed
+      } else {
+        fail("The term " + pt + " does not prove " + goal)
+      }
     /* case Split(pat) =>
       val prems = ind(pat, goal, hyp = false)
       Step(prems, goal, tactic) */
