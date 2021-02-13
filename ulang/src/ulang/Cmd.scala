@@ -2,9 +2,10 @@ package ulang
 
 import arse.Fixity
 
-sealed trait Cmd extends Pretty {
-
-}
+/**
+ * The syntactical top level elements for an ulang source file.
+ */
+sealed trait Cmd extends Pretty
 
 case class Def(expr: Expr)
 case class Defs(defs: List[Def]) extends Cmd
@@ -15,6 +16,10 @@ case class Notation(fixs: List[(List[String], Fixity)]) extends Cmd
 case class Tests(tests: List[Expr]) extends Cmd
 case class Evals(exprs: List[Expr]) extends Cmd
 
+/**
+ * Types of fixpoints, [[Least]] for induction and [[Greatest]] for
+ * coinduction
+ */
 sealed trait Fix
 case object Least extends Fix
 case object Greatest extends Fix
