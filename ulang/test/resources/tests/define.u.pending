@@ -1,0 +1,4 @@
+define
+  A B C;
+
+  (let f = x x in f f) == A;

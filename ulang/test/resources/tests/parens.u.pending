@@ -3,6 +3,8 @@
 
 test
 
+  True;
+
   // simple terms
   True == (True);
 
