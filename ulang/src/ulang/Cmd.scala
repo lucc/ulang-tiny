@@ -6,7 +6,7 @@ sealed trait Cmd extends Pretty {
 
 }
 
-case class Def(expr: Expr, attr: List[String])
+case class Def(expr: Expr)
 case class Defs(defs: List[Def]) extends Cmd
 
 case class Datas(names: List[String]) extends Cmd

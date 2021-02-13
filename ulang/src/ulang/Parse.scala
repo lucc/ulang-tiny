@@ -71,9 +71,7 @@ object Parse {
   val split = Split("cases" ~ expr)
   val have = Have("have" ~ expr)
 
-  val attr = L("rewrite")
-  val attrs = bracks(attr.*) | ret(Nil)
-  val df = Def(expr ~ attrs)
+  val df = Def(expr)
 
   /**
    * Generate a parser for a section from a parser for the individual
