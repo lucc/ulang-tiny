@@ -19,5 +19,12 @@ class PreludeTest extends AnyFunSpec with PreloadLoader {
       assert(actual == Pair(Id("a"), Id("b")))
     }
   }
+  describe("equality") {
+    it("parses as infix") {
+      val actual = u"A == B"
+      val expected = App(App(Id("=="), Id("A")), Id("B"))
+      assert(actual == expected)
+    }
+  }
 
 }
