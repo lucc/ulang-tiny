@@ -1,5 +1,7 @@
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.BeforeAndAfter
+import TestHelpers.UlangParser
+import ulang.{App, Pair, Id}
 
 class PreludeTest extends AnyFunSpec with PreloadLoader {
 
@@ -8,13 +10,12 @@ class PreludeTest extends AnyFunSpec with PreloadLoader {
   implicit val w = ulang.Parse.whitespace
 
   describe("tuples") {
-    import ulang.{Pair, Id}
     it("are defined with a comma") {
-      val actual = ulang.Parse.expr.parse("(a,b)")
+      val actual = u"(a,b)"
       assert(actual == Pair(Id("a"), Id("b")))
     }
     it("can be written without parens") {
-      val actual = ulang.Parse.expr.parse("a,b")
+      val actual = u"a,b"
       assert(actual == Pair(Id("a"), Id("b")))
     }
   }

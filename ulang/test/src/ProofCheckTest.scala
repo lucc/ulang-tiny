@@ -3,20 +3,13 @@ import ulang.ProofTermChecker.check
 import ulang.{True, False, Imp, And, Id, Expr}
 
 class ProofCheckTest extends AnyFunSpec {
+  import TestHelpers.UlangParser
 
   // load the prelude file when initializeing the test suite
   ulang.Main.loadPrelude()
 
   def assertProves(proof: Expr, goal: Expr) {
     assert(check(proof, goal), proof + " does not prove " + goal)
-  }
-  /** A String interpolator to parse u"..." into Expr.  */
-  implicit class UlangParser(val sc: StringContext) {
-    def u(): Expr = {
-      import arse._
-      implicit val w = ulang.Parse.whitespace
-      ulang.Parse.expr.parseAll(sc.parts.mkString(" "))
-    }
   }
 
   describe("simple proofs") {
