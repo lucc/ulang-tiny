@@ -101,7 +101,10 @@ object Eval {
       fail("unbound identifier: " + id)
     case Lam(cases) =>
       Curry(cases, Nil, lex)
-    //case Eq(left, right) => ??? // TODO special treatment of equality
+    // Equality is build in and evaluated here
+    case Eq(left, right) =>
+      if (norm(left, lex) == norm(right, lex)) True
+      else False
     case App(fun, arg) =>
       push(norm(fun, lex), defer(arg, lex))
     case let @ Let(_, body) =>
