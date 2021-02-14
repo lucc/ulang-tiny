@@ -1,0 +1,18 @@
+// some simple proof terms for simple propositions
+//////////////////////////////////////////////////
+
+show True;
+proof term True;
+
+show a ==> a;
+proof term (lambda x -> x);
+
+
+// all the above can also be proven by the "auto" tactic
+////////////////////////////////////////////////////////
+
+show a ==> a;
+// proof auto qed
+
+show True;
+// proof auto qed

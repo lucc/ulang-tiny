@@ -1,9 +1,0 @@
-show a ==> a;
-proof term (lambda x -> x);
-
-assume A;
-show A;
-proof term (lambda x -> x);
-
-show True;
-proof term True;
