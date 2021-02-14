@@ -108,6 +108,7 @@ object ProofTermChecker {
                                           check(assumptions, p2, f2)
       case (LeftE(p), Or(f, _)) => check(assumptions, p, f)
       case (RightE(p), Or(_, f)) => check(assumptions, p, f)
+      //case (Lam(cases), _) => elim(assumptions, cases, goal) // TODO
       case (Lam1(id, body), Imp(f1, f2)) =>
         // FIXME do I need to generate a new name instead of id?  If I use id
         // itself do I need to rename then?  I think no & no.
@@ -128,6 +129,22 @@ object ProofTermChecker {
       //case _ => false
     }
 
+  // TODO these functions are suggested by Gidon in order to check elimination
+  // and introduction rules seperately.
+  def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id,Expr] =
+    (pat, assm) match {
+      case (And(p1,p2), And(a1,a2)) => bind(bind(ctx, p1, a1), p2, a2)
+    }
+  def elim(ctx: Map[Id, Expr], pats: List[Expr], body: Expr, goal: Expr): Boolean =
+    (pats, goal) match {
+      case (Nil, _) => check(ctx, body, goal)
+      case (pat::rest, Imp(assm, concl)) =>
+        val ctx_ = bind(ctx, pat, assm)
+        elim(ctx_, rest, body, concl)
+    }
+  def elim(ctx: Map[Id, Expr], cs: Case, goal: Expr): Boolean = ???
+  def elim(ctx: Map[Id, Expr], cases: List[Case], goal: Expr): Boolean =
+    cases.forall(elim(ctx, _, goal))
 }
 
 object Expr extends Alpha[Expr, Id]
