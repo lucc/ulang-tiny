@@ -105,6 +105,7 @@ object Exec {
 
     case Tests(tests) =>
       for (expr <- tests) {
+        // TODO non equalities should also be testable, debug this
         val (lhs, rhs) = Eq.split(expr)
         val actual = Eval.strict(lhs, Env.empty)
         val expected = Eval.strict(rhs, Env.empty)

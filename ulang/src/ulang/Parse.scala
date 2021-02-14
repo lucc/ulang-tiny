@@ -73,6 +73,11 @@ object Parse {
   val term = Term("term" ~ expr)
 
   val df = Def(expr)
+  // TODO if the normal equality term == is to troublesome to get right as the
+  // defining equality in Def expressions we can use ":=" as a new syntactical
+  // element in its place.  This entails that arbitrary expressions can not be
+  // put in define blocks any longer.  If this is done, the let expression
+  // should also use := instead of =.
 
   /**
    * Generate a parser for a section from a parser for the individual

@@ -78,7 +78,7 @@ object Eval {
     case lzy: Defer => const(lzy.norm)
     case id: Id if isTag(id) => id
     case Obj(fun, arg) => Obj(const(fun), const(arg))
-    case fun: Curry => fun
+    case fun: Curry => fun // TODO Gidon says we might drop this. Why?
     case _ => sys.error("not constant: " + arg)
   }
 
@@ -101,6 +101,7 @@ object Eval {
       fail("unbound identifier: " + id)
     case Lam(cases) =>
       Curry(cases, Nil, lex)
+    //case Eq(left, right) => ??? // TODO special treatment of equality
     case App(fun, arg) =>
       push(norm(fun, lex), defer(arg, lex))
     case let @ Let(_, body) =>

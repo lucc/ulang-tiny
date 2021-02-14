@@ -14,6 +14,10 @@ object Prove {
         prove(open, tactic)
       case (step @ Step(List(prem: Open), concl, auto), Some(tactic)) =>
         Step(List(prove(prem, tactic)), concl, auto)
+      // TODO
+      //case (_, Some(Term(pt))) =>
+      //  if (ProofTermChecker.check(pt, ???/*goal*/)) Closed
+      //  else fail("the proof term " + pt + " does not match " + goal)
       case (_, Some(tactic)) =>
         fail("cannot apply: " + tactic + " (goal is closed)")
       case (goal, _) =>
