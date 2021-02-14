@@ -122,6 +122,12 @@ object Exec {
         println("  " + intro)
       println()
 
+    case Thm(Nil, show, Some(Term(proofterm))) =>
+      if (ProofTermChecker.check(proofterm, show))
+        println(proofterm + " proves " + show)
+      else
+        fail("The term " + proofterm + " does not prove " + show)
+
     case Thm(assume, show, tactic) =>
       val proof = Prove.prove(assume, show, tactic)
       for (line <- Print.format(proof))
