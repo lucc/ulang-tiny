@@ -1,0 +1,22 @@
+// any term should be testable not only equalityies
+
+define
+  f A == True;
+  f B == False;
+
+  rot x == match x with Foo -> Bar
+                      | Bar -> Baz
+                      | Baz -> Foo;
+
+  toBool == lambda Foo -> True
+		 | Bar -> False
+		 | Baz -> False;
+test
+
+  True;
+
+  f A;
+  not (f B);
+
+  toBool (rot Baz);
+  not (toBool (rot Foo));
