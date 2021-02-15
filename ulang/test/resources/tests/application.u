@@ -1,10 +1,27 @@
+define
+  f1 == lambda x y z -> F (x y z);
+  g1 == lambda x y -> G (x y);
+  h1 == lambda x -> (H x);
+
+  f2 x y z == F (x y z);
+  g2 x y == G (x y);
+  h2 x == H x;
+
 test
   // application is left associative
   F A B == ((F A) B);
 
-  // partial application
+  // partial applications
+  f1 g1 h1 BASE == F (G (H BASE));
+  f2 g2 h2 BASE == F (G (H BASE));
+
+  F (G (H BASE)) == F (G (H BASE));
+
   (let f = (lambda x y z -> F (x y z));
        g = (lambda x y -> G (x y));
        h = (lambda x -> (H x))
-  in f g h BASE)  // TODO why do I need these parentheses
+  in
+  f g h BASE)  // TODO why do I need these parentheses
   == F (G (H BASE));
+
+
