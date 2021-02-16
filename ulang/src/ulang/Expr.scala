@@ -108,13 +108,15 @@ object ProofTermChecker {
                                           check(assumptions, p2, f2)
       case (LeftE(p), Or(f, _)) => check(assumptions, p, f)
       case (RightE(p), Or(_, f)) => check(assumptions, p, f)
-      //case (Lam(cases), _) => elim(assumptions, cases, goal) // TODO
+      // special case for one argument lambdas with a variable pattern
       case (Lam1(id, body), Imp(f1, f2)) =>
-        // FIXME do I need to generate a new name instead of id?  If I use id
-        // itself do I need to rename then?  I think no & no.
-        // TODO How can I evaluate the body here?  Eval.norm produces a Norm
-        // which is not an Expr.
-        check(assumptions + (id -> f1), body.rename(Map(id -> id)), f2)
+        check(assumptions + (id -> f1), body, f2)
+      // and elimination
+      case (Lam(List(Case(List(Pair(p1: Id, p2: Id)), body))), Imp(And(f1, f2), f3)) =>
+        check(assumptions + (p1 -> f1) + (p2 -> f2), body, f3)
+
+      // propositional logic: elimination rules TODO
+      //case (App(f, args), _) if functionArgumentsMatch(f, args) && bodyTypeMatches()
 
       // predicate logic
       case (Pair(w: Id, p), Bind(Ex, List(v), body)) =>  // only for one variable
