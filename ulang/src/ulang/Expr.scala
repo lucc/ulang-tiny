@@ -114,6 +114,10 @@ object ProofTermChecker {
       // and elimination
       case (Lam(List(Case(List(Pair(p1: Id, p2: Id)), body))), Imp(And(f1, f2), f3)) =>
         check(assumptions + (p1 -> f1) + (p2 -> f2), body, f3)
+      case (Lam(List(Case(List(LeftE(p1: Id)), body))), Imp(Or(f1, _), f2)) =>
+        check(assumptions + (p1 -> f1), body, f2)
+      case (Lam(List(Case(List(RightE(p1: Id)), body))), Imp(Or(_, f1), f2)) =>
+        check(assumptions + (p1 -> f1), body, f2)
 
       // propositional logic: elimination rules TODO
       //case (App(f, args), _) if functionArgumentsMatch(f, args) && bodyTypeMatches()
