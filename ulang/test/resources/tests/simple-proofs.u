@@ -4,15 +4,42 @@
 show True;
 proof term True;
 
+// identity
 show a ==> a;
 proof term (lambda x -> x);
 
+// weakening
+show a ==> b ==> a;
+proof term (lambda x -> lambda y -> x);
+
+// some introduction rules for logical connectives (predicate logic)
+////////////////////////////////////////////////////////////////////
+
+show a ==> a /\ a;
+proof term (lambda x -> (x,x));
+
+show a ==> b ==> a /\ b;
+proof term (lambda x -> lambda y -> (x,y));
+
+show a ==> a \/ b;
+proof term (lambda x -> Left x);
+
+show b ==> a \/ b;
+proof term (lambda x -> Right x);
 
 // all the above can also be proven by the "auto" tactic
 ////////////////////////////////////////////////////////
 
-show a ==> a;
-// proof auto qed
-
 show True;
-// proof auto qed
+show a ==> a;
+show a ==> b ==> a;
+show a ==> a /\ a;
+show a ==> b ==> a /\ b;
+show a ==> a \/ b;
+show b ==> a \/ b;
+
+// introduction rule for exists
+///////////////////////////////
+
+show p x ==> exists y. p y;
+proof term (lambda a -> (x, a));
