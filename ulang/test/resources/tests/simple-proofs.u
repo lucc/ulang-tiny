@@ -43,3 +43,15 @@ show b ==> a \/ b;
 
 show p x ==> exists y. p y;
 proof term (lambda a -> (x, a));
+show a ==> exists x. a;
+proof term (lambda a -> (x, a));
+
+// general proof terms can be used to proof concrete formulas
+/////////////////////////////////////////////////////////////
+
+show a /\ b ==> a /\ b;
+proof term lambda x -> x;
+show a /\ b \/ c ==> a /\ b \/ c;
+proof term lambda x -> x;
+show (A ==> A) ==> (A ==> A);
+proof term lambda x -> x;
