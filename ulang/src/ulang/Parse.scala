@@ -4,7 +4,6 @@ import arse._
 import arse.implicits._
 
 object Parse {
-  import context._
 
   /**
    * Any whitespace separates tokens, two slashes start a "whitespace token"
@@ -33,7 +32,7 @@ object Parse {
   val n = s | c
   val name = n filterNot keywords
   // isMixfix depends on the current context!
-  val name_nonmixfix = name filterNot isMixfix
+  val name_nonmixfix = name filterNot context.isMixfix
 
   val apps = (name: String, args: List[Expr]) =>
     Apps(Id(name), args)
@@ -112,7 +111,7 @@ object Parse {
    */
   def data_declare = name.+ map {
     names =>
-      data ++= names
+      context.data ++= names
       names
   }
 
