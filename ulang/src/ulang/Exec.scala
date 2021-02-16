@@ -151,9 +151,11 @@ object Exec {
     script parseAll string
   }
 
-  def run(name: String) {
+  def runFile(name: String) {
     val file = new File(name)
     val cmds = parse(file)
     exec(cmds)
   }
+
+  def run(script: String) = exec(parse(script))
 }

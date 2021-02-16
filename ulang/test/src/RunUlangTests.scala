@@ -9,11 +9,11 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
 
   describe("run file") {
     for (testFile <- testFiles("tests"))
-      it(testFile) { ulang.Exec.run(testFile) }
+      it(testFile) { ulang.Exec.runFile(testFile) }
     for (testFile <- testFiles("pending"))
       it(testFile) {
         pendingUntilFixed {
-          ulang.Exec.run(testFile)
+          ulang.Exec.runFile(testFile)
         }
       }
   }
@@ -21,7 +21,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
   describe("special files") {
     it("the omega term should throw an exception") {
       assertThrows[java.lang.StackOverflowError] {
-        ulang.Exec.run(getClass.getResource("/omega.u").getPath())
+        ulang.Exec.runFile(getClass.getResource("/omega.u").getPath())
       }
     }
   }
