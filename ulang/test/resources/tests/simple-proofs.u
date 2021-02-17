@@ -45,6 +45,8 @@ show a ==> a /\ a;
 show a ==> b ==> a /\ b;
 show a ==> a \/ b;
 show b ==> a \/ b;
+show a /\ b ==> a;
+show a /\ b ==> b;
 
 // introduction rule for exists
 ///////////////////////////////
