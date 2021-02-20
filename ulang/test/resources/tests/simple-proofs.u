@@ -35,6 +35,12 @@ proof term (lambda (x,y) -> x);
 show a /\ b ==> b;
 proof term (lambda (x,y) -> y);
 
+// modus ponens
+show a ==> (a ==> b) ==> b;
+proof term lambda x -> lambda f -> f x;
+show (a ==> b) ==> a ==> b;
+proof term lambda f -> lambda x -> f x;
+
 // all the above can also be proven by the "auto" tactic
 ////////////////////////////////////////////////////////
 

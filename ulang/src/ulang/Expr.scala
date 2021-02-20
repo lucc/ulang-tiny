@@ -119,6 +119,11 @@ object ProofTermChecker {
       case (Lam(List(Case(List(RightE(p1: Id)), body))), Imp(Or(_, f1), f2)) =>
         check(assumptions + (p1 -> f1), body, f2)
 
+      // Special cases for modus ponens
+      case (App(f: Id, arg: Id), _)
+        if assumptions.contains(f) && assumptions.contains(arg)
+        => assumptions(f) == Imp(assumptions(arg), goal)
+
       // propositional logic: elimination rules TODO
       //case (App(f, args), _) if functionArgumentsMatch(f, args) && bodyTypeMatches()
 
