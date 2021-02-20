@@ -7,7 +7,7 @@ import arse.Fixity
  */
 sealed trait Cmd extends Pretty
 
-case class Def(expr: Expr)
+case class Def(left: Expr, right: Expr)
 case class Defs(defs: List[Def]) extends Cmd
 
 case class Datas(names: List[String]) extends Cmd
