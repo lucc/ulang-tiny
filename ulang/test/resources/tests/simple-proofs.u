@@ -12,6 +12,14 @@ proof term (lambda x -> x);
 show a ==> b ==> a;
 proof term (lambda x -> lambda y -> x);
 
+// detour in a proof
+show a ==> a;
+proof term (lambda v -> (lambda u -> u) v);
+
+// chaining
+show (b ==> c) ==> (a ==> b) ==> a ==> c;
+proof term lambda f -> lambda g -> lambda x -> f (g x);
+
 // some introduction rules for logical connectives (predicate logic)
 ////////////////////////////////////////////////////////////////////
 
@@ -41,16 +49,13 @@ proof term lambda x -> lambda f -> f x;
 show (a ==> b) ==> a ==> b;
 proof term lambda f -> lambda x -> f x;
 
-// chaining
-show (b ==> c) ==> (a ==> b) ==> a ==> c;
-proof term lambda f -> lambda g -> lambda x -> f (g x);
-
 // all the above can also be proven by the "auto" tactic
 ////////////////////////////////////////////////////////
 
 show True;
 show a ==> a;
 show a ==> b ==> a;
+show (b ==> c) ==> (a ==> b) ==> a ==> c;
 show a ==> a /\ a;
 show a ==> b ==> a /\ b;
 show a ==> a \/ b;
@@ -59,7 +64,6 @@ show a /\ b ==> a;
 show a /\ b ==> b;
 show a ==> (a ==> b) ==> b;
 show (a ==> b) ==> a ==> b;
-show (b ==> c) ==> (a ==> b) ==> a ==> c;
 
 // introduction rule for exists
 ///////////////////////////////

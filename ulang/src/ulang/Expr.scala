@@ -129,6 +129,8 @@ object ProofTermChecker {
           case _ => false
         })
         => true
+      case (App(Lam1(id, body), arg), _) =>
+        check(assumptions, body.subst(Map(id -> arg)), goal)
 
       // propositional logic: elimination rules TODO
       //case (App(f, args), _) if functionArgumentsMatch(f, args) && bodyTypeMatches()
