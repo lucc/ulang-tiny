@@ -120,6 +120,8 @@ object ProofTermChecker {
         check(assumptions + (p1 -> f1), body, f2)
 
       // Special cases for modus ponens
+      // this is only a simpler case of the next case, the implementation
+      // there also checks this case correctly
       case (App(f: Id, arg: Id), _)
         if assumptions.contains(f) && assumptions.contains(arg)
         => assumptions(f) == Imp(assumptions(arg), goal)
