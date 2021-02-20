@@ -1,0 +1,11 @@
+notation
+  ○ [infix 10];
+
+define
+  (g ○ f) x := g (f x);
+
+eval
+  (G ○ F) X;
+
+test
+  (G ○ F) X == G (F X);
