@@ -1,7 +1,5 @@
 package ulang
 
-import arse._
-
 sealed trait Expr extends Expr.term with Pretty {
   def free: Set[Id]
 
