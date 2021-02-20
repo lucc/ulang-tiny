@@ -136,6 +136,13 @@ object ProofTermChecker {
         => None
       case (App(Lam1(id, body), arg), _) =>
         check(assumptions, body.subst(Map(id -> arg)), goal)
+      // generall applications need type inference for either the left or the
+      // right side
+      case (App(f, arg), _) =>
+        infer(assumptions, arg) match {
+          case Right(ty) => check(assumptions, f, Imp(ty, goal))
+          case Left(err) => Some(err)
+        }
 
       // propositional logic: elimination rules TODO
       //case (App(f, args), _) if functionArgumentsMatch(f, args) && bodyTypeMatches()
@@ -152,6 +159,15 @@ object ProofTermChecker {
       // False is implicit here
       //case _ => false
     }
+
+  /**
+   * Type inference for the proof checker
+   */
+  def infer(ctx: Map[Id, Expr], expr: Expr): Either[String, Expr] = expr match {
+    case id: Id => if (ctx contains id) Right(ctx(id))
+                   else Left("Not in current type inference context: " + id)
+    case _ => Left("Type inference for " + expr + " is not yet implemented.")
+  }
 
   // TODO these functions are suggested by Gidon in order to check elimination
   // and introduction rules seperately.

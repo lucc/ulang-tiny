@@ -20,6 +20,10 @@ proof term (lambda v -> (lambda u -> u) v);
 show (b ==> c) ==> (a ==> b) ==> a ==> c;
 proof term lambda f -> lambda g -> lambda x -> f (g x);
 
+// order invariance
+show (a ==> b ==> c) ==> b ==> a ==> c;
+proof term lambda x -> lambda y -> lambda z -> x z y;
+
 // some introduction rules for logical connectives (predicate logic)
 ////////////////////////////////////////////////////////////////////
 
@@ -56,6 +60,7 @@ show True;
 show a ==> a;
 show a ==> b ==> a;
 show (b ==> c) ==> (a ==> b) ==> a ==> c;
+show (a ==> b ==> c) ==> b ==> a ==> c;
 show a ==> a /\ a;
 show a ==> b ==> a /\ b;
 show a ==> a \/ b;
@@ -64,14 +69,6 @@ show a /\ b ==> a;
 show a /\ b ==> b;
 show a ==> (a ==> b) ==> b;
 show (a ==> b) ==> a ==> b;
-
-// introduction rule for exists
-///////////////////////////////
-
-show p x ==> exists y. p y;
-proof term (lambda a -> (x, a));
-show a ==> exists x. a;
-proof term (lambda a -> (x, a));
 
 // general proof terms can be used to proof concrete formulas
 /////////////////////////////////////////////////////////////

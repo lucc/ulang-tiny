@@ -32,11 +32,9 @@ class ProofCheckTest extends AnyFunSpec {
       assertProves(cons, weakening)
     }
     it("flip function proof order innvariance in implications") {
-      pendingUntilFixed {
       val flip = u"lambda x -> lambda y -> lambda z -> x z y"
       val invariance = u"(a ==> b ==> c) ==> b ==> a ==> c"
       assertProves(flip, invariance)
-      }
     }
     it("function composition proves chaining") {
       val composition = u"lambda f -> lambda g -> lambda x -> f (g x)"
