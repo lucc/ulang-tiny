@@ -136,4 +136,13 @@ class ParseTest extends AnyFunSpec {
       assert(actual_e == expected_e)
     }
   }
+
+  describe("assignment operator") {
+    import ulang.{Id, Def}
+    it("simplest version") {
+      val actual = p.df.parse("define a := b;")
+      val expected = Def(Id("a"), Id("b"))
+      assert(actual == expected)
+    }
+  }
 }
