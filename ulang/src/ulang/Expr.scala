@@ -254,9 +254,9 @@ case class Bind(quant: Quant, args: List[Id], body: Expr) extends Expr with Expr
 case class Obj(fun: Data, arg: Val) extends Data
 
 case class Curry(cases: List[Case], rargs: List[Val], lex: Env) extends Data {
-  assert(cases.nonEmpty)
-  assert(cases forall (_.arity == arity))
-  assert(rargs.length <= arity)
+  ensure(cases.nonEmpty, "curried function with no cases")
+  ensure(cases forall (_.arity == arity), "curried function with mixed arities")
+  ensure(rargs.length <= arity, "curried function with too many arguments")
   def isComplete = arity == rargs.length
   def arity = cases.head.arity
 }
