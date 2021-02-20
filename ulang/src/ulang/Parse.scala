@@ -28,7 +28,7 @@ object Parse {
    * These special symbols do not need to be surrounded by whitespace in
    * order to be recognized as individual tokens.
    */
-  val c = L("::", ":", "[]", ",")
+  val c = L(":=", "::", ":", "[]", ",")
   val n = s | c
   val name = n filterNot keywords
   // isMixfix depends on the current context!
