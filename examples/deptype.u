@@ -15,8 +15,8 @@ inductive
 
 notation ++ [infix 10];
 define
-  [] ++ ys == ys;
-  (x::xs) ++ ys == x::(xs ++ ys);
+  [] ++ ys := ys;
+  (x::xs) ++ ys := x::(xs ++ ys);
 
 //inductive
 //  []: List a;

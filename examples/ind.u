@@ -9,12 +9,12 @@ notation
 
 // das Ziel ist hier zu bestimmen dass dies funktionen und keine variblen sind
 define
-  o x   == o x;
-  q x   == q x;
-  h x   == h x;
-  f x y == f x y;
-  g x y == g x y;
-  k x y == k x y;
+  o x   := o x;
+  q x   := q x;
+  h x   := h x;
+  f x y := f x y;
+  g x y := g x y;
+  k x y := k x y;
 
 inductive
   q (f x y) /\ p (k x y) ==> p (g x z);

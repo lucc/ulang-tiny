@@ -2,7 +2,7 @@ eval
   CamelCase A;
 
 define
-  camelCase A == B;
+  camelCase A := B;
 
 eval
   camelCase A;

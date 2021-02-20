@@ -1,16 +1,16 @@
 // define a forward reference
 define
-  f x == g x;
+  f x := g x;
 
 eval f x; // I don't get what is happeing here
 test f X == g X;
 
 // define g now
 define
-  g 1 == One;
-  g 2 == Two;
-  g 3 == Three;
-  g x == Otherwise;
+  g 1 := One;
+  g 2 := Two;
+  g 3 := Three;
+  g x := Otherwise;
 
 // I don't get what is happeing here
 eval f 1; f 10;

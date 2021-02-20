@@ -1,14 +1,14 @@
 // any term should be testable not only equalityies
 
 define
-  f A == True;
-  f B == False;
+  f A := True;
+  f B := False;
 
-  rot x == match x with Foo -> Bar
+  rot x := match x with Foo -> Bar
                       | Bar -> Baz
                       | Baz -> Foo;
 
-  toBool == lambda Foo -> True
+  toBool := lambda Foo -> True
 		 | Bar -> False
 		 | Baz -> False;
 test

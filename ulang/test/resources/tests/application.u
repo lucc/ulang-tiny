@@ -1,11 +1,11 @@
 define
-  f1 == lambda x y z -> F (x y z);
-  g1 == lambda x y -> G (x y);
-  h1 == lambda x -> (H x);
+  f1 := lambda x y z -> F (x y z);
+  g1 := lambda x y -> G (x y);
+  h1 := lambda x -> (H x);
 
-  f2 x y z == F (x y z);
-  g2 x y == G (x y);
-  h2 x == H x;
+  f2 x y z := F (x y z);
+  g2 x y := G (x y);
+  h2 x := H x;
 
 test
   // application is left associative

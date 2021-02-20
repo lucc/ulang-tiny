@@ -22,11 +22,11 @@ inductive
   n: Nat ==> n +1: Nat;
 
 define
-  m + 0 == m;
-  m + (n +1) == (m + n) +1;
-  (m < 0) == False;
-  (0 < n +1) == True;
-  (m +1 < n +1) == (m < n);
+  m + 0 := m;
+  m + (n +1) := (m + n) +1;
+  (m < 0) := False;
+  (0 < n +1) := True;
+  (m +1 < n +1) := (m < n);
 
 assume k: Nat;
 show k < k +1;
@@ -53,8 +53,8 @@ inductive
   x: a /\ xs: List a ==> (x :: xs): List a;
 
 define
-  [] ++ ys == ys;
-  (x :: xs) ++ ys == x :: (xs ++ ys);
+  [] ++ ys := ys;
+  (x :: xs) ++ ys := x :: (xs ++ ys);
 
 assume
   xs: List a;
