@@ -2,7 +2,7 @@ import org.scalatest.funspec.AnyFunSpec
 
 class ProofSnippetsTest extends AnyFunSpec with PreloadLoader {
   val pendingProofs = List(
-    // order infariance
+    // order invariance
     """
     show (a ==> b ==> c) ==> b ==> a ==> c;
     proof term lambda x -> lambda y -> lambda z -> x z y;
@@ -13,6 +13,7 @@ class ProofSnippetsTest extends AnyFunSpec with PreloadLoader {
     proof lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
                | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);
     """,
+    // detour
     "show a ==> a; proof term (lambda v -> (lambda u -> u) v);",
   )
   val pendingDefines = List(
