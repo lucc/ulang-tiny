@@ -2,21 +2,21 @@ data +;
 
 define
   // lower case name -> function
-  f X == Y;
+  f X := Y;
   // upper case name -> data / rewrite rule is ignored
-  F X == Y;
+  F X := Y;
   // data as name -> data / rewrite rule is ignored
-  + X == Y;
+  + X := Y;
   // symbol as name -> function
-  ++ X == Y;
+  ++ X := Y;
   // number as name -> function
-  42 X == Y;
+  42 X := Y;
   // capital unicode letter -> data / rewrite rule is ignored
-  Λ X == Y;
+  Λ X := Y;
   // lower case unicode letter -> function
-  λ X == Y;
+  λ X := Y;
   // starting with an equal sign
-  =||= X == Y;
+  =||= X := Y;
 
 test
   f X == Y;

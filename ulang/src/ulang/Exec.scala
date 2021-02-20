@@ -7,7 +7,7 @@ object Exec {
   import context._
 
   def split(df: Def) = {
-    val (lhs, rhs) = Eq.split(df.expr)
+    val (lhs, rhs) = (df.left, df.right)
     // TODO: complain properly if fun is not Id
     val Apps(fun: Id, args) = lhs
     (fun, args, rhs)

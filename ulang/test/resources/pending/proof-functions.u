@@ -1,13 +1,13 @@
 // predefined functions can be used as proof terms
 
 define
-id x == x;
-cons x y == x;
-flip x y z == x z y;
-composition f g x == f (g x);
-switchPair (x,y) == (y,x);
-switchEither (Left x) == Right x;
-switchEither (Right x) == Left x;
+id x := x;
+cons x y := x;
+flip x y z := x z y;
+composition f g x := f (g x);
+switchPair (x,y) := (y,x);
+switchEither (Left x) := Right x;
+switchEither (Right x) := Left x;
 
 show a ==> a;                             proof term id;
 show a ==> (b ==> a);                     proof term cons;

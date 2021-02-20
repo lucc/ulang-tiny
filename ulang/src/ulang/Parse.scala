@@ -18,7 +18,7 @@ object Parse {
   val keywords = Set(
     "define", "data", "notation", "eval", "test", "assume", "show", "proof",
     "inductive", "coinductive",
-    ";", "(", ")", "{", "}", "[", "]", "->", "|",
+    ";", "(", ")", "{", "}", "[", "]", "->", "|", ":=",
     "if", "then", "else",
     "let", "in", "match", "with",
     "lambda", "exists", "forall")
@@ -28,7 +28,7 @@ object Parse {
    * These special symbols do not need to be surrounded by whitespace in
    * order to be recognized as individual tokens.
    */
-  val c = L("::", ":", "[]", ",")
+  val c = L(":=", "::", ":", "[]", ",")
   val n = s | c
   val name = n filterNot keywords
   // isMixfix depends on the current context!
@@ -71,7 +71,7 @@ object Parse {
   val have = Have("have" ~ expr)
   val term = Term("term" ~ expr)
 
-  val df = Def(expr)
+  val df = Def(expr ~ ":=" ~ expr)
   // TODO if the normal equality term == is to troublesome to get right as the
   // defining equality in Def expressions we can use ":=" as a new syntactical
   // element in its place.  This entails that arbitrary expressions can not be

@@ -2,13 +2,13 @@
 
 define
 
-  f1 x == match x with (A y) -> AA
+  f1 x := match x with (A y) -> AA
 		     | (B y) -> BB
 		     | (C y) -> CC;
 
-  f2 (A y) == AA;
-  f2 (B y) == BB;
-  f2 (C y) == CC;
+  f2 (A y) := AA;
+  f2 (B y) := BB;
+  f2 (C y) := CC;
 
 test
 
