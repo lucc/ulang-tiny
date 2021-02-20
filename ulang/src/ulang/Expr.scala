@@ -123,6 +123,12 @@ object ProofTermChecker {
       case (App(f: Id, arg: Id), _)
         if assumptions.contains(f) && assumptions.contains(arg)
         => assumptions(f) == Imp(assumptions(arg), goal)
+      case (App(f: Id, arg), _)
+        if assumptions.contains(f) && (assumptions(f) match {
+          case Imp(precond, `goal`) => check(assumptions, arg, precond)
+          case _ => false
+        })
+        => true
 
       // propositional logic: elimination rules TODO
       //case (App(f, args), _) if functionArgumentsMatch(f, args) && bodyTypeMatches()

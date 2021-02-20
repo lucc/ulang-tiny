@@ -36,11 +36,9 @@ class ProofCheckTest extends AnyFunSpec {
       }
     }
     it("function composition proves chaining") {
-      pendingUntilFixed {
       val composition = u"lambda f -> lambda g -> lambda x -> f (g x)"
       val chain = u"(b ==> c) ==> (a ==> b) ==> a ==> c"
       assertProves(composition, chain)
-      }
     }
     it("ex falso quodlibet") {
       pendingUntilFixed {

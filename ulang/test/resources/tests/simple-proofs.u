@@ -41,6 +41,10 @@ proof term lambda x -> lambda f -> f x;
 show (a ==> b) ==> a ==> b;
 proof term lambda f -> lambda x -> f x;
 
+// chaining
+show (b ==> c) ==> (a ==> b) ==> a ==> c;
+proof term lambda f -> lambda g -> lambda x -> f (g x);
+
 // all the above can also be proven by the "auto" tactic
 ////////////////////////////////////////////////////////
 
@@ -53,6 +57,9 @@ show a ==> a \/ b;
 show b ==> a \/ b;
 show a /\ b ==> a;
 show a /\ b ==> b;
+show a ==> (a ==> b) ==> b;
+show (a ==> b) ==> a ==> b;
+show (b ==> c) ==> (a ==> b) ==> a ==> c;
 
 // introduction rule for exists
 ///////////////////////////////

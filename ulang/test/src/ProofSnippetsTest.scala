@@ -7,11 +7,6 @@ class ProofSnippetsTest extends AnyFunSpec with PreloadLoader {
     show (a ==> b ==> c) ==> b ==> a ==> c;
     proof term lambda x -> lambda y -> lambda z -> x z y;
     """,
-    // chaining
-    """
-    show (b ==> c) ==> (a ==> b) ==> a ==> c;
-    proof term lambda f -> lambda g -> lambda x -> f (g x);
-    """,
     // or elimination
     """
     show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
