@@ -1,4 +1,4 @@
 define
-  A B C;
+  A B C;// FIXME ungültig, links data als function
 
-  (let f = x x in f f) == A;
+  (let f = x x in f f) := A;// Fixme ungültig, links kein pattern
