@@ -9,7 +9,10 @@ class ProofCheckTest extends AnyFunSpec {
   ulang.Main.loadPrelude()
 
   def assertProves(proof: Expr, goal: Expr) {
-    assert(check(proof, goal), proof + " does not prove " + goal)
+    check(proof, goal) match {
+      case None => assert(true)
+      case Some(err) => assert(false, err)
+    }
   }
 
   describe("simple proofs") {

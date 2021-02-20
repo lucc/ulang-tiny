@@ -67,7 +67,7 @@ object ProofTermChecker {
    *
    *  The proof is assumed to have no global assumtions.
    */
-  def check(proof: Expr, goal: Expr): Boolean = check(Map(), proof, goal)
+  def check(proof: Expr, goal: Expr): Option[String] = check(Map(), proof, goal)
 
   /** Check a proof with context
    *
@@ -77,17 +77,16 @@ object ProofTermChecker {
    *
    *  If a proof should be allowed to use axioms, they need to be present in
    *  the context.
-   *
-   *  TODO use a rich return type like `type Error = Option[String]`
    */
-  def check(assumptions: Map[Id, Expr], proof: Expr, goal: Expr): Boolean =
+  def check(assumptions: Map[Id, Expr], proof: Expr, goal: Expr): Option[String] =
     (proof, goal) match {
 
       // Proof by assumption has to be the first case, this makes it possible
       // to match against any goal (even "False").  If the given goal is not
       // in the context we fall through to the other cases.
       case (id: Id, _) if assumptions.contains(id) =>
-        assumptions(id) == goal
+        if (assumptions(id) == goal) None
+        else Some(f"Assumption $id does not match the goal $goal")
       // TODO if the id was not found in the local assumptions we want to look
       // at the gloablly available lemmas  (and axioms etc) or at defined
       // functions which the user might use to proof something.
@@ -99,11 +98,11 @@ object ProofTermChecker {
       //  canBeUnified(funs(id), goal)
 
       // special cases
-      case (True, True) => true // we use "True" to represent a trivial proof
+      case (True, True) => None // we use "True" to represent a trivial proof
 
       // propositional logic: introduction rules
-      case (Pair(p1, p2), And(f1, f2)) => check(assumptions, p1, f1) &&
-                                          check(assumptions, p2, f2)
+      case (Pair(p1, p2), And(f1, f2)) =>
+        check(assumptions, p1, f1) orElse check(assumptions, p2, f2)
       case (LeftE(p), Or(f, _)) => check(assumptions, p, f)
       case (RightE(p), Or(_, f)) => check(assumptions, p, f)
       // special case for one argument lambdas with a variable pattern
@@ -121,14 +120,20 @@ object ProofTermChecker {
       // this is only a simpler case of the next case, the implementation
       // there also checks this case correctly
       case (App(f: Id, arg: Id), _)
-        if assumptions.contains(f) && assumptions.contains(arg)
-        => assumptions(f) == Imp(assumptions(arg), goal)
+      if assumptions.contains(f) && assumptions.contains(arg) =>
+        val t1 = assumptions(f)
+        val t2 = assumptions(arg)
+        if (t1 == Imp(t2, goal)) None
+        else Some(f"Formulas do not match: $t1 should be equal to $t2 ==> $goal")
       case (App(f: Id, arg), _)
         if assumptions.contains(f) && (assumptions(f) match {
-          case Imp(precond, `goal`) => check(assumptions, arg, precond)
+          case Imp(precond, `goal`) => check(assumptions, arg, precond) match {
+            case None => true
+            case _ => false
+          }
           case _ => false
         })
-        => true
+        => None
       case (App(Lam1(id, body), arg), _) =>
         check(assumptions, body.subst(Map(id -> arg)), goal)
 
@@ -150,20 +155,22 @@ object ProofTermChecker {
 
   // TODO these functions are suggested by Gidon in order to check elimination
   // and introduction rules seperately.
-  def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id,Expr] =
-    (pat, assm) match {
-      case (And(p1,p2), And(a1,a2)) => bind(bind(ctx, p1, a1), p2, a2)
-    }
-  def elim(ctx: Map[Id, Expr], pats: List[Expr], body: Expr, goal: Expr): Boolean =
-    (pats, goal) match {
-      case (Nil, _) => check(ctx, body, goal)
-      case (pat::rest, Imp(assm, concl)) =>
-        val ctx_ = bind(ctx, pat, assm)
-        elim(ctx_, rest, body, concl)
-    }
-  def elim(ctx: Map[Id, Expr], cs: Case, goal: Expr): Boolean = ???
-  def elim(ctx: Map[Id, Expr], cases: List[Case], goal: Expr): Boolean =
-    cases.forall(elim(ctx, _, goal))
+  //def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id,Expr] =
+  //  (pat, assm) match {
+  //    case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
+  //    case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
+  //    case (RightE(p), Or(_, f)) => bind(ctx, p, f)
+  //  }
+  //def elim(ctx: Map[Id, Expr], pats: List[Expr], body: Expr, goal: Expr): Boolean =
+  //  (pats, goal) match {
+  //    case (Nil, _) => check(ctx, body, goal)
+  //    case (pat::rest, Imp(assm, concl)) =>
+  //      val ctx_ = bind(ctx, pat, assm)
+  //      elim(ctx_, rest, body, concl)
+  //  }
+  //def elim(ctx: Map[Id, Expr], cs: Case, goal: Expr): Boolean = ???
+  //def elim(ctx: Map[Id, Expr], cases: List[Case], goal: Expr): Boolean =
+  //  cases.forall(elim(ctx, _, goal))
 }
 
 object Expr extends Alpha[Expr, Id]
