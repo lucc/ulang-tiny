@@ -1,0 +1,2 @@
+// drinker formula
+show not forall x. not (p x ==> forall x. p x);

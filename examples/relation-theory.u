@@ -1,0 +1,23 @@
+define
+  reflexive p := forall x. p x x;
+  symetric p := forall x. forall y. p x y ==> p y x;
+  transitive p := forall x. forall y. forall z. p x y ==> p y z ==> p x z;
+
+inductive
+  (forall x. p x x) ==> Reflexive p;
+  (forall x. forall y. p x y ==> p y x) ==> Symetric p;
+  (forall x. forall y. forall z. p x y ==> p y z ==> p x z) ==> Transitive p;
+
+assume reflexive p;
+show Reflexive p;
+
+assume Reflexive p;
+show reflexive p;
+
+assume symetric p;
+       transitive p;
+show reflexive p;
+
+assume Symetric p;
+       Transitive p;
+show Reflexive p;
