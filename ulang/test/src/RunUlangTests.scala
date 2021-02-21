@@ -9,7 +9,11 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
 
   describe("run file") {
     for (testFile <- testFiles("tests"))
-      it(testFile) { ulang.Exec.runFile(testFile) }
+      it(testFile) {
+        Console.withOut(new java.io.ByteArrayOutputStream()) {
+          ulang.Exec.runFile(testFile)
+        }
+      }
     for (testFile <- testFiles("pending"))
       it(testFile) {
         pendingUntilFixed {
