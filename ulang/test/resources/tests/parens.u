@@ -15,5 +15,5 @@ test
   (A == A);
 
   // let expressions
-  (let x = A in x == A);
-  (let x = A in x) == A;
+  (let x := A in x == A);
+  (let x := A in x) == A;

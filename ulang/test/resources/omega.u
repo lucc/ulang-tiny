@@ -2,5 +2,5 @@
 // excetion: java.lang.StackOverflowError
 
 test
-  let omega = lambda x -> x x
+  let omega := lambda x -> x x
   in (omega omega) == omega;

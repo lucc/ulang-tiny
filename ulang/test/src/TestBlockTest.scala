@@ -23,7 +23,7 @@ class TestBlockTest extends AnyFunSpec with PreloadLoader {
       assert(split(other) == (other, ulang.True))
     }
     it("let terms are return with True") {
-      val other = u"let x = X in x x"
+      val other = u"let x := X in x x"
       assert(split(other) == (other, ulang.True))
     }
     it("match terms are return with True") {

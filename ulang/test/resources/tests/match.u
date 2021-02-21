@@ -21,7 +21,7 @@ test
   f2 (C D) == CC;
 
 
-  (let f =
+  (let f :=
     lambda x ->
       match x with (A y) -> AA
 	         | (B y) -> BB

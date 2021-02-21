@@ -57,21 +57,21 @@ class ParseTest extends AnyFunSpec {
   describe("let expressions") {
     import ulang.{Let, Case1, Id, App}
     it("can define simple bindings") {
-      val actual = p.let.parse("let x = y in x")
+      val actual = p.let.parse("let x := y in x")
       assert(actual == Let(List(Case1(Id("x"), Id("y"))), Id("x")))
     }
     it("can bind several names, separated by ;") {
-      val actual = p.let.parse("let x = y; a = b in x a")
+      val actual = p.let.parse("let x := y; a := b in x a")
       assert(actual == Let(List(Case1(Id("x"), Id("y")),
                                 Case1(Id("a"), Id("b"))),
                            App(Id("x"), Id("a"))))
     }
     it("can be nested on both sides") {
       val actual = p.let.parse("""
-        let x = let a = A;
-                    b = B
-                in a b
-        in let y = Z
+        let x := let a := A;
+                     b := B
+                 in a b
+        in let y := Z
            in x y""")
       val expected = Let(List(Case1(Id("x"), Let(List(Case1(Id("a"), Id("A")),
                                                       Case1(Id("b"), Id("B"))),
@@ -102,7 +102,7 @@ class ParseTest extends AnyFunSpec {
                                   Case(List(Id("C")), Id("D")))))
     }
     it("can be used in let bindings") {
-      val actual = p.let.parse("let a = match x with A -> B | C -> D in a")
+      val actual = p.let.parse("let a := match x with A -> B | C -> D in a")
       val expected = Let(List(Case1(Id("a"),
                                     Match(List(Id("x")),
                                           List(Case(List(Id("A")), Id("B")),
