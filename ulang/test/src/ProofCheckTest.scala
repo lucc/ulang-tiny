@@ -41,37 +41,13 @@ class ProofCheckTest extends AnyFunSpec {
       val chain = u"(b ==> c) ==> (a ==> b) ==> a ==> c"
       assertProves(composition, chain)
     }
-    it("ex falso quodlibet") {
-      pendingUntilFixed {
-      val foo = u"todo" // FIXME is this an axiom?
-      val efq = u"a ==> (not a ==> b)"
-      assertProves(foo, efq)
-      }
-    }
   }
 
   describe("conjunction") {
     it("is symmetric") {
       val switch1 = u"lambda (x,y) -> (y,x)"
-      val switch2 = u"lambda p -> match p with (x,y) -> (y,x)"
       val sym = u"a /\ b ==> b /\ a"
       assertProves(switch1, sym)
-      pendingUntilFixed {
-        assertProves(switch2, sym)
-      }
-    }
-  }
-
-  describe("disjunction") {
-    it("is symmetric") {
-      pendingUntilFixed {
-      val switch1 = u"""lambda ant -> match ant with (Left x) -> Right x
-                                                  | (Right x) -> Left x;"""
-      val switch2 = u"""lambda (Left x) -> Right x
-                             | (Right x) -> Left x;"""
-      val sym = u"a \/ b ==> b \/ a"
-      assertProves(switch1, sym)
-      }
     }
   }
 }
