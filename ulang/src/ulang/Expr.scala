@@ -150,8 +150,12 @@ object ProofTermChecker {
       // etc.
 
       // predicate logic
-      case (Pair(w: Id, p), Bind(Ex, List(v), body)) =>  // only for one variable
-        check(assumptions, p, body.rename(Map(v -> w)))
+      case (Pair(witness, p), Bind(Ex, ids, body)) =>
+        ids match {
+          case Nil => Some("Existential quantifier with no bound variable!")
+          case List(v) => check(assumptions, p, body.subst(Map(v -> witness)))
+          case v::vs => check(assumptions, p, Ex(vs, body).subst(Map(v -> witness)))
+        }
       case (Lam1(id, body1), Bind(All, List(v), body2)) =>  // only for one variable
         // FIXME do I need to generate a new name instead of id?  If I use id
         // itself do I need to rename on body1 then?  I think no & no.
