@@ -149,7 +149,7 @@ object ProofTermChecker {
       // here in order to eliminate connective: Elim-/\-1, Elim-/\-2, Elim-\/,
       // etc.
 
-      // predicate logic
+      // predicate logic introduction rules
       case (Pair(witness, p), Bind(Ex, ids, body)) =>
         ids match {
           case Nil => Some("Existential quantifier with no bound variable!")
@@ -161,9 +161,8 @@ object ProofTermChecker {
         // itself do I need to rename on body1 then?  I think no & no.
         check(assumptions, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
 
-      // TODO everything else needs to be evaluated and then checked again
       // False is implicit here
-      //case _ => false
+      case _ => Some(f"Proof term $proof does not match $goal.")
     }
 
   /**
