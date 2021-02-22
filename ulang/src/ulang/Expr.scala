@@ -65,7 +65,7 @@ object ProofTermChecker {
 
   /** Check a proof
    *
-   *  The proof is assumed to have no global assumtions.
+   *  The proof is assumed to have no global assumptions.
    */
   def check(proof: Expr, goal: Expr): Option[String] = check(Map(), proof, goal)
 
@@ -141,6 +141,7 @@ object ProofTermChecker {
       case (App(f, arg), _) =>
         infer(assumptions, arg) match {
           case Right(ty) => check(assumptions, f, Imp(ty, goal))
+          // TODO there should be a case for all-elim here?
           case Left(err) => Some(err)
         }
 
@@ -164,6 +165,23 @@ object ProofTermChecker {
         // FIXME do I need to generate a new name instead of id?  If I use id
         // itself do I need to rename on body1 then?  I think no & no.
         check(assumptions, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
+      case (Lam1(id, body), Bind(All, ids, matrix)) =>
+        // For all-introduction there is a variable condition: the bound
+        // variable (ids) must not occur free in any open assumption in body.
+        // We emulate this by filtering all assumptions from the current proof
+        // context where the ids are occurring free.
+        // TODO is this enough to implement the variable condition?
+        ids match {
+          case Nil => Some("Universal quantifier with no bound variable!")
+          case List(v) =>
+            check(assumptions.filter(!_._2.free.contains(v)), ???,
+                  matrix.subst(Map(v -> ???)))
+          // We unfold the list of quantified variables into a list of
+          // universal quantifiers with one variable each.
+          case v::vs =>
+            check(assumptions.filter(!_._2.free.contains(v)), ???,
+                  All(vs, matrix).subst(Map(v -> ???)))
+        }
 
       // TODO predicate logic elimination rules?
 

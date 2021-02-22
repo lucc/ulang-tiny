@@ -49,6 +49,8 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
          proof term lambda (Left x) -> Right x | (Right x) -> Left x;""",
       // define statements with strange expressions on the left
       "define (let x := y in x) := A;",
+      // proof with all quantifier
+      "show (forall x. p x) ==> p Foo; proof term lambda x -> x Foo;",
     )
     for (snippet <- snippets)
       it(snippet) { pendingUntilFixed { ulang.Exec.run(snippet) } }
