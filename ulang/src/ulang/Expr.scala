@@ -151,15 +151,21 @@ object ProofTermChecker {
 
       // predicate logic introduction rules
       case (Pair(witness, p), Bind(Ex, ids, body)) =>
+        // FIXME the global variable condition for the introduction rule of
+        // existential quantifiers is still missing!
         ids match {
           case Nil => Some("Existential quantifier with no bound variable!")
           case List(v) => check(assumptions, p, body.subst(Map(v -> witness)))
+          // We unfold the list of quantified variables into a list of
+          // existential quantifiers with one variable each.
           case v::vs => check(assumptions, p, Ex(vs, body).subst(Map(v -> witness)))
         }
       case (Lam1(id, body1), Bind(All, List(v), body2)) =>  // only for one variable
         // FIXME do I need to generate a new name instead of id?  If I use id
         // itself do I need to rename on body1 then?  I think no & no.
         check(assumptions, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
+
+      // TODO predicate logic elimination rules?
 
       // False is implicit here
       case _ => Some(f"Proof term $proof does not match $goal.")
