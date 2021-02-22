@@ -137,7 +137,7 @@ object ProofTermChecker {
       case (App(Lam1(id, body), arg), _) =>
         check(assumptions, body.subst(Map(id -> arg)), goal)
       // generall applications need type inference for either the left or the
-      // right side
+      // right side.  We use the left side for now.
       case (App(f, arg), _) =>
         infer(assumptions, arg) match {
           case Right(ty) => check(assumptions, f, Imp(ty, goal))
@@ -145,7 +145,9 @@ object ProofTermChecker {
         }
 
       // propositional logic: elimination rules TODO
-      //case (App(f, args), _) if functionArgumentsMatch(f, args) && bodyTypeMatches()
+      // We could also introduce special term constructors that are recognized
+      // here in order to eliminate connective: Elim-/\-1, Elim-/\-2, Elim-\/,
+      // etc.
 
       // predicate logic
       case (Pair(w: Id, p), Bind(Ex, List(v), body)) =>  // only for one variable

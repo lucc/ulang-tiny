@@ -145,4 +145,15 @@ class ParseTest extends AnyFunSpec {
       assert(actual == expected)
     }
   }
+
+  describe("parsing ids") {
+    def test(description: String, input: String) {
+      it(description) { assert(p.expr.parse(input) == ulang.Id(input)) }
+    }
+    test("with letters and symbols", "a+")
+    test("with symbols and letters", "+a")
+    test("with symbols and numbers", "+1")
+    test("with numbers and symbols", "1+")
+    test("names for elim rule constructor terms", "Elim-/\\")
+  }
 }
