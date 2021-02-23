@@ -151,42 +151,39 @@ object ProofTermChecker {
       // etc.
 
       // predicate logic introduction rules
-      case (Pair(witness, p), Bind(Ex, ids, body)) =>
-        // FIXME the global variable condition for the introduction rule of
-        // existential quantifiers is still missing!
+      case (Pair(witness, p), Ex(ids, matrix)) =>
         ids match {
           case Nil => Some("Existential quantifier with no bound variable!")
-          case List(v) => check(assumptions, p, body.subst(Map(v -> witness)))
+          case List(x) => check(assumptions, p, matrix.subst(Map(x -> witness)))
           // We unfold the list of quantified variables into a list of
           // existential quantifiers with one variable each.
-          case v::vs => check(assumptions, p, Ex(vs, body).subst(Map(v -> witness)))
+          case x::xs => check(assumptions, p, Ex(xs, matrix).subst(Map(x -> witness)))
         }
-      case (Lam1(id, body1), Bind(All, List(v), body2)) =>  // only for one variable
+      case (Lam1(id, body1), All(List(v), body2)) =>  // only for one variable
         // FIXME do I need to generate a new name instead of id?  If I use id
         // itself do I need to rename on body1 then?  I think no & no.
         check(assumptions, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
-      case (Lam1(id, body), Bind(All, ids, matrix)) =>
+      case (Lam1(id, body), All(ids, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable (ids) must not occur free in any open assumption in body.
         // We emulate this by filtering all assumptions from the current proof
         // context where the ids are occurring free.
-        // TODO is this enough to implement the variable condition?
+        // TODO is this enough to implement the variable condition?  With this
+        // we must only accept closed formulas in open assumptions (lemmas and
+        // axioms).
+        def filtered(v: Id) = assumptions.filter(!_._2.free.contains(v))
         ids match {
           case Nil => Some("Universal quantifier with no bound variable!")
-          case List(v) =>
-            check(assumptions.filter(!_._2.free.contains(v)), ???,
-                  matrix.subst(Map(v -> ???)))
+          case List(v) => check(filtered(v), ???, matrix.subst(Map(v -> ???)))
           // We unfold the list of quantified variables into a list of
           // universal quantifiers with one variable each.
-          case v::vs =>
-            check(assumptions.filter(!_._2.free.contains(v)), ???,
-                  All(vs, matrix).subst(Map(v -> ???)))
+          case v::vs => check(filtered(v), ???, All(vs, matrix).subst(Map(v -> ???)))
         }
 
       // TODO predicate logic elimination rules?
 
       // False is implicit here
-      case _ => Some(f"Proof term $proof does not match $goal.")
+      case _ => Some(f"Proof term $proof does not match the formula $goal.")
     }
 
   /**
