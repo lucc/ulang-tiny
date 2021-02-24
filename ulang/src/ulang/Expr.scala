@@ -159,10 +159,6 @@ object ProofTermChecker {
           // existential quantifiers with one variable each.
           case x::xs => check(assumptions, p, Ex(xs, matrix).subst(Map(x -> witness)))
         }
-      case (Lam1(id, body1), All(List(v), body2)) =>  // only for one variable
-        // FIXME do I need to generate a new name instead of id?  If I use id
-        // itself do I need to rename on body1 then?  I think no & no.
-        check(assumptions, body1.rename(Map(id -> id)), body2.rename(Map(v -> id)))
       case (Lam1(id, body), All(ids, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable (ids) must not occur free in any open assumption in body.
@@ -174,10 +170,10 @@ object ProofTermChecker {
         def filtered(v: Id) = assumptions.filter(!_._2.free.contains(v))
         ids match {
           case Nil => Some("Universal quantifier with no bound variable!")
-          case List(v) => check(filtered(v), ???, matrix.subst(Map(v -> ???)))
+          case List(v) => check(filtered(v), body, matrix.subst(Map(v -> id)))
           // We unfold the list of quantified variables into a list of
           // universal quantifiers with one variable each.
-          case v::vs => check(filtered(v), ???, All(vs, matrix).subst(Map(v -> ???)))
+          case v::vs => check(filtered(v), body, All(vs, matrix).subst(Map(v -> id)))
         }
 
       // TODO predicate logic elimination rules?
