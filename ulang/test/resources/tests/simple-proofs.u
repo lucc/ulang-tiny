@@ -46,6 +46,8 @@ show a /\ b ==> a;
 proof term (lambda (x,y) -> x);
 show a /\ b ==> b;
 proof term (lambda (x,y) -> y);
+show a /\ b ==> (a ==> b ==> c) ==> c;
+proof term lambda (x,y) -> lambda f -> f x y;
 
 // modus ponens
 show a ==> (a ==> b) ==> b;
@@ -67,6 +69,7 @@ show a ==> a \/ b;
 show b ==> a \/ b;
 show a /\ b ==> a;
 show a /\ b ==> b;
+show a /\ b ==> (a ==> b ==> c) ==> c;
 show a ==> (a ==> b) ==> b;
 show (a ==> b) ==> a ==> b;
 
