@@ -200,8 +200,11 @@ object ProofTermChecker {
    * Type inference for the proof checker
    */
   def infer(ctx: Map[Id, Expr], expr: Expr): Either[String, Expr] = expr match {
-    case id: Id => if (ctx contains id) Right(ctx(id))
-                   else Left("Not in current type inference context: " + id)
+    case id: Id => ctx get id toRight s"Not in current type inference context: $id"
+    case Pair(a, b) => infer(ctx, a).flatMap(a => infer(ctx, b).map(b => And(a, b))) // TODO existential quantifier?
+    case LeftE(a) => infer(ctx, a).map(a => Or(a, ulang.Wildcard))
+    case RightE(a) => infer(ctx, a).map(a => Or(ulang.Wildcard, a))
+    case Lam1(v, body) => infer(ctx, v).flatMap(t1 => infer(ctx + (v -> t1), body).map(t2 => Imp(t1, t2))) // TODO universal quantifier?
     case _ => Left("Type inference for " + expr + " is not yet implemented.")
   }
 
