@@ -62,6 +62,18 @@ object ProofTermChecker {
       case _ => None
     }
   }
+  /**
+   * A pattern matching abbreviation for lambda expressions with only one case
+   * and only Ids in the pattern
+   */
+  object LamIds extends ((List[Id],Expr) => Expr) {
+    def apply(ids: List[Id], body: Expr) = Lam(List(Case(ids, body)))
+    def unapply(e: Expr): Option[(List[Id], Expr)] = e match {
+      case Lam(List(Case(ids, body))) if ids.forall(_.isInstanceOf[Id]) =>
+        Some((ids.map(_.asInstanceOf[Id]), body))
+      case _ => None
+    }
+  }
 
   /** Check a proof
    *
@@ -159,21 +171,23 @@ object ProofTermChecker {
           // existential quantifiers with one variable each.
           case x::xs => check(assumptions, p, Ex(xs, matrix).subst(Map(x -> witness)))
         }
-      case (Lam1(id, body), All(ids, matrix)) =>
+      case (LamIds(params, body), All(vars, matrix)) =>
         // For all-introduction there is a variable condition: the bound
-        // variable (ids) must not occur free in any open assumption in body.
+        // variable (vars) must not occur free in any open assumption in body.
         // We emulate this by filtering all assumptions from the current proof
-        // context where the ids are occurring free.
+        // context where the vars are occurring free.
         // TODO is this enough to implement the variable condition?  With this
         // we must only accept closed formulas in open assumptions (lemmas and
         // axioms).
         def filtered(v: Id) = assumptions.filter(!_._2.free.contains(v))
-        ids match {
-          case Nil => Some("Universal quantifier with no bound variable!")
-          case List(v) => check(filtered(v), body, matrix.subst(Map(v -> id)))
+        (params, vars) match {
+          case (_, Nil) => Some("Universal quantifier with no bound variable!")
+          case (Nil, _) => Some("Lambda abstraction without a variable!")
+          case (List(p), List(v)) => check(filtered(v), body, matrix.subst(Map(v -> p)))
           // We unfold the list of quantified variables into a list of
           // universal quantifiers with one variable each.
-          case v::vs => check(filtered(v), body, All(vs, matrix).subst(Map(v -> id)))
+          case (p::ps, v::vs) =>
+            check(filtered(v), LamIds(ps, body), All(vs, matrix).subst(Map(v -> p)))
         }
 
       // TODO predicate logic elimination rules?
