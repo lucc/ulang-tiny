@@ -6,24 +6,22 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
   def testFiles(folder: String) =
     new File(getClass.getResource("/"+folder).getFile()).listFiles(
       (_, name) => name endsWith ".u").map(_.getAbsolutePath)
-  def run(file: String) {
+  def run(file: String, pending: Boolean = false) = it(file) {
     Console.withOut(new java.io.ByteArrayOutputStream()) {
-      ulang.Exec.runFile(file)
+      if (pending) pendingUntilFixed { ulang.Exec.runFile(file) }
+      else ulang.Exec.runFile(file)
     }
   }
-  def runPending(file: String) = pendingUntilFixed { run(file) }
-  def eval(snippet: String) {
+  def eval(snippet: String, pending: Boolean = false) = it(snippet) {
     Console.withOut(new java.io.ByteArrayOutputStream()) {
-      ulang.Exec.run(snippet)
+      if (pending) pendingUntilFixed { ulang.Exec.run(snippet) }
+      else ulang.Exec.run(snippet)
     }
   }
-  def evalPending(snippet: String) = pendingUntilFixed { eval(snippet) }
 
   describe("run file") {
-    for (testFile <- testFiles("tests"))
-      it(testFile) { run(testFile) }
-    for (testFile <- testFiles("pending"))
-      it(testFile) { runPending(testFile) }
+    for (testFile <- testFiles("tests"))   run(testFile)
+    for (testFile <- testFiles("pending")) run(testFile, pending=true)
   }
 
   describe("special files") {
@@ -59,8 +57,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       // proof with all quantifier
       "show (forall x. p x) ==> p Foo; proof term lambda x -> x Foo;",
     )
-    for (snippet <- snippets)
-      it(snippet) { evalPending(snippet) }
+    for (snippet <- snippets) eval(snippet, pending=true)
   }
 
   describe("rules") {
@@ -76,27 +73,23 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
           // and introduction
           raw"show a ==> b ==> a /\ b; proof term lambda x -> lambda y -> (x,y);",
         )
-        for (snippet <- rules)
-          it(snippet) { eval(snippet) }
+        for (snippet <- rules) eval(snippet)
       }
       describe("elimination rules") {
         val rules = Map(
           // implication elimination / modus ponens
           """show (a ==> b) ==> a ==> b;
-          proof term lambda f -> lambda x -> f x;""" -> Ok,
+          proof term lambda f -> lambda x -> f x;""" -> false,
           // or elimination
           raw"""show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
           proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
                           | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);"""
-          -> Pending,
+          -> true,
           // and elimination
           raw"""show a /\ b ==> (a ==> b ==> c) ==> c;
-          proof term lambda (x,y) -> lambda f -> f x y;""" -> Ok,
+          proof term lambda (x,y) -> lambda f -> f x y;""" -> false,
         )
-        for ((snippet, state) <- rules) it(snippet) { state match {
-          case Pending => evalPending(snippet)
-          case Ok => eval(snippet)
-        }}
+        for ((snippet, pending) <- rules) eval(snippet, pending)
       }
     }
     describe("from predicate logic:") {
@@ -105,34 +98,23 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
           // universal quantifier introduction
           // TODO variable condition?
           "show a ==> forall x. a; proof term lambda p -> lambda x -> p;"
-          -> Ok,
+          -> false,
           // existential quantifier introduction
-          "show a ==> exists x. a; proof term lambda p -> (x,p);" -> Pending,
+          "show a ==> exists x. a; proof term lambda p -> (x,p);" -> true,
           )
-        for ((snippet, state) <- rules) it(snippet) { state match {
-          case Pending => evalPending(snippet)
-          case Ok => eval(snippet)
-        }}
+        for ((snippet, pending) <- rules) eval(snippet, pending)
       }
       describe("elimination rules") {
-        val rules: Map[String, TestStatus] = Map(
+        val rules = Map(
           // universal quantifier elimination
-          "show (forall x. p x) ==> p t; proof term lambda f -> f t;"
-          -> Pending,
+          "show (forall x. p x) ==> p t; proof term lambda f -> f t;" -> true,
           // existential quantifier elimination
           // TODO variable condition?
           """show exists x. a ==> (forall x. a ==> b) ==> b;
-          proof term lambda (w,p) -> lambda f -> f w p;""" -> Pending,
+          proof term lambda (w,p) -> lambda f -> f w p;""" -> true,
           )
-        for ((snippet, state) <- rules) it(snippet) { state match {
-          case Pending => evalPending(snippet)
-          case Ok => eval(snippet)
-        }}
+        for ((snippet, pending) <- rules) eval(snippet, pending)
       }
     }
   }
 }
-
-sealed trait TestStatus;
-case object Pending extends TestStatus;
-case object Ok extends TestStatus;
