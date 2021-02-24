@@ -35,17 +35,16 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
   describe("pending snippets") {
     val snippets = List(
       // proving or elimination
-      """
-      show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
+      """show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
       proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
-                      | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);
-      """,
+                      | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);""",
       // proving introduction rules for exists
       "show a ==> exists x. a; proof term (lambda a -> (x, a));",
       "show p x ==> exists y. p y; proof term (lambda a -> (x, a));",
       // proofs with match expressions
       // symmetry of /\
-      """show a /\ b ==> b /\ a; proof term lambda p -> match p with (x,y) -> (y,x);""",
+      """show a /\ b ==> b /\ a;
+      proof term lambda p -> match p with (x,y) -> (y,x);""",
       // symmetry of \/
       """show a \/ b ==> b \/ a;
          proof term lambda ant -> match ant with (Left x) -> Right x
@@ -56,6 +55,15 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       "define (let x := y in x) := A;",
       // proof with all quantifier
       "show (forall x. p x) ==> p Foo; proof term lambda x -> x Foo;",
+      // reordering bound variables
+      """show (forall x y. a) ==> forall y x. a;
+      proof term lambda f -> lambda y -> lambda x -> f x y;""",
+      """show (forall x. forall y. a) ==> forall y. forall x. a;
+      proof term lambda f -> lambda y -> lambda x -> f x y;""",
+      """show (exists x y. a) ==> exists y x. a;
+      proof term lambda (w1,(w2,pt)) -> (w2,(w1,pt))""",
+      """show (exists x. exists y. a) ==> exists y. exists x. a;
+      proof term lambda (w1,(w2,pt)) -> (w2,(w1,pt))""",
     )
     for (snippet <- snippets) eval(snippet, pending=true)
   }
@@ -67,11 +75,11 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
           // implication introduction / weakening
           "show a ==> b ==> a; proof term lambda x -> lambda y -> x;",
           // or introduction 1
-          raw"show a ==> a \/ b; proof term lambda x -> Left x;",
+          """show a ==> a \/ b; proof term lambda x -> Left x;""",
           // or introduction 2
-          raw"show b ==> a \/ b; proof term lambda x -> Right x;",
+          """show b ==> a \/ b; proof term lambda x -> Right x;""",
           // and introduction
-          raw"show a ==> b ==> a /\ b; proof term lambda x -> lambda y -> (x,y);",
+          """show a ==> b ==> a /\ b; proof term lambda x -> lambda y -> (x,y);""",
         )
         for (snippet <- rules) eval(snippet)
       }
@@ -81,12 +89,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
           """show (a ==> b) ==> a ==> b;
           proof term lambda f -> lambda x -> f x;""" -> false,
           // or elimination
-          raw"""show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
+          """show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
           proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
                           | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);"""
           -> true,
           // and elimination
-          raw"""show a /\ b ==> (a ==> b ==> c) ==> c;
+          """show a /\ b ==> (a ==> b ==> c) ==> c;
           proof term lambda (x,y) -> lambda f -> f x y;""" -> false,
         )
         for ((snippet, pending) <- rules) eval(snippet, pending)
