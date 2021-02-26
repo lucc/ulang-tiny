@@ -60,9 +60,9 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       proof term lambda f -> lambda y -> lambda x -> f x y;""",
       """show (forall x. forall y. a) ==> forall y. forall x. a;
       proof term lambda f -> lambda y -> lambda x -> f x y;""",
-      """show (exists x y. a) ==> exists y x. a;
+      """show (exists x y. a x y) ==> exists y x. a x y;
       proof term lambda (w1,(w2,pt)) -> (w2,(w1,pt))""",
-      """show (exists x. exists y. a) ==> exists y. exists x. a;
+      """show (exists x. exists y. a x y) ==> exists y. exists x. a x y;
       proof term lambda (w1,(w2,pt)) -> (w2,(w1,pt))""",
     )
     for (snippet <- snippets) eval(snippet, pending=true)
@@ -88,6 +88,8 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
           // implication elimination / modus ponens
           """show (a ==> b) ==> a ==> b;
           proof term lambda f -> lambda x -> f x;""" -> false,
+          """show a ==> (a ==> b) ==> b;
+          proof term lambda x -> lambda f -> f x;""" -> false,
           // or elimination
           """show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
           proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
@@ -104,11 +106,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       describe("introduction rules") {
         val rules = Map(
           // universal quantifier introduction
-          // TODO variable condition?
+          // TODO variable condition? We can not write "a x" here because then
+          // x would eb free in an open assumption.
           "show a ==> forall x. a; proof term lambda p -> lambda x -> p;"
           -> false,
           // existential quantifier introduction
-          "show a ==> exists x. a; proof term lambda p -> (x,p);" -> true,
+          "show a t ==> exists x. a x; proof term lambda p -> (t,p);" -> true,
           )
         for ((snippet, pending) <- rules) eval(snippet, pending)
       }
@@ -118,7 +121,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
           "show (forall x. p x) ==> p t; proof term lambda f -> f t;" -> true,
           // existential quantifier elimination
           // TODO variable condition?
-          """show exists x. a ==> (forall x. a ==> b) ==> b;
+          """show (exists x. a x) ==> (forall x. a x ==> b) ==> b;
           proof term lambda (w,p) -> lambda f -> f w p;""" -> true,
           )
         for ((snippet, pending) <- rules) eval(snippet, pending)

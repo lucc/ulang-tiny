@@ -82,3 +82,8 @@ show a /\ b \/ c ==> a /\ b \/ c;
 proof term lambda x -> x;
 show (A ==> A) ==> (A ==> A);
 proof term lambda x -> x;
+
+// pattern matching in proofs
+/////////////////////////////
+show a /\ b ==> b /\ a;
+proof term lambda (x,y) -> (y,x);
