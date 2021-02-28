@@ -58,9 +58,9 @@ object Parse {
   val lam = Lam("lambda " ~ css)
   // val bind = Binder(id_bind ~ cs)
 
-  val quant = id.+ ~ "." ~ expr
-  val ex = Ex("exists" ~ quant)
-  val all = All("forall" ~ quant)
+  val quant: Parser[List[Id] ~ Expr] = id.+ ~ "." ~ expr
+  val ex: Parser[Expr] = Ex("exists" ~ quant)
+  val all: Parser[Expr] = All("forall" ~ quant)
 
   val mtch = Match("match" ~ expr_arg.+ ~ "with" ~ css)
 

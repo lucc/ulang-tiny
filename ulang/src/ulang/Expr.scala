@@ -103,31 +103,24 @@ object ProofTermChecker {
       // etc.
 
       // predicate logic introduction rules
-      case (Pair(witness, p), Ex(ids, matrix)) =>
-        ids match {
-          case Nil => Some("Existential quantifier with no bound variable!")
-          case List(x) => check(assumptions, p, matrix.subst(Map(x -> witness)))
-          // We unfold the list of quantified variables into a list of
-          // existential quantifiers with one variable each.
-          case x::xs => check(assumptions, p, Ex(xs, matrix).subst(Map(x -> witness)))
-        }
-      case (LamIds(params, body), All(vars, matrix)) =>
+      case (Pair(witness, p), Ex(id, matrix)) =>
+        check(assumptions, p, matrix.subst(Map(id -> witness)))
+      case (LamIds(params, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
-        // variable (vars) must not occur free in any open assumption in body.
+        // variable must not occur free in any open assumption in body.
         // We emulate this by filtering all assumptions from the current proof
         // context where the vars are occurring free.
         // TODO is this enough to implement the variable condition?  With this
         // we must only accept closed formulas in open assumptions (lemmas and
         // axioms).
-        def filtered(v: Id) = assumptions.filter(!_._2.free.contains(v))
-        (params, vars) match {
-          case (_, Nil) => Some("Universal quantifier with no bound variable!")
-          case (Nil, _) => Some("Lambda abstraction without a variable!")
-          case (List(p), List(v)) => check(filtered(v), body, matrix.subst(Map(v -> p)))
+        def filtered = assumptions.filter(!_._2.free.contains(id))
+        params match {
+          case Nil => Some("Lambda abstraction without a variable!")
+          case List(p) => check(filtered, body, matrix.subst(Map(id -> p)))
           // We unfold the list of quantified variables into a list of
           // universal quantifiers with one variable each.
-          case (p::ps, v::vs) =>
-            check(filtered(v), LamIds(ps, body), All(vs, matrix).subst(Map(v -> p)))
+          case p::ps =>
+            check(filtered, LamIds(ps, body), matrix.subst(Map(id -> p)))
         }
 
       // TODO predicate logic elimination rules?
@@ -242,15 +235,16 @@ case class Let(eqs: List[Case1], body: Expr) extends Expr with Expr.bind[Let] {
   def subst(a: Map[Id, Id], su: Map[Id, Expr]) = Let(eqs subst (a, su), body subst su)
 }
 
-sealed trait Quant extends ((List[Id], Expr) => Expr) {
-  def apply(args: List[Id], body: Expr) = args match {
+sealed trait Quant extends ((Id, Expr) => Expr) {
+  def apply(arg: Id,  body: Expr) = Bind(this, arg, body)
+  def apply(args: List[Id], body: Expr): Expr = args match {
     case Nil => body
-    case _ => Bind(this, args, body)
+    case arg::args => Bind(this, arg, this(args, body))
   }
 
   def unapply(expr: Expr) = expr match {
-    case Bind(quant, args, body) if quant == this =>
-      Some((args, body))
+    case Bind(quant, arg, body) if quant == this =>
+      Some((arg, body))
     case _ =>
       None
   }
@@ -259,8 +253,8 @@ sealed trait Quant extends ((List[Id], Expr) => Expr) {
 case object Ex extends Quant
 case object All extends Quant
 
-case class Bind(quant: Quant, args: List[Id], body: Expr) extends Expr with Expr.bind[Bind] {
-  def bound = args.toSet
+case class Bind(quant: Quant, args: Id, body: Expr) extends Expr with Expr.bind[Bind] {
+  def bound = Set(args)
   def free = body.free -- bound
   def rename(a: Map[Id, Id], re: Map[Id, Id]) = Bind(quant, args rename a, body rename re)
   def subst(a: Map[Id, Id], su: Map[Id, Expr]) = Bind(quant, args rename a, body subst su)
