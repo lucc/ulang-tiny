@@ -27,9 +27,19 @@ object Print {
     case Lam(cases) => cases.mkString("lambda ", " | ", "")
     case Match(args, cases) => "match " + args.mkString(" ") + " with " + cases.mkString(" | ")
     case Let(eqs, body) => "let " + eqs.mkString(", ") + " in " + body
-    case All(x, body) => "forall " + x + ". " + body
-    case Ex(x, body) => "exists " + x + ". " + body
+    case Bind(q, _, _) =>
+      collectQuant(q, expr) match {
+        case (Nil, body) => print(body)
+        case (xs, body) =>
+          (if (q == All) "forall " else "exists ") + xs.mkString(" ") + ". " + body
+      }
     case Apps(fun, args) => print(fun, args)
+  }
+  def collectQuant(quant: Quant, expr: Expr): (List[Id], Expr) = expr match {
+    case `quant`(x, body: Expr) =>
+      val (xs, body_) = collectQuant(quant, body)
+      (x::xs, body_)
+    case _ => (Nil, expr)
   }
 
   def print(cmd: Cmd): String = cmd match {
