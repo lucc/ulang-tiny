@@ -241,6 +241,10 @@ sealed trait Quant extends ((Id, Expr) => Expr) {
     case Nil => body
     case arg::args => Bind(this, arg, this(args, body))
   }
+  def withManyVars(vars: List[Id], body: Expr): Expr = vars match {
+    case Nil => body
+    case v::vs => this(v, withManyVars(vs, body))
+  }
 
   def unapply(expr: Expr) = expr match {
     case Bind(quant, arg, body) if quant == this =>
