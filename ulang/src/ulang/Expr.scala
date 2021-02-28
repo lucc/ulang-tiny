@@ -235,16 +235,12 @@ case class Let(eqs: List[Case1], body: Expr) extends Expr with Expr.bind[Let] {
   def subst(a: Map[Id, Id], su: Map[Id, Expr]) = Let(eqs subst (a, su), body subst su)
 }
 
-sealed trait Quant extends ((Id, Expr) => Expr) {
-  def apply(arg: Id,  body: Expr) = Bind(this, arg, body)
+sealed trait Quant extends ((List[Id], Expr) => Expr) {
   def apply(args: List[Id], body: Expr): Expr = args match {
     case Nil => body
     case arg::args => Bind(this, arg, this(args, body))
   }
-  def withManyVars(vars: List[Id], body: Expr): Expr = vars match {
-    case Nil => body
-    case v::vs => this(v, withManyVars(vs, body))
-  }
+  def apply(arg: Id,  body: Expr) = Bind(this, arg, body)
 
   def unapply(expr: Expr) = expr match {
     case Bind(quant, arg, body) if quant == this =>
