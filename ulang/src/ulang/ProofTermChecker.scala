@@ -44,16 +44,9 @@ object ProofTermChecker {
         check(assumptions, p1, f1) orElse check(assumptions, p2, f2)
       case (LeftE(p), Or(f, _)) => check(assumptions, p, f)
       case (RightE(p), Or(_, f)) => check(assumptions, p, f)
-      // special case for one argument lambdas with a variable pattern
-      case (Lam1(id, body), Imp(f1, f2)) =>
-        check(assumptions + (id -> f1), body, f2)
-      // and elimination
-      case (Lam(List(Case(List(Pair(p1: Id, p2: Id)), body))), Imp(And(f1, f2), f3)) =>
-        check(assumptions + (p1 -> f1) + (p2 -> f2), body, f3)
-      case (Lam(List(Case(List(LeftE(p1: Id)), body))), Imp(Or(f1, _), f2)) =>
-        check(assumptions + (p1 -> f1), body, f2)
-      case (Lam(List(Case(List(RightE(p1: Id)), body))), Imp(Or(_, f1), f2)) =>
-        check(assumptions + (p1 -> f1), body, f2)
+      // special case for lambdas with one pattern only
+      case (Lam(List(Case(List(pat), body))), Imp(ant, cons)) =>
+        check(bind(assumptions, pat, ant), body, cons)
 
       // Special cases for modus ponens
       // this is only a simpler case of the next case, the implementation
@@ -128,14 +121,14 @@ object ProofTermChecker {
     case _ => Left("Type inference for " + expr + " is not yet implemented.")
   }
 
-  // TODO these functions are suggested by Gidon in order to check elimination
-  // and introduction rules seperately.
-  //def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id,Expr] =
-  //  (pat, assm) match {
-  //    case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
-  //    case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
-  //    case (RightE(p), Or(_, f)) => bind(ctx, p, f)
-  //  }
+  def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id,Expr] =
+    (pat, assm) match {
+      case (p: Id, _) => ctx + (p -> assm)
+      case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
+      case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
+      case (RightE(p), Or(_, f)) => bind(ctx, p, f)
+      case (Pair(w, p), Ex(x, matrix)) => bind(bind(ctx, w, x), p, matrix)
+    }
   //def elim(ctx: Map[Id, Expr], pats: List[Expr], body: Expr, goal: Expr): Boolean =
   //  (pats, goal) match {
   //    case (Nil, _) => check(ctx, body, goal)
