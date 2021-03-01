@@ -66,28 +66,27 @@ object ProofTermChecker {
       // TODO predicate logic elimination rules?
 
       // Special cases for modus ponens
-      // this is only a simpler case of the next case, the implementation
-      // there also checks this case correctly
+      // FIXME can this be merged into the next case?
       case (App(f: Id, arg: Id), _)
       if assumptions.contains(f) && assumptions.contains(arg) =>
-        val t1 = assumptions(f)
-        val t2 = assumptions(arg)
-        if (t1 == Imp(t2, goal)) None
-        else if (t2.isInstanceOf[Id] && t1 == All(t2.asInstanceOf[Id], goal)) None
-        else Some(f"Formulas do not match: $t1 should be equal to $t2 ==> $goal or forall $t2. $goal")
+        val fTy = assumptions(f)
+        val argTy = assumptions(arg)
+        if (fTy == Imp(argTy, goal)) None
+        else if (argTy.isInstanceOf[Id] && fTy == All(argTy.asInstanceOf[Id], goal)) None
+        else Some(f"Formulas do not match: $fTy should be equal to $argTy ==> $goal or forall $argTy. $goal")
       case (App(f: Id, arg), _)
         if assumptions.contains(f) && (assumptions(f) match {
-          case Imp(precond, `goal`) => check(assumptions, arg, precond) match {
-            case None => true
-            case _ => false
-          }
+          case Imp(precond, `goal`) => check(assumptions, arg, precond).isEmpty
           case All(x, matrix) => goal == matrix.subst(Map(x -> arg))
           case _ => false
         })
+        // If the pattern guard did succeed we have already checked the proof
+        // fully.  If the check failed we want to fall through to the lower
+        // cases.
         => None
       case (App(Lam1(id, body), arg), _) =>
         check(assumptions, body.subst(Map(id -> arg)), goal)
-      // generall applications need type inference for either the left or the
+      // general applications need type inference for either the left or the
       // right side.  We use the left side for now.
       case (App(f, arg), _) =>
         infer(assumptions, arg) match {
