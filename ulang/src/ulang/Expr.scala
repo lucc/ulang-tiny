@@ -88,10 +88,7 @@ case class Let(eqs: List[Case1], body: Expr) extends Expr with Expr.bind[Let] {
 }
 
 sealed trait Quant extends ((List[Id], Expr) => Expr) {
-  def apply(args: List[Id], body: Expr): Expr = args match {
-    case Nil => body
-    case arg::args => Bind(this, arg, this(args, body))
-  }
+  def apply(args: List[Id], body: Expr): Expr = args.foldRight(body)(Bind(this, _, _))
   def apply(arg: Id,  body: Expr) = Bind(this, arg, body)
 
   def unapply(expr: Expr) = expr match {
