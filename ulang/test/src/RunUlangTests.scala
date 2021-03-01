@@ -38,9 +38,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       """show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
       proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
                       | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);""",
-      // proving introduction rules for exists
-      "show a ==> exists x. a; proof term (lambda a -> (x, a));",
-      "show p x ==> exists y. p y; proof term (lambda a -> (x, a));",
       // proofs with match expressions
       // symmetry of /\
       """show a /\ b ==> b /\ a;
@@ -69,6 +66,9 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
   describe("working snippets") {
     // proof with all quantifier
     eval("show (forall x. p x) ==> p Foo; proof term lambda x -> x Foo;")
+    // proving introduction rules for exists
+    eval("show a ==> exists x. a; proof term (lambda a -> (x, a));")
+    eval("show p x ==> exists y. p y; proof term (lambda a -> (x, a));")
   }
 
   describe("rules") {
@@ -107,16 +107,10 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     }
     describe("from predicate logic:") {
       describe("introduction rules") {
-        val rules = Map(
-          // universal quantifier introduction
-          // TODO variable condition? We can not write "a x" here because then
-          // x would eb free in an open assumption.
-          "show a ==> forall x. a; proof term lambda p -> lambda x -> p;"
-          -> false,
-          // existential quantifier introduction
-          "show a t ==> exists x. a x; proof term lambda p -> (t,p);" -> true,
-          )
-        for ((snippet, pending) <- rules) eval(snippet, pending)
+        // universal quantifier introduction
+        eval("show a ==> forall x. a; proof term lambda p -> lambda x -> p;")
+        // existential quantifier introduction
+        eval("show a t ==> exists x. a x; proof term lambda p -> (t,p);" )
       }
       describe("elimination rules") {
         val rules = Map(

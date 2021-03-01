@@ -48,6 +48,23 @@ object ProofTermChecker {
       case (Lam(List(Case(List(pat), body))), Imp(ant, cons)) =>
         check(bind(assumptions, pat, ant), body, cons)
 
+      // propositional logic: elimination rules TODO
+      // We could also introduce special term constructors that are recognized
+      // here in order to eliminate connective: Elim-/\-1, Elim-/\-2, Elim-\/,
+      // etc.
+
+      // predicate logic introduction rules
+      case (Pair(witness, p), Ex(id, matrix)) =>
+        check(assumptions, p, matrix.subst(Map(id -> witness)))
+      case (Lam1(param, body), All(id, matrix)) =>
+        // For all-introduction there is a variable condition: the bound
+        // variable must not occur free in any open assumption in body.
+        val openFree = Expr free assumptions
+        if (openFree contains id) Some("Capturing variable " + id)
+        else check(assumptions, body, matrix.rename(Map(id -> param)))
+
+      // TODO predicate logic elimination rules?
+
       // Special cases for modus ponens
       // this is only a simpler case of the next case, the implementation
       // there also checks this case correctly
@@ -77,23 +94,6 @@ object ProofTermChecker {
           // TODO there should be a case for all-elim here?
           case Left(err) => Some(err)
         }
-
-      // propositional logic: elimination rules TODO
-      // We could also introduce special term constructors that are recognized
-      // here in order to eliminate connective: Elim-/\-1, Elim-/\-2, Elim-\/,
-      // etc.
-
-      // predicate logic introduction rules
-      case (Pair(witness, p), Ex(id, matrix)) =>
-        check(assumptions, p, matrix.subst(Map(id -> witness)))
-      case (Lam1(param, body), All(id, matrix)) =>
-        // For all-introduction there is a variable condition: the bound
-        // variable must not occur free in any open assumption in body.
-        val openFree = Expr free assumptions
-        if (openFree contains id) Some("Capturing variable " + id)
-        else check(assumptions, body, matrix.rename(Map(id -> param)))
-
-      // TODO predicate logic elimination rules?
 
       // False is implicit here
       case _ => Some(f"Proof term $proof does not match the formula $goal.")
