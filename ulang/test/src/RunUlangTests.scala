@@ -71,6 +71,29 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     eval("show p x ==> exists y. p y; proof term (lambda a -> (x, a));")
   }
 
+  describe("invaild proofs") {
+    it("universal quantifier introduction violating variable condition") {
+      // it would work with "a" instead of "a x"
+      val show = "show a x ==> forall x. a x;"
+      val proof = "proof term lambda p -> lambda x -> p;"
+      assertThrows[RuntimeException] { // Capturing variable x
+        ulang.Exec.run(show + proof)
+      }
+    }
+    it("existential quantifier elimination violating variable condition") {
+      pendingUntilFixed {
+      // it would work with "b" instead of "b x"
+      val show = "show (exists x. a x) ==> (forall x. a x ==> b x) ==> b x;"
+      val proof ="proof term lambda (w,p) -> lambda f -> f w p;"
+      Console.withOut(new java.io.ByteArrayOutputStream()) {
+        assertThrows[RuntimeException] {
+          ulang.Exec.run(show + proof)
+        }
+      }
+    }
+    }
+  }
+
   describe("rules") {
     describe("from propositional logic:") {
       describe("introduction rules") {
