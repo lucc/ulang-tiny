@@ -53,8 +53,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
          proof term lambda (Left x) -> Right x | (Right x) -> Left x;""",
       // define statements with strange expressions on the left
       "define (let x := y in x) := A;",
-      // proof with all quantifier
-      "show (forall x. p x) ==> p Foo; proof term lambda x -> x Foo;",
       // reordering bound variables
       """show (forall x y. a) ==> forall y x. a;
       proof term lambda f -> lambda y -> lambda x -> f x y;""",
@@ -66,6 +64,11 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       proof term lambda (w1,(w2,pt)) -> (w2,(w1,pt))""",
     )
     for (snippet <- snippets) eval(snippet, pending=true)
+  }
+
+  describe("working snippets") {
+    // proof with all quantifier
+    eval("show (forall x. p x) ==> p Foo; proof term lambda x -> x Foo;")
   }
 
   describe("rules") {
@@ -118,7 +121,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       describe("elimination rules") {
         val rules = Map(
           // universal quantifier elimination
-          "show (forall x. p x) ==> p t; proof term lambda f -> f t;" -> true,
+          "show (forall x. p x) ==> p t; proof term lambda f -> f t;" -> false,
           // existential quantifier elimination
           // TODO variable condition?
           """show (exists x. a x) ==> (forall x. a x ==> b) ==> b;

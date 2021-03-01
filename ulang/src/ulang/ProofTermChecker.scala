@@ -63,6 +63,7 @@ object ProofTermChecker {
             case None => true
             case _ => false
           }
+          case All(x, matrix) => goal == matrix.subst(Map(x -> arg))
           case _ => false
         })
         => None
@@ -85,23 +86,12 @@ object ProofTermChecker {
       // predicate logic introduction rules
       case (Pair(witness, p), Ex(id, matrix)) =>
         check(assumptions, p, matrix.subst(Map(id -> witness)))
-      case (LamIds(params, body), All(id, matrix)) =>
+      case (Lam1(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable must not occur free in any open assumption in body.
-        // We emulate this by filtering all assumptions from the current proof
-        // context where the vars are occurring free.
-        // TODO is this enough to implement the variable condition?  With this
-        // we must only accept closed formulas in open assumptions (lemmas and
-        // axioms).
-        def filtered = assumptions.filter(!_._2.free.contains(id))
-        params match {
-          case Nil => Some("Lambda abstraction without a variable!")
-          case List(p) => check(filtered, body, matrix.subst(Map(id -> p)))
-          // We unfold the list of quantified variables into a list of
-          // universal quantifiers with one variable each.
-          case p::ps =>
-            check(filtered, LamIds(ps, body), matrix.subst(Map(id -> p)))
-        }
+        val openFree = Expr free assumptions
+        if (openFree contains id) Some("Capturing variable " + id)
+        else check(assumptions, body, matrix.rename(Map(id -> param)))
 
       // TODO predicate logic elimination rules?
 
