@@ -113,15 +113,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         eval("show a t ==> exists x. a x; proof term lambda p -> (t,p);" )
       }
       describe("elimination rules") {
-        val rules = Map(
-          // universal quantifier elimination
-          "show (forall x. p x) ==> p t; proof term lambda f -> f t;" -> false,
-          // existential quantifier elimination
-          // TODO variable condition?
-          """show (exists x. a x) ==> (forall x. a x ==> b) ==> b;
-          proof term lambda (w,p) -> lambda f -> f w p;""" -> true,
-          )
-        for ((snippet, pending) <- rules) eval(snippet, pending)
+        // universal quantifier elimination
+        eval("show (forall x. p x) ==> p t; proof term lambda f -> f t;")
+        // existential quantifier elimination
+        // TODO variable condition?
+        eval("""show (exists x. a x) ==> (forall x. a x ==> b) ==> b;
+          proof term lambda (w,p) -> lambda f -> f w p;""")
       }
     }
   }

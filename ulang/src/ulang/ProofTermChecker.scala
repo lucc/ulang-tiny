@@ -73,7 +73,8 @@ object ProofTermChecker {
         val t1 = assumptions(f)
         val t2 = assumptions(arg)
         if (t1 == Imp(t2, goal)) None
-        else Some(f"Formulas do not match: $t1 should be equal to $t2 ==> $goal")
+        else if (t2.isInstanceOf[Id] && t1 == All(t2.asInstanceOf[Id], goal)) None
+        else Some(f"Formulas do not match: $t1 should be equal to $t2 ==> $goal or forall $t2. $goal")
       case (App(f: Id, arg), _)
         if assumptions.contains(f) && (assumptions(f) match {
           case Imp(precond, `goal`) => check(assumptions, arg, precond) match {
