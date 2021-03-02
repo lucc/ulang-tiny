@@ -90,7 +90,8 @@ object ProofTermChecker {
       // right side.  We use the left side for now.
       case (App(f, arg), _) =>
         infer(assumptions, arg) match {
-          case Right(ty) => check(assumptions, f, Imp(ty, goal))
+          case Right(ty) if check(assumptions, f, Imp(ty, goal)).isEmpty => None
+          case Right(ty: Id) => check(assumptions, f, All(ty, goal))
           // TODO there should be a case for all-elim here?
           case Left(err) => Some(err)
         }
