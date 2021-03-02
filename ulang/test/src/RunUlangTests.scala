@@ -7,15 +7,15 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     new File(getClass.getResource("/"+folder).getFile()).listFiles(
       (_, name) => name endsWith ".u").map(_.getAbsolutePath)
   def run(file: String, pending: Boolean = false) = it(file) {
-    Console.withOut(new java.io.ByteArrayOutputStream()) {
-      if (pending) pendingUntilFixed { ulang.Exec.runFile(file) }
-      else ulang.Exec.runFile(file)
+    if (pending) pendingUntilFixed { ulang.Exec.runFile(file) }
+    else Console.withOut(new java.io.ByteArrayOutputStream()) {
+      ulang.Exec.runFile(file)
     }
   }
   def eval(snippet: String, pending: Boolean = false) = it(snippet) {
-    Console.withOut(new java.io.ByteArrayOutputStream()) {
-      if (pending) pendingUntilFixed { ulang.Exec.run(snippet) }
-      else ulang.Exec.run(snippet)
+    if (pending) pendingUntilFixed { ulang.Exec.run(snippet) }
+    else Console.withOut(new java.io.ByteArrayOutputStream()) {
+      ulang.Exec.run(snippet)
     }
   }
 
