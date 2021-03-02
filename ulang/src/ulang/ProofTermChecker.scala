@@ -92,8 +92,12 @@ object ProofTermChecker {
         infer(assumptions, arg) match {
           case Right(ty) if check(assumptions, f, Imp(ty, goal)).isEmpty => None
           case Right(ty: Id) => check(assumptions, f, All(ty, goal))
-          // TODO there should be a case for all-elim here?
-          case Left(err) => Some(err)
+          case Left(err1) =>
+            infer(assumptions, f) match {
+              case Right(Imp(a, `goal`)) => check(assumptions, a, arg)
+              case Right(All(v, matrix)) if matrix.subst(Map(v -> arg)) == goal => None
+              case Left(err2) => Some(err1 + "\n" + err2)
+            }
         }
 
       // False is implicit here
@@ -109,6 +113,17 @@ object ProofTermChecker {
     case LeftE(a) => infer(ctx, a).map(a => Or(a, ulang.Wildcard))
     case RightE(a) => infer(ctx, a).map(a => Or(ulang.Wildcard, a))
     case Lam1(v, body) => infer(ctx, v).flatMap(t1 => infer(ctx + (v -> t1), body).map(t2 => Imp(t1, t2))) // TODO universal quantifier?
+    case App(fun, arg) => infer(ctx, fun) match {
+      case err@Left(_) => err
+      case Right(t1) => infer(ctx, arg) match {
+        case err@Left(_) => err
+        case Right(t2) => t1 match {
+          case Imp(`t2`, result) => Right(result)
+          case All(x, matrix) => Right(matrix.subst(Map(x -> arg)))
+          case _ => Left("Don't know how to apply to a " + t1)
+        }
+      }
+    }
     case _ => Left("Type inference for " + expr + " is not yet implemented.")
   }
 
