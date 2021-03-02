@@ -135,6 +135,8 @@ object ProofTermChecker {
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)
       case (Pair(w, p), Ex(x, matrix)) => bind(bind(ctx, w, x), p, matrix)
     }
+
+  // Functions that have been suggested by Gidon but are not yet implemented.
   //def elim(ctx: Map[Id, Expr], pats: List[Expr], body: Expr, goal: Expr): Boolean =
   //  (pats, goal) match {
   //    case (Nil, _) => check(ctx, body, goal)
@@ -145,4 +147,12 @@ object ProofTermChecker {
   //def elim(ctx: Map[Id, Expr], cs: Case, goal: Expr): Boolean = ???
   //def elim(ctx: Map[Id, Expr], cases: List[Case], goal: Expr): Boolean =
   //  cases.forall(elim(ctx, _, goal))
+  //def apply(assumption: Map[Id, Expr], fun: Expr, arg: Expr): Expr =
+  //  (fun, arg) match {
+  //    case (Lam1(v, body), _) => body.subst(Map(v -> arg))
+  //    case (All(x, matrix), _) =>
+  //       (forall x -> p) t == p[x -> t]
+  //       (a ==> b) a       == b
+  //  case _ => App(fun, arg)
+  //}
 }
