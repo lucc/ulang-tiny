@@ -156,3 +156,30 @@ object ProofTermChecker {
   //  case _ => App(fun, arg)
   //}
 }
+
+/**
+ * Type inference for the proof checker
+ *
+ * The algorithm is based on the lecture notes of Uli Schöpp from the lecure
+ * "Typsysteme" (summer term 2018).
+ */
+object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
+
+  /**
+   * The context can represent a type inference context, mapping term
+   * variables to there types, it can represent a set of type equations which
+   * all set one type variable equal to another (potentially complex) type.
+   */
+  type Ctx = Map[Id, Expr]
+
+  def apply(ctx: Ctx, term: Expr) = build(ctx, term) flatMap(solve(_) match {
+    case Left(e) => Left(e)
+    case Right(eqs) => Right(eqs(Id("t")))
+  })
+
+  def build(ctx: Ctx, term: Expr): Either[String, Ctx] = term match {
+    case _ => Left("TODO")
+  }
+  def solve(equations: Ctx): Either[String, Ctx] = Left("TODO")
+
+}
