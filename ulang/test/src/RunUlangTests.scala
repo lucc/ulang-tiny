@@ -59,6 +59,15 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       proof term lambda (w1,(w2,pt)) -> (w2,(w1,pt))""",
       """show (exists x. exists y. a x y) ==> exists y. exists x. a x y;
       proof term lambda (w1,(w2,pt)) -> (w2,(w1,pt))""",
+      // Schwichtenberg page 13
+      """show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
+      proof term lambda (w,p) -> fa -> p fa w;""",
+      """show (a ==> forall x. b x) ==> forall x. a ==> b x;
+      proof term lambda f -> lambda var -> lambda precond -> f precond var;""",
+      """show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
+      proof term lambda f -> lambda fa -> f (fa Term);""",
+      """show (exists x. a ==> b x) ==> a ==> exists x. b x;
+      proof term lambda (w,f) -> lambda pre -> (w,f pre);""",
     )
     for (snippet <- snippets) eval(snippet, pending=true)
   }
@@ -69,6 +78,11 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // proving introduction rules for exists
     eval("show a ==> exists x. a; proof term (lambda a -> (x, a));")
     eval("show p x ==> exists y. p y; proof term (lambda a -> (x, a));")
+    // Schwichtenberg page 13
+    eval("""show (forall x.a x ==> b) ==> (exists x. a x) ==> b;
+         proof term lambda f -> lambda (w,p) -> f w p;""")
+    eval("""show (forall x.a ==> b x) ==> a ==> forall x. b x;
+         proof term lambda f -> lambda precond -> lambda var -> f var precond;""")
   }
 
   describe("invaild proofs") {
