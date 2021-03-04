@@ -165,21 +165,72 @@ object ProofTermChecker {
  */
 object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
 
+  import scala.util.Try
+
   /**
-   * The context can represent a type inference context, mapping term
-   * variables to there types, it can represent a set of type equations which
-   * all set one type variable equal to another (potentially complex) type.
+   * TypeVar represents type variables used during type inference.  It relies
+   * on the fact that the parser for ulang does not accept space in
+   * identidiers.  This ensures that the generated variables are distinct from
+   * all user generated identidiers.
    */
-  type Ctx = Map[Id, Expr]
-
-  def apply(ctx: Ctx, term: Expr) = build(ctx, term) flatMap(solve(_) match {
-    case Left(e) => Left(e)
-    case Right(eqs) => Right(eqs(Id("t")))
-  })
-
-  def build(ctx: Ctx, term: Expr): Either[String, Ctx] = term match {
-    case _ => Left("TODO")
+  object TypeVar {
+    private val name = "ty "
+    private var index = 0
+    private def apply(index: Int) = Id(name, Some(index))
+    //def unapply(id: Expr) = id match {
+    //  case Id(`name`, Some(index)) => Some(index)
+    //  case _ => None
+    //}
+    /** generate a fresh type variable */
+    def next = {
+      index += 1
+      this(index)
+    }
   }
-  def solve(equations: Ctx): Either[String, Ctx] = Left("TODO")
+
+  def apply(ctx: Map[Id, Expr], term: Expr) = {
+    val tvar = TypeVar.next
+    build(ctx, term, tvar) flatMap(solve(_) match {
+      case Left(e) => Left(e)
+      case Right(eqs) => Right(eqs(tvar))
+    })
+  }
+
+  def build(ctx: Map[Id, Expr], term: Expr, tvar: Id): Either[String, Map[Expr, Expr]] = term match {
+    case id: Id => ctx get id map ((t: Expr) => Map(term -> t)) toRight s"Not in current type inference context: $id"
+    case Pair(a, b) =>
+      val ta = TypeVar.next
+      val tb = TypeVar.next
+      build(ctx, a, ta) flatMap (ctx1 => build(ctx, b, tb) map (ctx2 => ctx1++ctx2+(tvar -> Pair(ta, tb))))
+      // TODO should I try to construct this as exists if what happens?
+    case LeftE(a) =>
+      val ta = TypeVar.next
+      val tb = TypeVar.next
+      build(ctx, a, ta) map (_ + (tvar -> Or(ta, tb)))
+    case RightE(b) =>
+      val ta = TypeVar.next
+      val tb = TypeVar.next
+      build(ctx, b, tb) map (_ + (tvar -> Or(ta, tb)))
+    case Lam1(arg, body) =>
+      val ta = TypeVar.next
+      val tb = TypeVar.next
+      build(ctx, arg, ta) flatMap (ctx1 => build(ctx + (arg -> ta), body, tb) map (ctx2 => ctx1++ctx2+(tvar -> Imp(ta, tb))))
+    //case Lam(List(Case(List(arg), body))) =>
+      //val ta = TypeVar.next
+      //val tb = TypeVar.next
+      // TODO here I need type inference for pattern matching:
+      //                                                 v
+      //build(ctx, arg, ta) flatMap (ctx1 => build(ctx + (arg -> ta), body, tb) map (ctx2 => ctx1++ctx2+(tvar -> Imp(ta, tb))))
+      // TODO should I try to construct this as forall if ta is an Id?
+    case App(fun, arg) =>
+      val ta = TypeVar.next
+      val tb = TypeVar.next
+      build(ctx, fun, tb) flatMap (ctx1 => build(ctx, arg, ta) map (ctx2 => ctx1++ctx2+(tb -> Imp(ta, tvar))))
+    case _ => Left("Type inference for " + term + " is not yet implemented.")
+  }
+
+  def clean(eqs: Map[Expr, Expr]): Map[Id, Expr] = ???
+
+  def solve(equations: Map[Expr, Expr]): Either[String, Map[Id, Expr]] = Left("TODO")
 
 }
