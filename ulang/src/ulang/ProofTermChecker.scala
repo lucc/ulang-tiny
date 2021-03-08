@@ -173,23 +173,17 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
    * identidiers.  This ensures that the generated variables are distinct from
    * all user generated identidiers.
    */
-  object TypeVar {
+  object TypeVar extends (() => Id) {
     private val name = "ty "
-    private var index = 0
-    private def apply(index: Int) = Id(name, Some(index))
+    def apply() = Expr.fresh(Id(name))
     //def unapply(id: Expr) = id match {
-    //  case Id(`name`, Some(index)) => Some(index)
+    //  case Id(`name`, index) => index
     //  case _ => None
     //}
-    /** generate a fresh type variable */
-    def next = {
-      index += 1
-      this(index)
-    }
   }
 
   def apply(ctx: Map[Id, Expr], term: Expr) = {
-    val tvar = TypeVar.next
+    val tvar = TypeVar()
     build(ctx, term, tvar) flatMap(solve(_) match {
       case Left(e) => Left(e)
       case Right(eqs) => Right(eqs(tvar))
@@ -199,32 +193,32 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
   def build(ctx: Map[Id, Expr], term: Expr, tvar: Id): Either[String, Map[Expr, Expr]] = term match {
     case id: Id => ctx get id map ((t: Expr) => Map(term -> t)) toRight s"Not in current type inference context: $id"
     case Pair(a, b) =>
-      val ta = TypeVar.next
-      val tb = TypeVar.next
+      val ta = TypeVar()
+      val tb = TypeVar()
       build(ctx, a, ta) flatMap (ctx1 => build(ctx, b, tb) map (ctx2 => ctx1++ctx2+(tvar -> Pair(ta, tb))))
       // TODO should I try to construct this as exists if what happens?
     case LeftE(a) =>
-      val ta = TypeVar.next
-      val tb = TypeVar.next
+      val ta = TypeVar()
+      val tb = TypeVar()
       build(ctx, a, ta) map (_ + (tvar -> Or(ta, tb)))
     case RightE(b) =>
-      val ta = TypeVar.next
-      val tb = TypeVar.next
+      val ta = TypeVar()
+      val tb = TypeVar()
       build(ctx, b, tb) map (_ + (tvar -> Or(ta, tb)))
     case Lam1(arg, body) =>
-      val ta = TypeVar.next
-      val tb = TypeVar.next
+      val ta = TypeVar()
+      val tb = TypeVar()
       build(ctx, arg, ta) flatMap (ctx1 => build(ctx + (arg -> ta), body, tb) map (ctx2 => ctx1++ctx2+(tvar -> Imp(ta, tb))))
     //case Lam(List(Case(List(arg), body))) =>
-      //val ta = TypeVar.next
-      //val tb = TypeVar.next
+      //val ta = TypeVar()
+      //val tb = TypeVar()
       // TODO here I need type inference for pattern matching:
       //                                                 v
       //build(ctx, arg, ta) flatMap (ctx1 => build(ctx + (arg -> ta), body, tb) map (ctx2 => ctx1++ctx2+(tvar -> Imp(ta, tb))))
       // TODO should I try to construct this as forall if ta is an Id?
     case App(fun, arg) =>
-      val ta = TypeVar.next
-      val tb = TypeVar.next
+      val ta = TypeVar()
+      val tb = TypeVar()
       build(ctx, fun, tb) flatMap (ctx1 => build(ctx, arg, ta) map (ctx2 => ctx1++ctx2+(tb -> Imp(ta, tvar))))
     case _ => Left("Type inference for " + term + " is not yet implemented.")
   }
