@@ -1,7 +1,8 @@
 import org.scalatest.funspec.AnyFunSpec
 import TestHelpers.{expr, UlangParser}
 import ulang.ProofTermChecker.infer
-import ulang.{Expr, Id}
+import ulang.TypeInference
+import ulang.{Expr, Id, And, Pair}
 
 class TypeInferenceTests extends AnyFunSpec {
   def test(term: Expr, ty: Expr, context: Map[Id, Expr] = Map.empty) {
@@ -15,5 +16,42 @@ class TypeInferenceTests extends AnyFunSpec {
     it("pair") { test(Pair(Id("a"), Id("b")), And(Id("A"), Id("B")), ctx("a" -> "A", "b" -> "B")) }
     it("left") { test(u"Left a", Or(u"A",  u"_"), ctx("a" -> "A", "b" -> "B")) }
     it("right") { test(u"Right b", Or(u"_",  u"B"), ctx("a" -> "A", "b" -> "B")) }
+  }
+
+  // load the prelude file when initializeing the test suite
+  ulang.Main.loadPrelude()
+
+    val a = Id("a")
+    val b = Id("b")
+    val T = Id("T")
+    val T1 = Id("T", Some(1))
+    val T2 = Id("T", Some(2))
+  describe("building type equations") {
+    /** Wrapper around TypeInference.build to hide the initial type variable */
+    def build(ctx: Map[Id, Expr], term: Expr) = {
+      val tvar = TypeInference.TypeVar()
+      TypeInference.build(ctx, term, tvar) map (_(tvar))
+    }
+
+    it("can find type assumtions in the context") {
+      val actual = build(Map(a -> T), a)
+      assert(actual == Right(T))
+    }
+    it("fails if variable is missing from the context") {
+      val actual = build(Map(), a)
+      assert(actual.isInstanceOf[Left[String, _]])
+    }
+  }
+  describe("simple type inference examples") {
+    it("pairs") {
+      val actual = TypeInference(Map(a -> T1, b -> T2), Pair(a, b))
+      assert(actual == Right(And(T1, T2)))
+    }
+    it("omega term") {
+      import ulang.{Lam, Case, App}
+      val x = Id("x")
+      val actual = TypeInference(Map(), Lam(List(Case(List(x), App(x, x)))))
+      assert(actual.isInstanceOf[Left[String, _]])
+    }
   }
 }

@@ -176,26 +176,28 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
   object TypeVar extends (() => Id) {
     private val name = "ty "
     def apply() = Expr.fresh(Id(name))
-    //def unapply(id: Expr) = id match {
-    //  case Id(`name`, index) => index
-    //  case _ => None
-    //}
+    def unapply(id: Expr) = id match {
+      case Id(`name`, index) => index
+      case _ => None
+    }
   }
 
   def apply(ctx: Map[Id, Expr], term: Expr) = {
     val tvar = TypeVar()
-    build(ctx, term, tvar) flatMap(solve(_) match {
+    build(ctx, term, tvar) flatMap(eqs => solve(eqs toList) match {
       case Left(e) => Left(e)
       case Right(eqs) => Right(eqs(tvar))
     })
   }
 
   def build(ctx: Map[Id, Expr], term: Expr, tvar: Id): Either[String, Map[Expr, Expr]] = term match {
-    case id: Id => ctx get id map ((t: Expr) => Map(term -> t)) toRight s"Not in current type inference context: $id"
+    case id: Id =>
+      val t: Expr = tvar
+      ctx get id map ((e: Expr) => Map(t -> e)) toRight s"Not in current type inference context: $id"
     case Pair(a, b) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      build(ctx, a, ta) flatMap (ctx1 => build(ctx, b, tb) map (ctx2 => ctx1++ctx2+(tvar -> Pair(ta, tb))))
+      build(ctx, a, ta) flatMap (eqs1 => build(ctx, b, tb) map (eqs2 => eqs1++eqs2+(tvar -> And(ta, tb))))
       // TODO should I try to construct this as exists if what happens?
     case LeftE(a) =>
       val ta = TypeVar()
@@ -208,23 +210,36 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
     case Lam1(arg, body) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      build(ctx, arg, ta) flatMap (ctx1 => build(ctx + (arg -> ta), body, tb) map (ctx2 => ctx1++ctx2+(tvar -> Imp(ta, tb))))
+      build(ctx, arg, ta) flatMap (eqs1 => build(ctx + (arg -> ta), body, tb) map (eqs2 => eqs1++eqs2+(tvar -> Imp(ta, tb))))
     //case Lam(List(Case(List(arg), body))) =>
       //val ta = TypeVar()
       //val tb = TypeVar()
       // TODO here I need type inference for pattern matching:
       //                                                 v
-      //build(ctx, arg, ta) flatMap (ctx1 => build(ctx + (arg -> ta), body, tb) map (ctx2 => ctx1++ctx2+(tvar -> Imp(ta, tb))))
+      //build(ctx, arg, ta) flatMap (eqs1 => build(ctx + (arg -> ta), body, tb) map (eqs2 => eqs1++eqs2+(tvar -> Imp(ta, tb))))
       // TODO should I try to construct this as forall if ta is an Id?
     case App(fun, arg) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      build(ctx, fun, tb) flatMap (ctx1 => build(ctx, arg, ta) map (ctx2 => ctx1++ctx2+(tb -> Imp(ta, tvar))))
+      build(ctx, fun, tb) flatMap (eqs1 => build(ctx, arg, ta) map (eqs2 => eqs1++eqs2+(tb -> Imp(ta, tvar))))
     case _ => Left("Type inference for " + term + " is not yet implemented.")
   }
 
-  def clean(eqs: Map[Expr, Expr]): Map[Id, Expr] = ???
-
-  def solve(equations: Map[Expr, Expr]): Either[String, Map[Id, Expr]] = Left("TODO")
+  def solve(equations: List[(Expr, Expr)], subst: Map[Id, Expr] = Map()): Either[String, Map[Id, Expr]] =
+    equations match {
+      case Nil => Right(subst)
+      case (a, b)::rest if a == b => solve(rest, subst)
+      case (a@TypeVar(_), b)::rest if !b.free.contains(a.asInstanceOf[Id]) =>
+        val a_ = a.asInstanceOf[Id]
+        val update = Map(a_ -> b)
+        val eqs = equations.map(eq => (eq._1 subst update, eq._2 subst update))
+        val subst_ = subst.map((kv: (Id, Expr)) => if (a_ == kv._2) (kv._1 -> b) else kv) ++ update
+        solve(eqs, subst_)
+      case (a: Id, b@TypeVar(_))::rest => solve((b, a)::rest, subst)
+      case (Imp(a, b), Imp(c, d))::rest => solve((a, c)::(b, d)::rest, subst)
+      case (And(a, b), And(c, d))::rest => solve((a, c)::(b, d)::rest, subst)
+      case (Or(a, b), Or(c, d))::rest => solve((a, c)::(b, d)::rest, subst)
+      case _ => Left("TODO")
+    }
 
 }
