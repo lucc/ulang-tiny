@@ -21,11 +21,15 @@ class TypeInferenceTests extends AnyFunSpec {
   // load the prelude file when initializeing the test suite
   ulang.Main.loadPrelude()
 
-    val a = Id("a")
-    val b = Id("b")
-    val T = Id("T")
-    val T1 = Id("T", Some(1))
-    val T2 = Id("T", Some(2))
+  import ulang.{Lam, Case, App, All}
+
+  val a = Id("a")
+  val b = Id("b")
+  val x = Id("x")
+  val T = Id("T")
+  val T1 = Id("T", Some(1))
+  val T2 = Id("T", Some(2))
+
   describe("building type equations") {
     /** Wrapper around TypeInference.build to hide the initial type variable */
     def build(ctx: Map[Id, Expr], term: Expr) = {
@@ -48,8 +52,6 @@ class TypeInferenceTests extends AnyFunSpec {
       assert(actual == Right(And(T1, T2)))
     }
     it("omega term") {
-      import ulang.{Lam, Case, App}
-      val x = Id("x")
       val actual = TypeInference(Map(), Lam(List(Case(List(x), App(x, x)))))
       assert(actual.isInstanceOf[Left[String, _]])
     }

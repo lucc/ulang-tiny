@@ -186,7 +186,13 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
     val tvar = TypeVar()
     build(ctx, term, tvar) flatMap(eqs => solve(eqs toList) match {
       case Left(e) => Left(e)
-      case Right(eqs) => Right(eqs(tvar))
+      case Right(eqs) =>
+        val ty1 = eqs(tvar)
+        val ty2 = ty1.free.filter {
+          case t@TypeVar(_) => true
+          case _ => false
+        }.foldLeft(ty1)((term: Expr, v: Id) => term.subst(Map(v -> Wildcard)))
+        Right(ty2)
     })
   }
 
@@ -225,6 +231,9 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
     case _ => Left("Type inference for " + term + " is not yet implemented.")
   }
 
+  /**
+   * Generate a uifying substitution for a list of type equations
+   */
   def solve(equations: List[(Expr, Expr)], subst: Map[Id, Expr] = Map()): Either[String, Map[Id, Expr]] =
     equations match {
       case Nil => Right(subst)
@@ -239,6 +248,9 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
       case (Imp(a, b), Imp(c, d))::rest => solve((a, c)::(b, d)::rest, subst)
       case (And(a, b), And(c, d))::rest => solve((a, c)::(b, d)::rest, subst)
       case (Or(a, b), Or(c, d))::rest => solve((a, c)::(b, d)::rest, subst)
+      // FIXME do I need to compare the bound variable somehow?
+      case (All(x, matrix1), All(y, matrix2))::rest => solve((matrix1, matrix2)::rest, subst)
+      case (Ex(x, matrix1), Ex(y, matrix2))::rest => solve((matrix1, matrix2)::rest, subst)
       case _ => Left("TODO")
     }
 
