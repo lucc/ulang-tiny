@@ -201,7 +201,10 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
     case Pair(a, b) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      build(ctx, a, ta) flatMap (eqs1 => build(ctx, b, tb) map (eqs2 => eqs1++eqs2+(tvar -> And(ta, tb))))
+      for {
+        eqs1 <- build(ctx, a, ta)
+        eqs2 <- build(ctx, b, tb)
+      } yield eqs1 ++ eqs2 + (tvar -> And(ta, tb))
       // TODO should I try to construct this as exists if what happens?
     case LeftE(a) =>
       val ta = TypeVar()
@@ -214,18 +217,27 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
     case Lam1(arg, body) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      build(ctx, arg, ta) flatMap (eqs1 => build(ctx + (arg -> ta), body, tb) map (eqs2 => eqs1++eqs2+(tvar -> Imp(ta, tb))))
+      for {
+        eqs1 <- build(ctx, arg, ta)
+        eqs2 <- build(ctx + (arg -> ta), body, tb)
+      } yield  eqs1 ++ eqs2 + (tvar -> Imp(ta, tb))
     //case Lam(List(Case(List(arg), body))) =>
       //val ta = TypeVar()
       //val tb = TypeVar()
-      // TODO here I need type inference for pattern matching:
-      //                                                 v
-      //build(ctx, arg, ta) flatMap (eqs1 => build(ctx + (arg -> ta), body, tb) map (eqs2 => eqs1++eqs2+(tvar -> Imp(ta, tb))))
+      //for {
+      //  eqs1 <- build(ctx, arg, ta)
+      //  // TODO here I need type inference for pattern matching:
+      //  //                   v
+      //  eqs2 <- build(ctx + (arg -> ta), body, tb)
+      //} yield eqs2 => eqs1++eqs2+(tvar -> Imp(ta, tb))
       // TODO should I try to construct this as forall if ta is an Id?
     case App(fun, arg) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      build(ctx, fun, tb) flatMap (eqs1 => build(ctx, arg, ta) map (eqs2 => eqs1++eqs2+(tb -> Imp(ta, tvar))))
+      for {
+        eqs1 <- build(ctx, fun, tb)
+        eqs2 <- build(ctx, arg, ta)
+      } yield eqs1 ++ eqs2 + (tb -> Imp(ta, tvar))
     case _ => Left("Type inference for " + term + " is not yet implemented.")
   }
 
