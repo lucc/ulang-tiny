@@ -21,7 +21,7 @@ class TypeInferenceTests extends AnyFunSpec {
   // load the prelude file when initializeing the test suite
   ulang.Main.loadPrelude()
 
-  import ulang.{Lam, Case, App, All}
+  import ulang.{Lam, Case, App, All, RightE, LeftE, Wildcard, Or}
 
   val a = Id("a")
   val b = Id("b")
@@ -51,8 +51,16 @@ class TypeInferenceTests extends AnyFunSpec {
       val actual = TypeInference(Map(a -> T1, b -> T2), Pair(a, b))
       assert(actual == Right(And(T1, T2)))
     }
+    it("left") {
+      val actual = TypeInference(Map(a -> T), LeftE(a))
+      assert(actual == Right(Or(T, Wildcard)))
+    }
+    it("right") {
+      val actual = TypeInference(Map(a -> T), RightE(a))
+      assert(actual == Right(Or(Wildcard, T)))
+    }
     it("omega term") {
-      val actual = TypeInference(Map(), Lam(List(Case(List(x), App(x, x)))))
+      val actual = TypeInference(Map(), u"lambda x -> x x")
       assert(actual.isInstanceOf[Left[String, _]])
     }
   }
