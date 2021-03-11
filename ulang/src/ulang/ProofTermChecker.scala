@@ -104,26 +104,7 @@ object ProofTermChecker {
       case _ => Some(f"Proof term $proof does not match the formula $goal.")
     }
 
-  /**
-   * Type inference for the proof checker
-   */
-  def infer(ctx: Map[Id, Expr], expr: Expr): Either[String, Expr] = expr match {
-    case Pair(_, _) => TypeInference(ctx, expr) // TODO existential quantifier?
-    case LeftE(_) => TypeInference(ctx, expr)
-    case RightE(_) => TypeInference(ctx, expr)
-    case App(fun, arg) => infer(ctx, fun) match {
-      case err@Left(_) => err
-      case Right(t1) => infer(ctx, arg) match {
-        case err@Left(_) => err
-        case Right(t2) => t1 match {
-          case Imp(`t2`, result) => Right(result)
-          case All(x, matrix) => Right(matrix.subst(Map(x -> arg)))
-          case _ => Left("Don't know how to apply to a " + t1)
-        }
-      }
-    }
-    case _ => TypeInference(ctx, expr)
-  }
+  val infer = TypeInference(_, _)
 
   def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id,Expr] =
     (pat, assm) match {
@@ -165,6 +146,11 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
 
   import scala.util.Try
 
+  // this type is used to represent type checking/inference context, equations
+  // assiging types to type variables (used for equation solving and also as
+  // substitutions)
+  type Ctx = Map[Id, Expr]
+
   /**
    * TypeVar represents type variables used during type inference.  It relies
    * on the fact that the parser for ulang does not accept space in
@@ -181,21 +167,43 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
     }
   }
 
-  def apply(ctx: Map[Id, Expr], term: Expr) = {
+  def apply(ctx: Ctx, term: Expr) = simple(ctx, term)
+
+  def simple(ctx: Ctx, term: Expr): Either[String, Expr] =
+    term match {
+      case id: Id => ctx get id toRight s"Not in current type inference context: $id"
+      case Pair(a, b) => simple(ctx, a).flatMap(a => simple(ctx, b).map(b => And(a, b))) // TODO existential quantifier?
+      case LeftE(a) => simple(ctx, a).map(a => Or(a, ulang.Wildcard))
+      case RightE(a) => simple(ctx, a).map(a => Or(ulang.Wildcard, a))
+      case Lam1(v, body) => simple(ctx, v).flatMap(t1 => simple(ctx + (v -> t1), body).map(t2 => Imp(t1, t2))) // TODO universal quantifier?
+      case App(fun, arg) => simple(ctx, fun) match {
+        case err@Left(_) => err
+        case Right(t1) => simple(ctx, arg) match {
+          case err@Left(_) => err
+          case Right(t2) => t1 match {
+            case Imp(`t2`, result) => Right(result)
+            case All(x, matrix) => Right(matrix.subst(Map(x -> arg)))
+            case _ => Left("Don't know how to apply to a " + t1)
+          }
+        }
+      }
+      case _ => Left("Type inference for " + term + " is not yet implemented.")
+    }
+  def full(ctx: Ctx, term: Expr) = {
     val tvar = TypeVar()
     build(ctx, term, tvar) flatMap(eqs => solve(eqs toList) match {
       case Left(e) => Left(e)
       case Right(eqs) =>
         val ty1 = eqs(tvar)
         val ty2 = ty1.free.filter {
-          case t@TypeVar(_) => true
+          case TypeVar(_) => true
           case _ => false
         }.foldLeft(ty1)((term: Expr, v: Id) => term.subst(Map(v -> Wildcard)))
         Right(ty2)
     })
   }
 
-  def build(ctx: Map[Id, Expr], term: Expr, tvar: Id): Either[String, Map[Expr, Expr]] = term match {
+  def build(ctx: Ctx, term: Expr, tvar: Id): Either[String, Map[Expr, Expr]] = term match {
     case id: Id =>
       val t: Expr = tvar
       ctx get id map ((e: Expr) => Map(t -> e)) toRight s"Not in current type inference context: $id"
@@ -245,7 +253,7 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
   /**
    * Generate a uifying substitution for a list of type equations
    */
-  def solve(equations: List[(Expr, Expr)], subst: Map[Id, Expr] = Map()): Either[String, Map[Id, Expr]] =
+  def solve(equations: List[(Expr, Expr)], subst: Ctx = Map()): Either[String, Ctx] =
     equations match {
       case Nil => Right(subst)
       case (a, b)::rest if a == b => solve(rest, subst)
