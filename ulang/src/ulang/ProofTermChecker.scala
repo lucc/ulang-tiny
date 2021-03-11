@@ -172,7 +172,8 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
    * all user generated identidiers.
    */
   object TypeVar extends (() => Id) {
-    private val name = "ty "
+    // a backspace makes these variables look nice in the output
+    private val name = "ty \u0008"
     def apply() = Expr.fresh(Id(name))
     def unapply(id: Expr) = id match {
       case Id(`name`, index) => index
