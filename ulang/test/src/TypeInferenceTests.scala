@@ -59,4 +59,24 @@ class TypeInferenceTests extends AnyFunSpec {
       assertThrows[TypeInference.InferenceError] { build(Map(), a) }
     }
   }
+
+  //describe("TODO") {
+  //  it("implication") {
+  //    val actual = TypeInference.full(Map(), u"lambda x -> x")
+  //    assert(actual == Right(Imp(Wildcard, Wildcard)))
+  //  }
+  //  it("omega term") {
+  //    val actual = TypeInference.full(Map(), u"lambda x -> x x")
+  //    assert(actual.isInstanceOf[Left[String, _]])
+  //  }
+  //  it("something") {
+  //    val x = Id("x")
+  //    val f = Id("f")
+  //    val tf = All(x, App(b, x))
+  //    val arg = Id("arg")
+  //    val ctx = Map(f -> tf, arg -> a)
+  //    val actual = TypeInference.full(ctx, App(f, arg))
+  //    assert(actual == Right())
+  //  }
+  //}
 }
