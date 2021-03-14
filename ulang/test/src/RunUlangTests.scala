@@ -56,9 +56,9 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       """show (forall x. forall y. a) ==> forall y. forall x. a;
       proof term lambda f -> lambda y -> lambda x -> f x y;""",
       """show (exists x y. a x y) ==> exists y x. a x y;
-      proof term lambda (w1,(w2,pt)) -> (w2,(w1,pt))""",
+      proof term lambda Witness w1 (Witness w2 pt) -> Witness w2 (Witness w1 pt)""",
       """show (exists x. exists y. a x y) ==> exists y. exists x. a x y;
-      proof term lambda (w1,(w2,pt)) -> (w2,(w1,pt))""",
+      proof term lambda Witness w1 (Witness w2 pt) -> Witness w2 (Witness w1 pt)""",
       // Schwichtenberg page 13
       """show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
       proof term lambda (w,p) -> fa -> p fa w;""",
@@ -74,11 +74,11 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // proof with all quantifier
     eval("show (forall x. p x) ==> p Foo; proof term lambda x -> x Foo;")
     // proving introduction rules for exists
-    eval("show a ==> exists x. a; proof term (lambda a -> (x, a));")
-    eval("show p x ==> exists y. p y; proof term (lambda a -> (x, a));")
+    eval("show a ==> exists x. a; proof term (lambda a -> Witness x a);")
+    eval("show p x ==> exists y. p y; proof term (lambda a -> Witness x a);")
     // Schwichtenberg page 13
     eval("""show (forall x.a x ==> b) ==> (exists x. a x) ==> b;
-         proof term lambda f -> lambda (w,p) -> f w p;""")
+         proof term lambda f -> lambda (Witness w p) -> f w p;""")
     eval("""show (forall x.a ==> b x) ==> a ==> forall x. b x;
          proof term lambda f -> lambda precond -> lambda var -> f var precond;""")
     eval("""show (a ==> forall x. b x) ==> forall x. a ==> b x;
@@ -98,7 +98,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       pendingUntilFixed {
       // it would work with "b" instead of "b x"
       val show = "show (exists x. a x) ==> (forall x. a x ==> b x) ==> b x;"
-      val proof ="proof term lambda (w,p) -> lambda f -> f w p;"
+      val proof ="proof term lambda (Witness w p) -> lambda f -> f w p;"
       Console.withOut(new java.io.ByteArrayOutputStream()) {
         assertThrows[RuntimeException] {
           ulang.Exec.run(show + proof)
@@ -147,7 +147,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         // universal quantifier introduction
         eval("show a ==> forall x. a; proof term lambda p -> lambda x -> p;")
         // existential quantifier introduction
-        eval("show a t ==> exists x. a x; proof term lambda p -> (t,p);" )
+        eval("show a t ==> exists x. a x; proof term lambda p -> Witness t p;" )
       }
       describe("elimination rules") {
         // universal quantifier elimination
@@ -155,7 +155,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         // existential quantifier elimination
         // TODO variable condition?
         eval("""show (exists x. a x) ==> (forall x. a x ==> b) ==> b;
-          proof term lambda (w,p) -> lambda f -> f w p;""")
+          proof term lambda (Witness w p) -> lambda f -> f w p;""")
       }
     }
   }

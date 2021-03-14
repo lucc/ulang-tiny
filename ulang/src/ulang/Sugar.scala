@@ -174,6 +174,7 @@ object Imp extends Binary("==>") {
 
 object Eqv extends Binary("<=>")
 object Pair extends Binary(",")
+object Witness extends Binary("Witness")
 object LeftE extends Unary("Left")
 object RightE extends Unary("Right")
 object Assumption extends Id("Assumption")

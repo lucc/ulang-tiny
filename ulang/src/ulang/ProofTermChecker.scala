@@ -54,7 +54,7 @@ object ProofTermChecker {
       // etc.
 
       // predicate logic introduction rules
-      case (Pair(witness, p), Ex(id, matrix)) =>
+      case (Witness(witness, p), Ex(id, matrix)) =>
         check(assumptions, p, matrix.subst(Map(id -> witness)))
       case (Lam1(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
@@ -112,7 +112,7 @@ object ProofTermChecker {
       case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
       case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)
-      case (Pair(w, p), Ex(x, matrix)) => bind(bind(ctx, w, x), p, matrix)
+      case (Witness(w, p), Ex(x, matrix)) => bind(bind(ctx, w, x), p, matrix)
     }
 
   // Functions that have been suggested by Gidon but are not yet implemented.
