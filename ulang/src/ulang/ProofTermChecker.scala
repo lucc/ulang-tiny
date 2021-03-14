@@ -171,11 +171,28 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
 
   def simple(ctx: Ctx, term: Expr): Either[String, Expr] =
     term match {
-      case id: Id => ctx get id toRight s"Not in current type inference context: $id"
-      case Pair(a, b) => simple(ctx, a).flatMap(a => simple(ctx, b).map(b => And(a, b))) // TODO existential quantifier?
-      case LeftE(a) => simple(ctx, a).map(a => Or(a, ulang.Wildcard))
-      case RightE(a) => simple(ctx, a).map(a => Or(ulang.Wildcard, a))
-      case Lam1(v, body) => simple(ctx, v).flatMap(t1 => simple(ctx + (v -> t1), body).map(t2 => Imp(t1, t2))) // TODO universal quantifier?
+      case id: Id =>
+        ctx get id orElse (Some(id) filter ulang.context.isTag) toRight
+          s"Not in current type inference context: $id"
+      case Pair(a, b) =>
+        simple(ctx, a).flatMap(a => simple(ctx, b).map(b => And(a, b))) // TODO existential quantifier?
+      case LeftE(a) =>
+        simple(ctx, a).map(a => Or(a, ulang.Wildcard))
+      case RightE(a) =>
+        simple(ctx, a).map(a => Or(ulang.Wildcard, a))
+      case Lam1(v, body) =>
+        val v_ = Expr.fresh(v)
+        // FIXME: Gidon uses "All(v_ ..." here?
+        simple(ctx + (v -> v), body) map (t => All(v, Imp(v, t)))
+      case Lam(List(Case(List(pat), body))) =>
+        val xs = pat.free.toList
+        val as = xs map Expr.fresh
+        val re = xs zip as
+        val ctx_ = ctx ++ re
+        for {
+          patT <- simple(ctx, pat)
+          bodyT <- simple(ctx, body)
+        } yield All(as, Imp(patT, bodyT))
       case App(fun, arg) => simple(ctx, fun) match {
         case err@Left(_) => err
         case Right(t1) => simple(ctx, arg) match {
