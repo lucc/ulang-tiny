@@ -169,42 +169,45 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
 
   def apply(ctx: Ctx, term: Expr) = simple(ctx, term)
 
+  case class InferenceError(error: String) extends Throwable {
+    override def toString = error
+  }
+
   def simple(ctx: Ctx, term: Expr): Either[String, Expr] =
+    Try(simple_(ctx, term)).toEither.left.map(_.toString)
+  def simple_(ctx: Ctx, term: Expr): Expr =
     term match {
       case id: Id =>
-        ctx get id orElse (Some(id) filter ulang.context.isTag) toRight
-          s"Not in current type inference context: $id"
+        ctx get id orElse(Some(id) filter ulang.context.isTag) getOrElse(
+          throw InferenceError(s"Not in current type inference context: $id"))
       case Pair(a, b) =>
-        simple(ctx, a).flatMap(a => simple(ctx, b).map(b => And(a, b))) // TODO existential quantifier?
+        And(simple_(ctx, a), simple_(ctx, b))
       case LeftE(a) =>
-        simple(ctx, a).map(a => Or(a, ulang.Wildcard))
+        Or(simple_(ctx, a), ulang.Wildcard)
       case RightE(a) =>
-        simple(ctx, a).map(a => Or(ulang.Wildcard, a))
+        Or(ulang.Wildcard, simple_(ctx, a))
       case Lam1(v, body) =>
         val v_ = Expr.fresh(v)
         // FIXME: Gidon uses "All(v_ ..." here?
-        simple(ctx + (v -> v), body) map (t => All(v, Imp(v, t)))
+        All(v_, Imp(v, simple_(ctx + (v -> v_), body)))
       case Lam(List(Case(List(pat), body))) =>
         val xs = pat.free.toList
         val as = xs map Expr.fresh
         val re = xs zip as
         val ctx_ = ctx ++ re
-        for {
-          patT <- simple(ctx, pat)
-          bodyT <- simple(ctx, body)
-        } yield All(as, Imp(patT, bodyT))
-      case App(fun, arg) => simple(ctx, fun) match {
-        case err@Left(_) => err
-        case Right(t1) => simple(ctx, arg) match {
-          case err@Left(_) => err
-          case Right(t2) => t1 match {
-            case Imp(`t2`, result) => Right(result)
-            case All(x, matrix) => Right(matrix.subst(Map(x -> arg)))
-            case _ => Left("Don't know how to apply to a " + t1)
-          }
+        val patT = simple_(ctx, pat)
+        val bodyT = simple_(ctx, body)
+        All(as, Imp(patT, bodyT))
+      case App(fun, arg) =>
+        val t1 = simple_(ctx, fun)
+        val t2 = simple_(ctx, arg)
+        t1 match {
+          case Imp(`t2`, result) => result
+          case All(x, matrix) => (matrix.subst(Map(x -> arg)))
+          case _ =>  throw InferenceError("Don't know how to apply to a " + t1)
         }
-      }
-      case _ => Left("Type inference for " + term + " is not yet implemented.")
+      case _ =>
+        throw InferenceError("Type inference for " + term + " is not yet implemented.")
     }
   def full(ctx: Ctx, term: Expr) = {
     val tvar = TypeVar()
