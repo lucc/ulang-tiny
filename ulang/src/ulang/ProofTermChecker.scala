@@ -189,7 +189,7 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
       case Lam1(v, body) =>
         val v_ = Expr.fresh(v)
         // FIXME: Gidon uses "All(v_ ..." here?
-        All(v_, Imp(v, simple_(ctx + (v -> v_), body)))
+        All(v, Imp(v, simple_(ctx + (v -> v), body)))
       case Lam(List(Case(List(pat), body))) =>
         val xs = pat.free.toList
         val as = xs map Expr.fresh
