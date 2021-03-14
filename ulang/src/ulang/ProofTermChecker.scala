@@ -211,45 +211,58 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
     }
   def full(ctx: Ctx, term: Expr) = {
     val tvar = TypeVar()
-    build(ctx, term, tvar) flatMap(eqs => solve(eqs toList) match {
-      case Left(e) => Left(e)
-      case Right(eqs) =>
-        val ty1 = eqs(tvar)
-        val ty2 = ty1.free.filter {
-          case TypeVar(_) => true
-          case _ => false
-        }.foldLeft(ty1)((term: Expr, v: Id) => term.subst(Map(v -> Wildcard)))
-        Right(ty2)
-    })
+    try {
+      val eqs = solve(build(ctx, term, tvar) toList)
+      val ty1 = eqs(tvar)
+      Right(ty1.free.filter {
+        case TypeVar(_) => true
+        case _ => false
+      }.foldLeft(ty1)((term: Expr, v: Id) => term.subst(Map(v -> Wildcard))))
+    } catch {
+      case InferenceError(err) => Left(err)
+    }
   }
 
-  def build(ctx: Ctx, term: Expr, tvar: Id): Either[String, Map[Expr, Expr]] = term match {
+  def build(ctx: Ctx, term: Expr, tvar: Id): Map[Expr, Expr] = term match {
     case id: Id =>
       val t: Expr = tvar
-      ctx get id map ((e: Expr) => Map(t -> e)) toRight s"Not in current type inference context: $id"
+      ctx get id map ((e: Expr) => Map(t -> e)) getOrElse
+        (throw InferenceError(s"Not in current type inference context: $id"))
     case Pair(a, b) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      for {
-        eqs1 <- build(ctx, a, ta)
-        eqs2 <- build(ctx, b, tb)
-      } yield eqs1 ++ eqs2 + (tvar -> And(ta, tb))
+      build(ctx, a, ta) ++ build(ctx, b, tb) + (tvar -> And(ta, tb))
       // TODO should I try to construct this as exists if what happens?
     case LeftE(a) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      build(ctx, a, ta) map (_ + (tvar -> Or(ta, tb)))
+      build(ctx, a, ta) + (tvar -> Or(ta, tb))
     case RightE(b) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      build(ctx, b, tb) map (_ + (tvar -> Or(ta, tb)))
+      build(ctx, b, tb) + (tvar -> Or(ta, tb))
+
+    case Lam(List(Case(List(pat), body))) =>
+      // this is let-polimorphism?
+      val ta = TypeVar()
+      val tb = TypeVar()
+      val eqs1 = build(ctx, pat, ta)
+      val eqs2 = build(ctx, pat, tb)
+      //  eqs <- solve(eqs1 ++ eqs2 toList)
+      //  ty = eqs(tvar)
+      //  xs = ty.free.toList
+      //  ts = xs map Expr.fresh
+
+      //} yield eqs1 ++ eqs2 + (tvar -> All(ts, ty))
+      eqs1 ++ eqs2 + (tvar -> Imp(ta, tb))
+
     case Lam1(arg, body) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      for {
-        eqs1 <- build(ctx, arg, ta)
-        eqs2 <- build(ctx + (arg -> ta), body, tb)
-      } yield  eqs1 ++ eqs2 + (tvar -> Imp(ta, tb))
+      val eqs1 = build(ctx, arg, ta)
+      val eqs2 = build(ctx + (arg -> ta), body, tb)
+      eqs1 ++ eqs2 + (tvar -> Imp(ta, tb))
+      // forall free(p). p ==> e
     //case Lam(List(Case(List(arg), body))) =>
       //val ta = TypeVar()
       //val tb = TypeVar()
@@ -263,19 +276,18 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
     case App(fun, arg) =>
       val ta = TypeVar()
       val tb = TypeVar()
-      for {
-        eqs1 <- build(ctx, fun, tb)
-        eqs2 <- build(ctx, arg, ta)
-      } yield eqs1 ++ eqs2 + (tb -> Imp(ta, tvar))
-    case _ => Left("Type inference for " + term + " is not yet implemented.")
+      val eqs1 = build(ctx, fun, tb)
+      val eqs2 = build(ctx, arg, ta)
+      eqs1 ++ eqs2 + (tb -> Imp(ta, tvar))
+    case _ => throw InferenceError("Type inference for " + term + " is not yet implemented.")
   }
 
   /**
    * Generate a uifying substitution for a list of type equations
    */
-  def solve(equations: List[(Expr, Expr)], subst: Ctx = Map()): Either[String, Ctx] =
+  def solve(equations: List[(Expr, Expr)], subst: Ctx = Map()): Ctx =
     equations match {
-      case Nil => Right(subst)
+      case Nil => subst
       case (a, b)::rest if a == b => solve(rest, subst)
       case (a@TypeVar(_), b)::rest if !b.free.contains(a.asInstanceOf[Id]) =>
         val a_ = a.asInstanceOf[Id]
@@ -290,7 +302,7 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
       // FIXME do I need to compare the bound variable somehow?
       case (All(x, matrix1), All(y, matrix2))::rest => solve((matrix1, matrix2)::rest, subst)
       case (Ex(x, matrix1), Ex(y, matrix2))::rest => solve((matrix1, matrix2)::rest, subst)
-      case _ => Left("TODO")
+      case _ => throw InferenceError("TODO")
     }
 
 }
