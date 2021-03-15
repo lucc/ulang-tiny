@@ -7,7 +7,29 @@ import arse.Fixity
  */
 sealed trait Cmd extends Pretty
 
-case class Def(left: Expr, right: Expr)
+case class Def(left: Expr, right: Expr) {
+  private def check(pattern: Expr): Unit = pattern match {
+    case _: Id | Wildcard =>
+    case App(left, right) => check(left); check(right)
+    case _ => fail("A " + pattern +
+      " can not appear on the left hand side of a define statement.")
+  }
+  left match {
+    case Id("elim", None) =>
+      fail("elim is a reserved function name that can not be defined manually")
+    case Id("intro", None) =>
+      fail("intro is a reserved function name that can not be defined manually")
+    case id: Id if context isTag id =>
+      fail("A define left hand side can not be a tag")
+    case App(id: Id, _) if context isTag id =>
+      fail("A define left hand side can not start with a tag")
+    case Wildcard =>
+      fail("A define left hand side can not be a wildcard")
+    case App(Wildcard, _) =>
+      fail("A define left hand side can not start with a wildcard")
+    case _ => check(left)
+  }
+}
 case class Defs(defs: List[Def]) extends Cmd
 
 case class Datas(names: List[String]) extends Cmd

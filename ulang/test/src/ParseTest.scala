@@ -156,4 +156,29 @@ class ParseTest extends AnyFunSpec {
     test("with numbers and symbols", "1+")
     test("names for elim rule constructor terms", "Elim-/\\")
   }
+
+  describe("define") {
+    it("can not have lambdas on the left") {
+      assertThrows[RuntimeException] {
+        p.cmd.parse("define (lambda x -> x) := A;")
+      }
+    }
+    it("can not have let on the left") {
+      assertThrows[RuntimeException] {
+        p.cmd.parse("define (let x := y in x) := A;")
+      }
+    }
+    describe("can not have a tag on the left") {
+      it("plain") {
+        assertThrows[RuntimeException] {
+          p.cmd.parse("define Foo := A;")
+        }
+      }
+      it("With arguments") {
+        assertThrows[RuntimeException] {
+          p.cmd.parse("define Foo x := A;")
+        }
+      }
+    }
+  }
 }
