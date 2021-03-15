@@ -23,18 +23,18 @@ object ProofTermChecker {
       // Proof by assumption has to be the first case, this makes it possible
       // to match against any goal (even "False").  If the given goal is not
       // in the context we fall through to the other cases.
-      case (id: Id, _) if assumptions.contains(id) =>
+      case (id: Id, _) if assumptions contains id =>
         if (assumptions(id) == goal) None
         else Some(f"Assumption $id does not match the goal $goal")
-      // TODO if the id was not found in the local assumptions we want to look
-      // at the gloablly available lemmas  (and axioms etc) or at defined
-      // functions which the user might use to proof something.
-      // Here local assumptions shadow lemmas which in turn shadow global
-      // functions.
+      // TODO lemmas and axioms etc should shadow defined functions
       //case (id: Id, _) if global_lemmas.contains(id) =>
       //  canBeUnified(global_lemmas(id), goal)
-      //case (id: Id, _) if funs.contains(id) =>
-      //  canBeUnified(funs(id), goal)
+      case (id: Id, _) if context.funs contains id =>
+        check(assumptions, Lam(context.funs(id)), goal)
+      case (Id("elim", None), _) =>
+        Some("The special function name 'elim' can only be used in applications.")
+      case (Id("intro", None), _) =>
+        Some("The special function name 'intro' can only be used in applications.")
 
       // special cases
       case (True, True) => None // we use "True" to represent a trivial proof
