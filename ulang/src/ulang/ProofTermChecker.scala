@@ -178,8 +178,8 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
   def simple_(ctx: Ctx, term: Expr): Expr =
     term match {
       case id: Id =>
-        ctx get id orElse(Some(id) filter ulang.context.isTag) getOrElse(
-          throw InferenceError(s"Not in current type inference context: $id"))
+        ctx get id getOrElse(throw InferenceError(
+          s"Not in current type inference context: $id"))
       case Pair(a, b) =>
         And(simple_(ctx, a), simple_(ctx, b))
       case LeftE(a) =>
