@@ -56,7 +56,7 @@ object ProofTermChecker {
       // predicate logic introduction rules
       case (Witness(witness, p), Ex(id, matrix)) =>
         check(assumptions, p, matrix.subst(Map(id -> witness)))
-      case (Lam1(param, body), All(id, matrix)) =>
+      case (LamId(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable must not occur free in any open assumption in body.
         val openFree = Expr free assumptions
@@ -65,7 +65,9 @@ object ProofTermChecker {
 
       // TODO predicate logic elimination rules?
 
-      // Special cases for modus ponens
+      // different cases for modus ponens
+      case (App(LamId(id, body), arg), _) =>
+        check(assumptions, body.subst(Map(id -> arg)), goal)
       // FIXME can this be merged into the next case?
       case (App(f: Id, arg: Id), _)
       if assumptions.contains(f) && assumptions.contains(arg) =>
@@ -84,8 +86,6 @@ object ProofTermChecker {
         // fully.  If the check failed we want to fall through to the lower
         // cases.
         => None
-      case (App(Lam1(id, body), arg), _) =>
-        check(assumptions, body.subst(Map(id -> arg)), goal)
       // general applications need type inference for either the left or the
       // right side.  We use the left side for now.
       case (App(f, arg), _) =>
@@ -128,7 +128,7 @@ object ProofTermChecker {
   //  cases.forall(elim(ctx, _, goal))
   //def apply(assumption: Map[Id, Expr], fun: Expr, arg: Expr): Expr =
   //  (fun, arg) match {
-  //    case (Lam1(v, body), _) => body.subst(Map(v -> arg))
+  //    case (LamId(v, body), _) => body.subst(Map(v -> arg))
   //    case (All(x, matrix), _) =>
   //       (forall x -> p) t == p[x -> t]
   //       (a ==> b) a       == b
@@ -186,7 +186,7 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
         Or(simple_(ctx, a), ulang.Wildcard)
       case RightE(a) =>
         Or(ulang.Wildcard, simple_(ctx, a))
-      case Lam1(v, body) =>
+      case LamId(v, body) =>
         val v_ = Expr.fresh(v)
         // FIXME: Gidon uses "All(v_ ..." here?
         All(v, Imp(v, simple_(ctx + (v -> v), body)))
@@ -256,7 +256,7 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
       //} yield eqs1 ++ eqs2 + (tvar -> All(ts, ty))
       eqs1 ++ eqs2 + (tvar -> Imp(ta, tb))
 
-    case Lam1(arg, body) =>
+    case LamId(arg, body) =>
       val ta = TypeVar()
       val tb = TypeVar()
       val eqs1 = build(ctx, arg, ta)
