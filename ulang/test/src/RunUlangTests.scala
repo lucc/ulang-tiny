@@ -48,8 +48,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
                                                | (Right x) -> Left x;""",
       """show a \/ b ==> b \/ a;
          proof term lambda (Left x) -> Right x | (Right x) -> Left x;""",
-      // define statements with strange expressions on the left
-      "define (let x := y in x) := A;",
       // reordering bound variables
       """show (forall x y. a) ==> forall y x. a;
       proof term lambda f -> lambda y -> lambda x -> f x y;""",
