@@ -17,20 +17,20 @@ object ProofTermChecker {
    *  If a proof should be allowed to use axioms, they need to be present in
    *  the context.
    */
-  def check(assumptions: Map[Id, Expr], proof: Expr, goal: Expr): Option[String] =
+  def check(ctx: Map[Id, Expr], proof: Expr, goal: Expr): Option[String] =
     (proof, goal) match {
 
       // Proof by assumption has to be the first case, this makes it possible
       // to match against any goal (even "False").  If the given goal is not
       // in the context we fall through to the other cases.
-      case (id: Id, _) if assumptions contains id =>
-        if (assumptions(id) == goal) None
+      case (id: Id, _) if ctx contains id =>
+        if (ctx(id) == goal) None
         else Some(f"Assumption $id does not match the goal $goal")
       // TODO lemmas and axioms etc should shadow defined functions
       //case (id: Id, _) if global_lemmas.contains(id) =>
       //  canBeUnified(global_lemmas(id), goal)
       case (id: Id, _) if context.funs contains id =>
-        check(assumptions, Lam(context.funs(id)), goal)
+        check(ctx, Lam(context.funs(id)), goal)
       case (Id("elim", None), _) =>
         Some("The special function name 'elim' can only be used in applications.")
       case (Id("intro", None), _) =>
@@ -41,12 +41,12 @@ object ProofTermChecker {
 
       // propositional logic: introduction rules
       case (Pair(p1, p2), And(f1, f2)) =>
-        check(assumptions, p1, f1) orElse check(assumptions, p2, f2)
-      case (LeftE(p), Or(f, _)) => check(assumptions, p, f)
-      case (RightE(p), Or(_, f)) => check(assumptions, p, f)
+        check(ctx, p1, f1) orElse check(ctx, p2, f2)
+      case (LeftE(p), Or(f, _)) => check(ctx, p, f)
+      case (RightE(p), Or(_, f)) => check(ctx, p, f)
       // special case for lambdas with one pattern only
       case (Lam(List(Case(List(pat), body))), Imp(ant, cons)) =>
-        check(bind(assumptions, pat, ant), body, cons)
+        check(bind(ctx, pat, ant), body, cons)
 
       // propositional logic: elimination rules TODO
       // We could also introduce special term constructors that are recognized
@@ -55,30 +55,30 @@ object ProofTermChecker {
 
       // predicate logic introduction rules
       case (Witness(witness, p), Ex(id, matrix)) =>
-        check(assumptions, p, matrix.subst(Map(id -> witness)))
+        check(ctx, p, matrix.subst(Map(id -> witness)))
       case (LamId(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable must not occur free in any open assumption in body.
-        val openFree = Expr free assumptions
+        val openFree = Expr free ctx
         if (openFree contains id) Some("Capturing variable " + id)
-        else check(assumptions, body, matrix.rename(Map(id -> param)))
+        else check(ctx, body, matrix.rename(Map(id -> param)))
 
       // TODO predicate logic elimination rules?
 
       // different cases for modus ponens
       case (App(LamId(id, body), arg), _) =>
-        check(assumptions, body.subst(Map(id -> arg)), goal)
+        check(ctx, body.subst(Map(id -> arg)), goal)
       // FIXME can this be merged into the next case?
       case (App(f: Id, arg: Id), _)
-      if assumptions.contains(f) && assumptions.contains(arg) =>
-        val fTy = assumptions(f)
-        val argTy = assumptions(arg)
+      if ctx.contains(f) && ctx.contains(arg) =>
+        val fTy = ctx(f)
+        val argTy = ctx(arg)
         if (fTy == Imp(argTy, goal)) None
         else if (argTy.isInstanceOf[Id] && fTy == All(argTy.asInstanceOf[Id], goal)) None
         else Some(f"Formulas do not match: $fTy should be equal to $argTy ==> $goal or forall $argTy. $goal")
       case (App(f: Id, arg), _)
-        if assumptions.contains(f) && (assumptions(f) match {
-          case Imp(precond, `goal`) => check(assumptions, arg, precond).isEmpty
+        if ctx.contains(f) && (ctx(f) match {
+          case Imp(precond, `goal`) => check(ctx, arg, precond).isEmpty
           case All(x, matrix) => goal == matrix.subst(Map(x -> arg))
           case _ => false
         })
@@ -89,12 +89,12 @@ object ProofTermChecker {
       // general applications need type inference for either the left or the
       // right side.  We use the left side for now.
       case (App(f, arg), _) =>
-        infer(assumptions, arg) match {
-          case Right(ty) if check(assumptions, f, Imp(ty, goal)).isEmpty => None
-          case Right(ty: Id) => check(assumptions, f, All(ty, goal))
+        infer(ctx, arg) match {
+          case Right(ty) if check(ctx, f, Imp(ty, goal)).isEmpty => None
+          case Right(ty: Id) => check(ctx, f, All(ty, goal))
           case Left(err1) =>
-            infer(assumptions, f) match {
-              case Right(Imp(a, `goal`)) => check(assumptions, a, arg)
+            infer(ctx, f) match {
+              case Right(Imp(a, `goal`)) => check(ctx, a, arg)
               case Right(All(v, matrix)) if matrix.subst(Map(v -> arg)) == goal => None
               case Left(err2) => Some(err1 + "\n" + err2)
             }
