@@ -47,13 +47,8 @@ object ProofTermChecker {
       case (LeftE(p), Or(f, _)) => check(ctx, p, f)
       case (RightE(p), Or(_, f)) => check(ctx, p, f)
       // special case for lambdas with one pattern only
-      case (Lam(List(Case(List(pat), body))), Imp(ant, cons)) =>
+      case (Lam1(List(pat), body), Imp(ant, cons)) =>
         check(bind(ctx, pat, ant), body, cons)
-
-      // propositional logic: elimination rules TODO
-      // We could also introduce special term constructors that are recognized
-      // here in order to eliminate connective: Elim-/\-1, Elim-/\-2, Elim-\/,
-      // etc.
 
       // predicate logic introduction rules
       case (Witness(witness, p), Ex(id, matrix)) =>
@@ -70,24 +65,20 @@ object ProofTermChecker {
       // different cases for modus ponens
       case (App(LamId(id, body), arg), _) =>
         check(ctx, body.subst(Map(id -> arg)), goal)
-      // FIXME can this be merged into the next case?
-      case (App(f: Id, arg: Id), _)
-      if ctx.contains(f) && ctx.contains(arg) =>
-        val fTy = ctx(f)
-        val argTy = ctx(arg)
-        if (fTy == Imp(argTy, goal)) None
-        else if (argTy.isInstanceOf[Id] && fTy == All(argTy.asInstanceOf[Id], goal)) None
-        else Some(f"Formulas do not match: $fTy should be equal to $argTy ==> $goal or forall $argTy. $goal")
-      case (App(f: Id, arg), _)
-        if ctx.contains(f) && (ctx(f) match {
-          case Imp(precond, `goal`) => check(ctx, arg, precond).isEmpty
-          case All(x, matrix) => goal == matrix.subst(Map(x -> arg))
-          case _ => false
-        })
-        // If the pattern guard did succeed we have already checked the proof
-        // fully.  If the check failed we want to fall through to the lower
-        // cases.
-        => None
+      case (App(f: Id, arg), _) if ctx.contains(f) || context.lemmas.contains(f) =>
+        val t1 = ctx.getOrElse(f, context.lemmas(f))
+        infer(ctx, arg) match {
+          case Left(err) => Some(err)
+          case Right(t2) =>
+            if (t1 == Imp(t2, goal)) None
+            else if (t2.isInstanceOf[Id] && t1 == All(t2.asInstanceOf[Id], goal)) None
+            else Some(f"Formulas do not match: $t1 should be equal to $t2 ==> $goal or forall $t2. $goal")
+        }
+
+      case (App(f: Id, arg), _) if context.funs contains f =>
+        // defined functions are checked like lambda terms
+        check(ctx, App(Lam(context.funs(f)), arg), goal)
+
       // general applications need type inference for either the left or the
       // right side.  We use the left side for now.
       case (App(f, arg), _) =>
