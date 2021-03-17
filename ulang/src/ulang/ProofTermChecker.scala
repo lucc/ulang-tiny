@@ -68,6 +68,16 @@ object ProofTermChecker {
       // This must have more than one Id because of previous case
       case (App(LamIds(id::ids, body), arg), _) =>
         check(ctx, LamIds(ids, body).subst(Map(id -> arg)), goal)
+      case (App(Lam1(pat, body), arg), _) =>
+        infer(ctx, arg) match {
+          case Left(err) => Some(err)
+          case Right(t) =>
+            pat match {
+              case Nil => Some("This should never happen")
+              case List(p) => check(ctx, apply(p, arg, body), goal)
+              case p::ps => check(ctx, apply(p, arg, Lam1(ps, body)), goal)
+            }
+        }
       case (App(f: Id, arg), _) if ctx.contains(f) || context.lemmas.contains(f) =>
         val t1 = ctx.getOrElse(f, context.lemmas(f))
         infer(ctx, arg) match {
@@ -113,6 +123,17 @@ object ProofTermChecker {
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)
       case (Witness(w, p), Ex(x, matrix)) => bind(bind(ctx, w, x), p, matrix)
     }
+  /**
+   * Bind an argument term to a pattern
+   */
+  def apply(pat: Expr, arg: Expr, body: Expr): Expr =
+    (pat, arg) match {
+      case (p: Id, _) => body.subst(Map(p -> arg))
+      case (App(id1: Id, term1), App(id2: Id, term2))
+        if context.isTag(id1) && id1 == id2 => apply(term1, term2, body)
+      case (App(f1, a1), App(f2, a2)) => apply(a1, a2, apply(f1, f2, body))
+    }
+
 
   // Functions that have been suggested by Gidon but are not yet implemented.
   //def elim(ctx: Map[Id, Expr], pats: List[Expr], body: Expr, goal: Expr): Boolean =
