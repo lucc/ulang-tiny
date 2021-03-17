@@ -38,6 +38,8 @@ object ProofTermChecker {
 
       // special cases
       case (True, True) => None // we use "True" to represent a trivial proof
+      case (intro(pred, index), _) => Some("Generation of intro axioms is not yet implemented")
+      case (elim(pred), _) => Some("Generation of elim axioms is not yet implemented")
 
       // propositional logic: introduction rules
       case (Pair(p1, p2), And(f1, f2)) =>

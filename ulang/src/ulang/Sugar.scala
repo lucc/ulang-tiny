@@ -178,3 +178,8 @@ object Witness extends Binary("Witness")
 object LeftE extends Unary("Left")
 object RightE extends Unary("Right")
 object Assumption extends Id("Assumption")
+
+// Special function names to manage intro and elim axioms of inductive
+// predicates
+object intro extends Binary("intro")
+object elim extends Unary("elim")
