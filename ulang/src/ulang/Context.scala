@@ -29,6 +29,7 @@ class Context extends Syntax[String] {
   var infix_ops: Map[String, (Assoc, Int)] = Map()
 
   var funs: Map[Id, List[Case]] = Map()
+  var lemmas: Map[Id, Expr] = Map()
   var consts: Map[Id, Norm] = Map()
 
   var inds: List[(Expr, Fix, List[Intro])] = List()

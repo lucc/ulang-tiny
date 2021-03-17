@@ -26,9 +26,9 @@ object ProofTermChecker {
       case (id: Id, _) if ctx contains id =>
         if (ctx(id) == goal) None
         else Some(f"Assumption $id does not match the goal $goal")
-      // TODO lemmas and axioms etc should shadow defined functions
-      //case (id: Id, _) if global_lemmas.contains(id) =>
-      //  canBeUnified(global_lemmas(id), goal)
+      case (id: Id, _) if context.lemmas contains id =>
+        if (context.lemmas(id) == goal) None
+        else Some(f"Lemma $id does not match the goal $goal")
       case (id: Id, _) if context.funs contains id =>
         check(ctx, Lam(context.funs(id)), goal)
       case (Id("elim", None), _) =>
@@ -178,8 +178,10 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
   def simple_(ctx: Ctx, term: Expr): Expr =
     term match {
       case id: Id =>
-        ctx get id getOrElse(throw InferenceError(
-          s"Not in current type inference context: $id"))
+        if (ctx contains id) ctx(id)
+        else if (context.lemmas contains id) context.lemmas(id)
+        else if (context.funs contains id) simple_(ctx, Lam(context.funs(id)))
+        else throw InferenceError( s"Not in current type inference context: $id")
       case Pair(a, b) =>
         And(simple_(ctx, a), simple_(ctx, b))
       case LeftE(a) =>
