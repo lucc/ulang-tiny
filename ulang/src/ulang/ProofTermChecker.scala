@@ -65,6 +65,9 @@ object ProofTermChecker {
       // different cases for modus ponens
       case (App(LamId(id, body), arg), _) =>
         check(ctx, body.subst(Map(id -> arg)), goal)
+      // This must have more than one Id because of previous case
+      case (App(LamIds(id::ids, body), arg), _) =>
+        check(ctx, LamIds(ids, body).subst(Map(id -> arg)), goal)
       case (App(f: Id, arg), _) if ctx.contains(f) || context.lemmas.contains(f) =>
         val t1 = ctx.getOrElse(f, context.lemmas(f))
         infer(ctx, arg) match {
@@ -99,6 +102,9 @@ object ProofTermChecker {
 
   val infer = TypeInference(_, _)
 
+  /**
+   * extend a context by binding argument types to parameter variables
+   */
   def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id,Expr] =
     (pat, assm) match {
       case (p: Id, _) => ctx + (p -> assm)
