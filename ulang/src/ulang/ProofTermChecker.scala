@@ -62,7 +62,8 @@ object ProofTermChecker {
 
       // TODO predicate logic elimination rules?
 
-      case (App(All(x, body), arg), _) if body.subst(Map(x -> arg)) == goal => None
+      case (App(All(x, body), arg), _) if body.subst(Map(x -> arg)) == goal =>
+        None
       // different cases for modus ponens
       case (App(LamId(id, body), arg), _) =>
         check(ctx, body.subst(Map(id -> arg)), goal)
@@ -255,6 +256,8 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
           case All(x, matrix) => (matrix.subst(Map(x -> arg)))
           case _ =>  throw InferenceError("Don't know how to apply to a " + t1)
         }
+      case All(x, body) =>
+        All(x, simple_(ctx + (x -> Wildcard), body))
       case _ =>
         throw InferenceError("Type inference for " + term + " is not yet implemented.")
     }
