@@ -48,9 +48,9 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
          proof term lambda (Left x) -> Right x | (Right x) -> Left x;""",
       // reordering bound variables
       """show (forall x y. a) ==> forall y x. a;
-      proof term lambda f -> lambda y -> lambda x -> f x y;""",
+      proof term lambda f -> forall y. forall x. f x y;""",
       """show (forall x. forall y. a) ==> forall y. forall x. a;
-      proof term lambda f -> lambda y -> lambda x -> f x y;""",
+      proof term lambda f -> forall y. forall x. f x y;""",
       """show (exists x y. a x y) ==> exists y x. a x y;
       proof term lambda Witness w1 (Witness w2 pt) -> Witness w2 (Witness w1 pt)""",
       """show (exists x. exists y. a x y) ==> exists y. exists x. a x y;
@@ -76,16 +76,16 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     eval("""show (forall x.a x ==> b) ==> (exists x. a x) ==> b;
          proof term lambda f -> lambda (Witness w p) -> f w p;""")
     eval("""show (forall x.a ==> b x) ==> a ==> forall x. b x;
-         proof term lambda f -> lambda precond -> lambda var -> f var precond;""")
+         proof term lambda f -> lambda precond -> forall var. f var precond;""")
     eval("""show (a ==> forall x. b x) ==> forall x. a ==> b x;
-         proof term lambda f -> lambda var -> lambda precond -> f precond var;""")
+         proof term lambda f -> forall var. lambda precond -> f precond var;""")
   }
 
   describe("invaild proofs") {
     it("universal quantifier introduction violating variable condition") {
       // it would work with "a" instead of "a x"
       val show = "show a x ==> forall x. a x;"
-      val proof = "proof term lambda p -> lambda x -> p;"
+      val proof = "proof term lambda p -> forall x. p;"
       assertThrows[RuntimeException] { // Capturing variable x
         ulang.Exec.run(show + proof)
       }
@@ -141,7 +141,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     describe("from predicate logic:") {
       describe("introduction rules") {
         // universal quantifier introduction
-        eval("show a ==> forall x. a; proof term lambda p -> lambda x -> p;")
+        eval("show a ==> forall x. a; proof term lambda p -> forall x. p;")
         // existential quantifier introduction
         eval("show a t ==> exists x. a x; proof term lambda p -> Witness t p;" )
       }

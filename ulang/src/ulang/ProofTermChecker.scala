@@ -53,7 +53,7 @@ object ProofTermChecker {
       // predicate logic introduction rules
       case (Witness(witness, p), Ex(id, matrix)) =>
         check(ctx, p, matrix.subst(Map(id -> witness)))
-      case (LamId(param, body), All(id, matrix)) =>
+      case (All(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable must not occur free in any open assumption in body.
         val openFree = Expr free ctx
@@ -62,6 +62,7 @@ object ProofTermChecker {
 
       // TODO predicate logic elimination rules?
 
+      case (App(All(x, body), arg), _) if body.subst(Map(x -> arg)) == goal => None
       // different cases for modus ponens
       case (App(LamId(id, body), arg), _) =>
         check(ctx, body.subst(Map(id -> arg)), goal)
@@ -90,12 +91,16 @@ object ProofTermChecker {
 
       case (App(f: Id, arg), _) if ctx.contains(f) || context.lemmas.contains(f) =>
         val t1 = ctx.getOrElse(f, context.lemmas(f))
-        infer(ctx, arg) match {
-          case Left(err) => Some(err)
-          case Right(t2) =>
-            if (t1 == Imp(t2, goal)) None
-            else if (t2.isInstanceOf[Id] && t1 == All(t2.asInstanceOf[Id], goal)) None
-            else Some(f"Formulas do not match: $t1 should be equal to $t2 ==> $goal or forall $t2. $goal")
+        t1 match {
+          case All(x, matrix) if matrix.subst(Map(x -> arg)) == goal => None
+          case _ =>
+            infer(ctx, arg) match {
+              case Left(err) => Some(err)
+              case Right(t2) =>
+                if (t1 == Imp(t2, goal)) None
+                else if (t2.isInstanceOf[Id] && t1 == All(t2.asInstanceOf[Id], goal)) None
+                else Some(f"Formulas do not match: $t1 should be equal to $t2 ==> $goal or forall $t2. $goal")
+            }
         }
 
       case (App(f: Id, arg), _) if context.funs contains f =>
