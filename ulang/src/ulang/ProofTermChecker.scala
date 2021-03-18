@@ -78,6 +78,16 @@ object ProofTermChecker {
               case p::ps => check(ctx, apply(p, arg, Lam1(ps, body)), goal)
             }
         }
+      case (App(Lam(cases), arg), _) =>
+        infer(ctx, arg) match {
+          case Left(err) => Some(err)
+          case Right(t) =>
+            val proofs = apply(cases, arg)
+            val ctxs = bind(ctx, cases, t)
+            ctxs.zip(proofs).map { case (c, p) => check(c, p, goal)
+            }.foldLeft( None: Option[String])((a,o) => a orElse o)
+        }
+
       case (App(f: Id, arg), _) if ctx.contains(f) || context.lemmas.contains(f) =>
         val t1 = ctx.getOrElse(f, context.lemmas(f))
         infer(ctx, arg) match {
@@ -127,6 +137,8 @@ object ProofTermChecker {
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)
       case (Witness(w, p), Ex(x, matrix)) => bind(bind(ctx, w, x), p, matrix)
     }
+  def bind(ctx: Map[Id, Expr], cases: List[Case], assm: Expr): List[Map[Id, Expr]] =
+    cases.map(c => bind(ctx, c.pats.head, assm))
   /**
    * Bind an argument term to a pattern
    */
@@ -136,6 +148,12 @@ object ProofTermChecker {
       case (App(id1: Id, term1), App(id2: Id, term2))
         if context.isTag(id1) && id1 == id2 => apply(term1, term2, body)
       case (App(f1, a1), App(f2, a2)) => apply(a1, a2, apply(f1, f2, body))
+    }
+  def apply(cases: List[Case], arg: Expr): List[Expr] =
+
+    cases.map {
+      case Case(List(p), body) => apply(p, arg, body)
+      case Case(p::ps, body) => apply(p, arg, Lam1(ps, body))
     }
 
 
