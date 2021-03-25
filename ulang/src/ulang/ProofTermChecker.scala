@@ -228,7 +228,7 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
       case id: Id =>
         if (ctx contains id) ctx(id)
         else if (context.lemmas contains id) context.lemmas(id)
-        else if (context.funs contains id) simple_(ctx, Lam(context.funs(id)))
+        // defined functions are hard infer because they can be recursive
         else throw InferenceError( s"Not in current type inference context: $id")
       case Pair(a, b) =>
         And(simple_(ctx, a), simple_(ctx, b))
