@@ -250,9 +250,8 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
         All(as, Imp(patT, bodyT))
       case App(fun, arg) =>
         val t1 = simple_(ctx, fun)
-        val t2 = simple_(ctx, arg)
         t1 match {
-          case Imp(`t2`, result) => result
+          case Imp(cond, result) if cond == simple_(ctx, arg) => result
           case All(x, matrix) => (matrix.subst(Map(x -> arg)))
           case _ =>  throw InferenceError("Don't know how to apply to a " + t1)
         }
