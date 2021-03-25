@@ -124,7 +124,7 @@ object ProofTermChecker {
 
       // match expressions can be converted to function applications
       case (Match(args, cases), _) =>
-        check(ctx, args.foldLeft(Lam(cases): Expr)(App(_, _)), goal)
+        check(ctx, Apps(Lam(cases), args), goal)
 
       // False is implicit here
       case _ => Some(f"Proof term $proof does not match the formula $goal.")
