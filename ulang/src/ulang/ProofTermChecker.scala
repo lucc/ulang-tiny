@@ -141,7 +141,7 @@ object ProofTermChecker {
       case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
       case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)
-      case (Witness(w, p), Ex(x, matrix)) => bind(bind(ctx, w, x), p, matrix)
+      case (Witness(w, p), Ex(x, matrix)) => bind(bind(ctx, w, x), p, matrix.subst(Map(x -> w)))
     }
   def bind(ctx: Map[Id, Expr], cases: List[Case], assm: Expr): List[Map[Id, Expr]] =
     cases.map(c => bind(ctx, c.pats.head, assm))
