@@ -161,12 +161,10 @@ object ProofTermChecker {
         if context.isTag(id1) && id1 == id2 => apply(term1, term2, body)
       case (App(f1, a1), App(f2, a2)) => apply(a1, a2, apply(f1, f2, body))
     }
-  def apply(cases: List[Case], arg: Expr): List[Expr] =
-
-    cases.map {
-      case Case(List(p), body) => apply(p, arg, body)
-      case Case(p::ps, body) => apply(p, arg, Lam1(ps, body))
-    }
+  def apply(cases: List[Case], arg: Expr): List[Expr] = cases.map {
+    case Case(List(p), body) => apply(p, arg, body)
+    case Case(p::ps, body) => apply(p, arg, Lam1(ps, body))
+  }
 
 
   // Functions that have been suggested by Gidon but are not yet implemented.
@@ -235,13 +233,24 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
         if (ctx contains id) ctx(id)
         else if (context.lemmas contains id) context.lemmas(id)
         // defined functions are hard infer because they can be recursive
-        else throw InferenceError( s"Not in current type inference context: $id")
+        else throw InferenceError(s"Not in current type inference context: $id")
       case Pair(a, b) =>
         And(simple_(ctx, a), simple_(ctx, b))
       case LeftE(a) =>
         Or(simple_(ctx, a), ulang.Wildcard)
       case RightE(a) =>
         Or(ulang.Wildcard, simple_(ctx, a))
+      case Witness(w, p) =>
+        throw  InferenceError("Can not yet infer existential types.")
+      //case Witness(w, p) =>
+      //  val x = Expr.fresh(Id("x"))
+      //  val ty = simple_(ctx, p)
+      //  Ex(x, ty.subst(Map(w -> x)))
+      case Inst(pt, t, pt2) =>
+        val All(x, phi) = simple_(ctx, pt)
+        val Imp(ant, cons) = simple_(ctx, pt2)
+        if (phi.subst(Map(x -> t)) equals ant) cons
+        else throw InferenceError("Type mismatch in Inst expression.")
       case LamId(v, body) =>
         val v_ = Expr.fresh(v)
         // FIXME: Gidon uses "All(v_ ..." here?
