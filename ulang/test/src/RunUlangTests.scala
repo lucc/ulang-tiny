@@ -47,21 +47,18 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       """show a \/ b ==> b \/ a;
          proof term lambda (Left x) -> Right x | (Right x) -> Left x;""",
       // reordering bound variables
-      """show (forall x y. a) ==> forall y x. a;
-      proof term lambda f -> forall y. forall x. f x y;""",
-      """show (forall x. forall y. a) ==> forall y. forall x. a;
-      proof term lambda f -> forall y. forall x. f x y;""",
       """show (exists x y. a x y) ==> exists y x. a x y;
-      proof term lambda Witness w1 (Witness w2 pt) -> Witness w2 (Witness w1 pt)""",
+      proof term lambda (Witness w1 (Witness w2 pt)) -> Witness w2 (Witness w1 pt)""",
       """show (exists x. exists y. a x y) ==> exists y. exists x. a x y;
-      proof term lambda Witness w1 (Witness w2 pt) -> Witness w2 (Witness w1 pt)""",
+      proof term lambda (Witness w1 (Witness w2 pt)) -> Witness w2 (Witness w1 pt)""",
       // Schwichtenberg page 13
       """show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
-      proof term lambda (w,p) -> fa -> p (Inst fa w lambda x -> x);""",
+      proof term lambda (Witness w p) -> lambda fa -> p (Inst fa w lambda x -> x);""",
       """show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
-      proof term lambda f -> lambda fa -> f (fa Term);""",
+      proof term lambda f -> forall x. lambda ha -> f (Witness x ha);""",
+      //a -> f (Witness Term (Inst fa Term lambda x -> x));
       """show (exists x. a ==> b x) ==> a ==> exists x. b x;
-      proof term lambda (w,f) -> lambda pre -> (w,f pre);""",
+        proof term lambda (Witness w hab) -> lambda ha -> Witness w (hab ha);""",
     )
     for (snippet <- snippets) eval(snippet, pending=true)
   }
@@ -80,6 +77,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     eval("""show (a ==> forall x. b x) ==> forall x. a ==> b x;
         proof term lambda f -> forall var. lambda precond -> Inst (f precond) var lambda x -> x;""")
     // TODO why do I have to put "var" and not "x" here ----------------------^
+
+    // reordering bound variables
+    val reorderProof = """proof term lambda faxy -> forall y. forall x.
+                          Inst faxy x lambda fay -> Inst fay y lambda x -> x;"""
+    eval("show (forall x y. a) ==> forall y x. a;"+reorderProof)
+    eval("show (forall x. forall y. a) ==> forall y. forall x. a;"+reorderProof)
   }
 
   describe("rules") {
@@ -135,15 +138,14 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         // universal quantifier elimination
         eval("show (forall x. p x) ==> p t; proof term lambda f -> Inst f t (lambda x -> x);")
         // existential quantifier elimination
-        // TODO variable condition?
-        eval("""show (exists x. a x) ==> (forall x. a x ==> b) ==> b;
-          proof term lambda (Witness w p) -> lambda f -> Inst f w lambda ff -> ff p;""")
+        val exElim = "show (exists x. a x) ==> (forall x. a x ==> b) ==> b;"
+        val proof ="proof term lambda (Witness w p) -> lambda f -> Inst f w lambda ff -> ff p;"
+        eval(exElim + " " + proof)
         it("existential quantifier elimination violating variable condition") {
           // it would work with "b" instead of "b x"
-          val show = "show (exists x. a x) ==> (forall x. a x ==> b x) ==> b x;"
-          val proof ="proof term lambda (Witness w p) -> lambda f -> Inst f w lambda ff -> ff p;"
+          val badExElim = "show (exists x. a x) ==> (forall x. a x ==> b x) ==> b x;"
           assertThrows[RuntimeException] {
-            noStdout { ulang.Exec.run(show + proof) }
+            noStdout { ulang.Exec.run(badExElim + proof) }
           }
         }
       }
