@@ -57,8 +57,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       """show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
       proof term lambda f -> forall x. lambda ha -> f (Witness x ha);""",
       //a -> f (Witness Term (Inst fa Term lambda x -> x));
-      """show (exists x. a ==> b x) ==> a ==> exists x. b x;
-        proof term lambda (Witness w hab) -> lambda ha -> Witness w (hab ha);""",
     )
     for (snippet <- snippets) eval(snippet, pending=true)
   }
@@ -78,6 +76,8 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         proof term lambda f -> forall var. lambda precond -> Inst (f precond) var lambda x -> x;""")
     // TODO why do I have to put "var" and not "x" here ----------------------^
 
+    eval("""show (exists x. a ==> b x) ==> a ==> exists x. b x;
+        proof term lambda (Witness w hab) -> lambda ha -> Witness w (hab ha);""")
     // reordering bound variables
     val reorderProof = """proof term lambda faxy -> forall y. forall x.
                           Inst faxy x lambda fay -> Inst fay y lambda x -> x;"""
