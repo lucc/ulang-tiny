@@ -46,11 +46,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
                                                | (Right x) -> Left x;""",
       """show a \/ b ==> b \/ a;
          proof term lambda (Left x) -> Right x | (Right x) -> Left x;""",
-      // reordering bound variables
-      """show (exists x y. a x y) ==> exists y x. a x y;
-      proof term lambda (Witness w1 (Witness w2 pt)) -> Witness w2 (Witness w1 pt)""",
-      """show (exists x. exists y. a x y) ==> exists y. exists x. a x y;
-      proof term lambda (Witness w1 (Witness w2 pt)) -> Witness w2 (Witness w1 pt)""",
       // Schwichtenberg page 13
       """show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
       proof term lambda (Witness w p) -> lambda fa -> p (Inst fa w lambda x -> x);""",
@@ -79,10 +74,14 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     eval("""show (exists x. a ==> b x) ==> a ==> exists x. b x;
         proof term lambda (Witness w hab) -> lambda ha -> Witness w (hab ha);""")
     // reordering bound variables
-    val reorderProof = """proof term lambda faxy -> forall y. forall x.
-                          Inst faxy x lambda fay -> Inst fay y lambda x -> x;"""
-    eval("show (forall x y. a) ==> forall y x. a;"+reorderProof)
-    eval("show (forall x. forall y. a) ==> forall y. forall x. a;"+reorderProof)
+    val proof1 = """proof term lambda faxy -> forall y. forall x.
+                    Inst faxy x lambda fay -> Inst fay y lambda x -> x;"""
+    eval("show (forall x y. a) ==> forall y x. a;"+proof1)
+    eval("show (forall x. forall y. a) ==> forall y. forall x. a;"+proof1)
+    val proof2 = """proof term lambda (Witness w1 (Witness w2 pt))
+                               -> Witness w2 (Witness w1 pt);"""
+    eval("show (exists x y. a x y) ==> exists y x. a x y;"+proof2)
+    eval("show (exists x. exists y. a x y) ==> exists y. exists x. a x y;"+proof2)
   }
 
   describe("rules") {
