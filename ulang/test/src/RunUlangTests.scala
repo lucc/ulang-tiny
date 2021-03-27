@@ -57,7 +57,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       proof term lambda Witness w1 (Witness w2 pt) -> Witness w2 (Witness w1 pt)""",
       // Schwichtenberg page 13
       """show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
-      proof term lambda (w,p) -> fa -> p fa w;""",
+      proof term lambda (w,p) -> fa -> p (Inst fa w lambda x -> x);""",
       """show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
       proof term lambda f -> lambda fa -> f (fa Term);""",
       """show (exists x. a ==> b x) ==> a ==> exists x. b x;
@@ -68,40 +68,18 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
 
   describe("working snippets") {
     // proof with all quantifier
-    eval("show (forall x. p x) ==> p Foo; proof term lambda x -> x Foo;")
+    eval("show (forall x. p x) ==> p Foo; proof term lambda x -> Inst x Foo lambda x -> x;")
     // proving introduction rules for exists
     eval("show a ==> exists x. a; proof term (lambda a -> Witness x a);")
     eval("show p x ==> exists y. p y; proof term (lambda a -> Witness x a);")
     // Schwichtenberg page 13
     eval("""show (forall x.a x ==> b) ==> (exists x. a x) ==> b;
-         proof term lambda f -> lambda (Witness w p) -> f w p;""")
+        proof term lambda fa -> lambda (Witness w p) -> Inst fa w lambda hab -> hab p;""")
     eval("""show (forall x.a ==> b x) ==> a ==> forall x. b x;
-         proof term lambda f -> lambda precond -> forall var. f var precond;""")
+        proof term lambda hfa -> lambda ha -> forall var. Inst hfa var lambda hab -> hab ha;""")
     eval("""show (a ==> forall x. b x) ==> forall x. a ==> b x;
-         proof term lambda f -> forall var. lambda precond -> f precond var;""")
-  }
-
-  describe("invaild proofs") {
-    it("universal quantifier introduction violating variable condition") {
-      // it would work with "a" instead of "a x"
-      val show = "show a x ==> forall x. a x;"
-      val proof = "proof term lambda p -> forall x. p;"
-      assertThrows[RuntimeException] { // Capturing variable x
-        ulang.Exec.run(show + proof)
-      }
-    }
-    it("existential quantifier elimination violating variable condition") {
-      pendingUntilFixed {
-      // it would work with "b" instead of "b x"
-      val show = "show (exists x. a x) ==> (forall x. a x ==> b x) ==> b x;"
-      val proof ="proof term lambda (Witness w p) -> lambda f -> f w p;"
-      Console.withOut(new java.io.ByteArrayOutputStream()) {
-        assertThrows[RuntimeException] {
-          ulang.Exec.run(show + proof)
-        }
-      }
-    }
-    }
+        proof term lambda f -> forall var. lambda precond -> Inst (f precond) var lambda x -> x;""")
+    // TODO why do I have to put "var" and not "x" here ----------------------^
   }
 
   describe("rules") {
@@ -144,14 +122,30 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         eval("show a ==> forall x. a; proof term lambda p -> forall x. p;")
         // existential quantifier introduction
         eval("show a t ==> exists x. a x; proof term lambda p -> Witness t p;" )
+        it("universal quantifier introduction violating variable condition") {
+          // it would work with "a" instead of "a x"
+          val show = "show a x ==> forall x. a x;"
+          val proof = "proof term lambda p -> forall x. p;"
+          assertThrows[RuntimeException] { // Capturing variable x
+            noStdout { ulang.Exec.run(show + proof) }
+          }
+        }
       }
       describe("elimination rules") {
         // universal quantifier elimination
-        eval("show (forall x. p x) ==> p t; proof term lambda f -> f t;")
+        eval("show (forall x. p x) ==> p t; proof term lambda f -> Inst f t (lambda x -> x);")
         // existential quantifier elimination
         // TODO variable condition?
         eval("""show (exists x. a x) ==> (forall x. a x ==> b) ==> b;
-          proof term lambda (Witness w p) -> lambda f -> f w p;""")
+          proof term lambda (Witness w p) -> lambda f -> Inst f w lambda ff -> ff p;""")
+        it("existential quantifier elimination violating variable condition") {
+          // it would work with "b" instead of "b x"
+          val show = "show (exists x. a x) ==> (forall x. a x ==> b x) ==> b x;"
+          val proof ="proof term lambda (Witness w p) -> lambda f -> Inst f w lambda ff -> ff p;"
+          assertThrows[RuntimeException] {
+            noStdout { ulang.Exec.run(show + proof) }
+          }
+        }
       }
     }
   }

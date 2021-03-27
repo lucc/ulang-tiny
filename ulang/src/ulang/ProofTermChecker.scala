@@ -62,6 +62,12 @@ object ProofTermChecker {
 
       // TODO predicate logic elimination rules?
 
+      case (Inst(pt, t, pt2), _)
+      if (infer(ctx, pt) match {case Right(All(_, _)) => true; case _ => false}) =>
+        val Right(All(x, phi)) = infer(ctx, pt)
+        println(f"TODO: $ctx ⊢ $pt2 : ${Imp(phi.subst(Map(x -> t)), goal)}")
+        check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
+
       case (App(All(x, body), arg), _) if body.subst(Map(x -> arg)) == goal =>
         None
       // different cases for modus ponens
