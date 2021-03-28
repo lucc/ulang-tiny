@@ -100,7 +100,7 @@ object ProofTermChecker {
             val proofs = apply(cases, arg)
             val ctxs = bind(ctx, cases, t)
             ctxs.zip(proofs).map { case (c, p) => check(c, p, goal)
-            }.foldLeft( None: Option[String])((a,o) => a orElse o)
+            }.foldLeft(None: Option[String])((a,o) => a orElse o)
         }
 
       case (App(f: Id, arg), _) if ctx.contains(f) || context.lemmas.contains(f) =>
