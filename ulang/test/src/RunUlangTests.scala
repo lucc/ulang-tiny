@@ -32,10 +32,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
 
   describe("pending snippets") {
     val snippets = List(
-      // proving or elimination
-      """show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
-      proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
-                      | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);""",
       // proofs with match expressions
       // symmetry of /\
       """show a /\ b ==> b /\ a;
@@ -44,8 +40,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       """show a \/ b ==> b \/ a;
          proof term lambda ant -> match ant with (Left x) -> Right x
                                                | (Right x) -> Left x;""",
-      """show a \/ b ==> b \/ a;
-         proof term lambda (Left x) -> Right x | (Right x) -> Left x;""",
       // Schwichtenberg page 13
       """show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
       proof term lambda (Witness w p) -> lambda fa -> p (Inst fa w lambda x -> x);""",
@@ -57,6 +51,13 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
   }
 
   describe("working snippets") {
+    // proving or elimination
+    eval("""show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
+      proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
+                      | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);""")
+    // symmetry of \/
+    eval("""show a \/ b ==> b \/ a;
+         proof term lambda (Left x) -> Right x | (Right x) -> Left x;""")
     // proof with all quantifier
     eval("show (forall x. p x) ==> p Foo; proof term lambda x -> Inst x Foo lambda x -> x;")
     // proving introduction rules for exists
@@ -100,22 +101,21 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         for (snippet <- rules) eval(snippet)
       }
       describe("elimination rules") {
-        val rules = Map(
+        val rules = List(
           // implication elimination / modus ponens
           """show (a ==> b) ==> a ==> b;
-          proof term lambda f -> lambda x -> f x;""" -> false,
+          proof term lambda f -> lambda x -> f x;""",
           """show a ==> (a ==> b) ==> b;
-          proof term lambda x -> lambda f -> f x;""" -> false,
+          proof term lambda x -> lambda f -> f x;""",
           // or elimination
           """show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
           proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
-                          | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);"""
-          -> true,
+                          | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);""",
           // and elimination
           """show a /\ b ==> (a ==> b ==> c) ==> c;
-          proof term lambda (x,y) -> lambda f -> f x y;""" -> false,
+          proof term lambda (x,y) -> lambda f -> f x y;""",
         )
-        for ((snippet, pending) <- rules) eval(snippet, pending)
+        for (snippet <- rules) eval(snippet)
       }
     }
     describe("from predicate logic:") {

@@ -49,6 +49,15 @@ object ProofTermChecker {
       // special case for lambdas with one pattern only
       case (Lam1(List(pat), body), Imp(ant, cons)) =>
         check(bind(ctx, pat, ant), body, cons)
+      // special case for lambdas with one case only
+      case (Lam1(pat::pats, body), Imp(ant, cons)) =>
+        check(bind(ctx, pat, ant), Lam1(pats, body), cons)
+      // special case for multible cases but with only one pattern each
+      case (Lam(cases), Imp(ant, cons)) if cases.forall(_.pats.length == 1) =>
+        val checks = cases.map(c => check(bind(ctx, c.pats.head, ant), c.body, cons))
+        val errs = checks.filter(_.isDefined)
+        if (errs.isEmpty) None
+        else Some(errs map(_.get) mkString "\n")
 
       // predicate logic introduction rules
       case (Witness(witness, p), Ex(id, matrix)) =>
