@@ -77,8 +77,6 @@ object ProofTermChecker {
         println(f"TODO: $ctx ⊢ $pt2 : ${Imp(phi.subst(Map(x -> t)), goal)}")
         check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
 
-      case (App(All(x, body), arg), _) if body.subst(Map(x -> arg)) == goal =>
-        None
       // different cases for modus ponens
       case (App(LamId(id, body), arg), _) =>
         check(ctx, body.subst(Map(id -> arg)), goal)
