@@ -84,13 +84,26 @@ object ProofTermChecker {
       case (App(LamIds(id::ids, body), arg), _) =>
         check(ctx, LamIds(ids, body).subst(Map(id -> arg)), goal)
       case (App(Lam1(pat, body), arg), _) =>
-        infer(ctx, arg) match {
-          case Left(err) => Some(err)
-          case Right(t) =>
-            pat match {
-              case Nil => Some("This should never happen")
-              case List(p) => check(ctx, apply(p, arg, body), goal)
-              case p::ps => check(ctx, apply(p, arg, Lam1(ps, body)), goal)
+        // if we can apply the argument to the patterns we do that directly
+        try {
+          pat match {
+            case Nil => throw new Exception("This should never happen")
+            case List(p) => check(ctx, apply(p, arg, body), goal)
+            case p::ps => check(ctx, apply(p, arg, Lam1(ps, body)), goal)
+          }
+        } catch {
+          // in case that fails (i.e. because the argument was an Id and the
+          // pattern was complex) then we can still try to bind the argument
+          // type to the pattern in the context and leave the body unchanged
+          case _: MatchError =>
+            infer(ctx, arg) match {
+              case Left(err) => Some(err)
+              case Right(t) =>
+                pat match {
+                  case Nil => throw new Exception("This should never happen")
+                  case List(p) => check(bind(ctx, p, t), body, goal)
+                  case p::ps => check(bind(ctx, p, t), Lam1(ps, body), goal)
+                }
             }
         }
       case (App(Lam(cases), arg), _) =>

@@ -33,9 +33,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
   describe("pending snippets") {
     val snippets = List(
       // proofs with match expressions
-      // symmetry of /\
-      """show a /\ b ==> b /\ a;
-      proof term lambda p -> match p with (x,y) -> (y,x);""",
       // symmetry of \/
       """show a \/ b ==> b \/ a;
          proof term lambda ant -> match ant with (Left x) -> Right x
@@ -58,6 +55,10 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // symmetry of \/
     eval("""show a \/ b ==> b \/ a;
          proof term lambda (Left x) -> Right x | (Right x) -> Left x;""")
+    // proofs with match expressions
+    // symmetry of /\
+    eval("""show a /\ b ==> b /\ a;
+      proof term lambda p -> match p with (x,y) -> (y,x);""")
     // proof with all quantifier
     eval("show (forall x. p x) ==> p Foo; proof term lambda x -> Inst x Foo lambda x -> x;")
     // proving introduction rules for exists
