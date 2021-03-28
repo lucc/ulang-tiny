@@ -56,7 +56,7 @@ object ProofTermChecker {
       case (LamId(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable must not occur free in any open assumption in body.
-        val openFree = Expr free ctx
+        val openFree = Expr free ctx.values
         if (openFree contains id) Some("Capturing variable " + id)
         else check(ctx, body, matrix.rename(Map(id -> param)))
 
