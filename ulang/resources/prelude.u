@@ -12,8 +12,9 @@ data
   ;
 
 notation
-  ==  [infix 6];
-  !=  [infix 6];
+  :   [infix  6];
+  ==  [infix  6];
+  !=  [infix  6];
   not [prefix 5];
   /\  [infixr 4];
   \/  [infixr 3];
@@ -28,9 +29,9 @@ notation
   && || [infix 7];
 
 define
-  True && x := x;
+  True  && x := x;
   False && _ := False;
-  True || _ := True;
+  True  || _ := True;
   False || x := x;
 
 // tuples as nested pairs
