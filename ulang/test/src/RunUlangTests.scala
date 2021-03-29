@@ -43,6 +43,9 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       """show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
       proof term lambda f -> forall x. lambda ha -> f (Witness x ha);""",
       //a -> f (Witness Term (Inst fa Term lambda x -> x));
+      """//show (not (not (not a))) ==> not a;
+      show (((a ==> False) ==> False) ==> False) ==> a ==> False;
+      proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""",
     )
     for (snippet <- snippets) eval(snippet, pending=true)
   }
@@ -84,6 +87,9 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
                                -> Witness w2 (Witness w1 pt);"""
     eval("show (exists x y. a x y) ==> exists y x. a x y;"+proof2)
     eval("show (exists x. exists y. a x y) ==> exists y. exists x. a x y;"+proof2)
+    eval("""// show a ==> not not a;
+            show a ==> (a ==> False) ==> False;
+            proof term lambda ha haf -> haf ha;""")
   }
 
   describe("rules") {
