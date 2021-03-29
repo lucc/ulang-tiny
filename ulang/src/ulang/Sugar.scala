@@ -192,7 +192,6 @@ object Imp extends Binary("==>") {
 
 object Eqv extends Binary("<=>")
 object Pair extends Binary(",")
-object Witness extends Binary("Witness")
 object LeftE extends Unary("Left")
 object RightE extends Unary("Right")
 object Assumption extends Id("Assumption")
@@ -203,3 +202,12 @@ object intro extends Binary("intro")
 object elim extends Unary("elim")
 
 object Inst extends Ternery("Inst")
+object Witness extends Ternery("Witness") {
+  def apply(x: Id, wit: Expr, body: Expr) =
+    App(App(App(Id("Witness"), x), wit), body)
+  override def unapply(e: Expr): Option[(Id, Expr, Expr)] = e match {
+    case App(App(App(Id("Witness", None), x: Id), arg2), arg3) =>
+      Some((x, arg2, arg3))
+    case _ => None
+  }
+}

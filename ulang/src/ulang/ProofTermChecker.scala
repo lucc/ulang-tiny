@@ -60,8 +60,8 @@ object ProofTermChecker {
         else Some(errs map(_.get) mkString "\n")
 
       // predicate logic introduction rules
-      case (Witness(witness, p), Ex(id, matrix)) =>
-        check(ctx, p, matrix.subst(Map(id -> witness)))
+      case (Witness(id1, witness, p), Ex(id2, matrix)) if id1 == id2 =>
+        check(ctx, p, matrix.subst(Map(id1 -> witness)))
       case (All(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable must not occur free in any open assumption in body.
@@ -167,7 +167,8 @@ object ProofTermChecker {
       case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
       case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)
-      case (Witness(w, p), Ex(x, matrix)) => bind(bind(ctx, w, x), p, matrix.subst(Map(x -> w)))
+      case (Witness(x1, w, p), Ex(x2, matrix)) if x1 == x2 =>
+        bind(bind(ctx, w, x1), p, matrix.subst(Map(x1 -> w)))
     }
   def bind(ctx: Map[Id, Expr], cases: List[Case], assm: Expr): List[Map[Id, Expr]] =
     cases.map(c => bind(ctx, c.pats.head, assm))
@@ -260,10 +261,9 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
         Or(simple_(ctx, a), ulang.Wildcard)
       case RightE(a) =>
         Or(ulang.Wildcard, simple_(ctx, a))
-      case Witness(w, p) =>
+      case Witness(x, w, p) =>
         throw  InferenceError("Can not yet infer existential types.")
-      //case Witness(w, p) =>
-      //  val x = Expr.fresh(Id("x"))
+      //case Witness(x, w, p) =>
       //  val ty = simple_(ctx, p)
       //  Ex(x, ty.subst(Map(w -> x)))
       case Inst(pt, t, pt2) =>
