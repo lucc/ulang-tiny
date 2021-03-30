@@ -95,34 +95,28 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
   describe("rules") {
     describe("from propositional logic:") {
       describe("introduction rules") {
-        val rules = List(
-          // implication introduction / weakening
-          "show a ==> b ==> a; proof term lambda x -> lambda y -> x;",
-          // or introduction 1
-          """show a ==> a \/ b; proof term lambda x -> Left x;""",
-          // or introduction 2
-          """show b ==> a \/ b; proof term lambda x -> Right x;""",
-          // and introduction
-          """show a ==> b ==> a /\ b; proof term lambda x -> lambda y -> (x,y);""",
-        )
-        for (snippet <- rules) eval(snippet)
+        // implication introduction / weakening
+        eval("show a ==> b ==> a; proof term lambda x -> lambda y -> x;")
+        // or introduction 1
+        eval("""show a ==> a \/ b; proof term lambda x -> Left x;""")
+        // or introduction 2
+        eval("""show b ==> a \/ b; proof term lambda x -> Right x;""")
+        // and introduction
+        eval("""show a ==> b ==> a /\ b; proof term lambda x -> lambda y -> (x,y);""")
       }
       describe("elimination rules") {
-        val rules = List(
           // implication elimination / modus ponens
-          """show (a ==> b) ==> a ==> b;
-          proof term lambda f -> lambda x -> f x;""",
-          """show a ==> (a ==> b) ==> b;
-          proof term lambda x -> lambda f -> f x;""",
+          eval("""show (a ==> b) ==> a ==> b;
+          proof term lambda f -> lambda x -> f x;""")
+          eval("""show a ==> (a ==> b) ==> b;
+          proof term lambda x -> lambda f -> f x;""")
           // or elimination
-          """show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
+          eval("""show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
           proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
-                          | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);""",
+                          | (Right x) -> (lambda p1 -> lambda p2 -> p2 x);""")
           // and elimination
-          """show a /\ b ==> (a ==> b ==> c) ==> c;
-          proof term lambda (x,y) -> lambda f -> f x y;""",
-        )
-        for (snippet <- rules) eval(snippet)
+          eval("""show a /\ b ==> (a ==> b ==> c) ==> c;
+          proof term lambda (x,y) -> lambda f -> f x y;""")
       }
     }
     describe("from predicate logic:") {
