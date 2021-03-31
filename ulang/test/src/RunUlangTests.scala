@@ -90,6 +90,8 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     eval("""// show a ==> not not a;
             show a ==> (a ==> False) ==> False;
             proof term lambda ha haf -> haf ha;""")
+    // testing automatic forall instantiation
+    eval("show a t ==> (forall x. a x ==> b x) ==> b t; proof term lambda ha hfa -> hfa ha;")
   }
 
   describe("rules") {

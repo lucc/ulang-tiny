@@ -74,7 +74,6 @@ object ProofTermChecker {
       case (Inst(pt, t, pt2), _)
       if (infer(ctx, pt) match {case Right(All(_, _)) => true; case _ => false}) =>
         val Right(All(x, phi)) = infer(ctx, pt)
-        println(f"TODO: $ctx ⊢ $pt2 : ${Imp(phi.subst(Map(x -> t)), goal)}")
         check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
 
       // different cases for modus ponens
@@ -118,16 +117,12 @@ object ProofTermChecker {
 
       case (App(f: Id, arg), _) if ctx.contains(f) || context.lemmas.contains(f) =>
         val t1 = ctx.getOrElse(f, context.lemmas(f))
+        val t2 = infer(ctx, arg) match { case Right(t) => t
+                                         case Left(err) => return Some(err) }
         t1 match {
-          case All(x, matrix) if matrix.subst(Map(x -> arg)) == goal => None
-          case _ =>
-            infer(ctx, arg) match {
-              case Left(err) => Some(err)
-              case Right(t2) =>
-                if (t1 == Imp(t2, goal)) None
-                else if (t2.isInstanceOf[Id] && t1 == All(t2.asInstanceOf[Id], goal)) None
-                else Some(f"Formulas do not match: $t1 should be equal to $t2 ==> $goal or forall $t2. $goal")
-            }
+          case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal => None
+          case Imp(`t2`, `goal`) => None
+          case _ => Some(f"Can not apply $t2 to $t1")
         }
 
       case (App(f: Id, arg), _) if context.funs contains f =>
@@ -138,12 +133,10 @@ object ProofTermChecker {
       // right side.  We use the left side for now.
       case (App(f, arg), _) =>
         infer(ctx, arg) match {
-          case Right(ty) if check(ctx, f, Imp(ty, goal)).isEmpty => None
-          case Right(ty: Id) => check(ctx, f, All(ty, goal))
+          case Right(ty) => check(ctx, f, Imp(ty, goal))
           case Left(err1) =>
             infer(ctx, f) match {
               case Right(Imp(a, `goal`)) => check(ctx, a, arg)
-              case Right(All(v, matrix)) if matrix.subst(Map(v -> arg)) == goal => None
               case Left(err2) => Some(err1 + "\n" + err2)
             }
         }
