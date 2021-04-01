@@ -1,5 +1,8 @@
 package ulang
 
+import PartialFunction.cond
+import ulang.{TypeInference => infer}
+
 object ProofTermChecker {
 
   /** Check a proof
@@ -147,8 +150,6 @@ object ProofTermChecker {
       // False is implicit here
       case _ => Some(f"Proof term $proof does not match the formula $goal.")
     }
-
-  val infer = TypeInference(_, _)
 
   /**
    * extend a context by binding argument types to parameter variables
