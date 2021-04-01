@@ -1,5 +1,8 @@
 package ulang
 
+import PartialFunction.cond
+import ulang.{TypeInference => infer}
+
 object ProofTermChecker {
 
   /** Check a proof
@@ -49,11 +52,20 @@ object ProofTermChecker {
       // special case for lambdas with one pattern only
       case (Lam1(List(pat), body), Imp(ant, cons)) =>
         check(bind(ctx, pat, ant), body, cons)
+      // special case for lambdas with one case only
+      case (Lam1(pat::pats, body), Imp(ant, cons)) =>
+        check(bind(ctx, pat, ant), Lam1(pats, body), cons)
+      // special case for multible cases but with only one pattern each
+      case (Lam(cases), Imp(ant, cons)) if cases.forall(_.pats.length == 1) =>
+        val checks = cases.map(c => check(bind(ctx, c.pats.head, ant), c.body, cons))
+        val errs = checks.filter(_.isDefined)
+        if (errs.isEmpty) None
+        else Some(errs map(_.get) mkString "\n")
 
       // predicate logic introduction rules
-      case (Witness(witness, p), Ex(id, matrix)) =>
-        check(ctx, p, matrix.subst(Map(id -> witness)))
-      case (LamId(param, body), All(id, matrix)) =>
+      case (Witness(id1, witness, p), Ex(id2, matrix)) if id1 == id2 =>
+        check(ctx, p, matrix.subst(Map(id1 -> witness)))
+      case (All(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable must not occur free in any open assumption in body.
         val openFree = Expr free ctx
@@ -62,6 +74,10 @@ object ProofTermChecker {
 
       // TODO predicate logic elimination rules?
 
+      case (Inst(pt, t, pt2), _) if cond(infer(ctx, pt)) {case Right(All(_, _)) => true} =>
+        val Right(All(x, phi)) = infer(ctx, pt)
+        check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
+
       // different cases for modus ponens
       case (App(LamId(id, body), arg), _) =>
         check(ctx, body.subst(Map(id -> arg)), goal)
@@ -69,13 +85,26 @@ object ProofTermChecker {
       case (App(LamIds(id::ids, body), arg), _) =>
         check(ctx, LamIds(ids, body).subst(Map(id -> arg)), goal)
       case (App(Lam1(pat, body), arg), _) =>
-        infer(ctx, arg) match {
-          case Left(err) => Some(err)
-          case Right(t) =>
-            pat match {
-              case Nil => Some("This should never happen")
-              case List(p) => check(ctx, apply(p, arg, body), goal)
-              case p::ps => check(ctx, apply(p, arg, Lam1(ps, body)), goal)
+        // if we can apply the argument to the patterns we do that directly
+        try {
+          pat match {
+            case Nil => throw new Exception("This should never happen")
+            case List(p) => check(ctx, apply(p, arg, body), goal)
+            case p::ps => check(ctx, apply(p, arg, Lam1(ps, body)), goal)
+          }
+        } catch {
+          // in case that fails (i.e. because the argument was an Id and the
+          // pattern was complex) then we can still try to bind the argument
+          // type to the pattern in the context and leave the body unchanged
+          case _: MatchError =>
+            infer(ctx, arg) match {
+              case Left(err) => Some(err)
+              case Right(t) =>
+                pat match {
+                  case Nil => throw new Exception("This should never happen")
+                  case List(p) => check(bind(ctx, p, t), body, goal)
+                  case p::ps => check(bind(ctx, p, t), Lam1(ps, body), goal)
+                }
             }
         }
       case (App(Lam(cases), arg), _) =>
@@ -85,46 +114,37 @@ object ProofTermChecker {
             val proofs = apply(cases, arg)
             val ctxs = bind(ctx, cases, t)
             ctxs.zip(proofs).map { case (c, p) => check(c, p, goal)
-            }.foldLeft( None: Option[String])((a,o) => a orElse o)
+            }.foldLeft(None: Option[String])((a,o) => a orElse o)
         }
 
-      case (App(f: Id, arg), _) if ctx.contains(f) || context.lemmas.contains(f) =>
-        val t1 = ctx.getOrElse(f, context.lemmas(f))
-        infer(ctx, arg) match {
-          case Left(err) => Some(err)
-          case Right(t2) =>
-            if (t1 == Imp(t2, goal)) None
-            else if (t2.isInstanceOf[Id] && t1 == All(t2.asInstanceOf[Id], goal)) None
-            else Some(f"Formulas do not match: $t1 should be equal to $t2 ==> $goal or forall $t2. $goal")
-        }
-
-      case (App(f: Id, arg), _) if context.funs contains f =>
+      // Defined functions are shadowed by assumptions from the context and
+      // lemas but these are checked in the case below.
+      case (App(f: Id, arg), _) if context.funs.contains(f)
+                                && !ctx.contains(f)
+                                && !context.lemmas.contains(f) =>
         // defined functions are checked like lambda terms
         check(ctx, App(Lam(context.funs(f)), arg), goal)
 
       // general applications need type inference for either the left or the
       // right side.  We use the left side for now.
       case (App(f, arg), _) =>
-        infer(ctx, arg) match {
-          case Right(ty) if check(ctx, f, Imp(ty, goal)).isEmpty => None
-          case Right(ty: Id) => check(ctx, f, All(ty, goal))
-          case Left(err1) =>
-            infer(ctx, f) match {
-              case Right(Imp(a, `goal`)) => check(ctx, a, arg)
-              case Right(All(v, matrix)) if matrix.subst(Map(v -> arg)) == goal => None
-              case Left(err2) => Some(err1 + "\n" + err2)
-            }
+        val t1 = infer(ctx, f) match { case Right(t) => t
+                                       case Left(err) => return Some(err) }
+        val t2 = infer(ctx, arg) match { case Right(t) => t
+                                         case Left(err) => return Some(err) }
+        t1 match {
+          case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal => None
+          case Imp(`t2`, `goal`) => None
+          case _ => Some(f"Can not apply $t2 to $t1")
         }
 
       // match expressions can be converted to function applications
       case (Match(args, cases), _) =>
-        check(ctx, args.foldLeft(Lam(cases): Expr)(App(_, _)), goal)
+        check(ctx, Apps(Lam(cases), args), goal)
 
       // False is implicit here
       case _ => Some(f"Proof term $proof does not match the formula $goal.")
     }
-
-  val infer = TypeInference(_, _)
 
   /**
    * extend a context by binding argument types to parameter variables
@@ -135,7 +155,8 @@ object ProofTermChecker {
       case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
       case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)
-      case (Witness(w, p), Ex(x, matrix)) => bind(bind(ctx, w, x), p, matrix)
+      case (Witness(x1, w, p), Ex(x2, matrix)) if x1 == x2 =>
+        bind(bind(ctx, w, x1), p, matrix.subst(Map(x1 -> w)))
     }
   def bind(ctx: Map[Id, Expr], cases: List[Case], assm: Expr): List[Map[Id, Expr]] =
     cases.map(c => bind(ctx, c.pats.head, assm))
@@ -149,12 +170,10 @@ object ProofTermChecker {
         if context.isTag(id1) && id1 == id2 => apply(term1, term2, body)
       case (App(f1, a1), App(f2, a2)) => apply(a1, a2, apply(f1, f2, body))
     }
-  def apply(cases: List[Case], arg: Expr): List[Expr] =
-
-    cases.map {
-      case Case(List(p), body) => apply(p, arg, body)
-      case Case(p::ps, body) => apply(p, arg, Lam1(ps, body))
-    }
+  def apply(cases: List[Case], arg: Expr): List[Expr] = cases.map {
+    case Case(List(p), body) => apply(p, arg, body)
+    case Case(p::ps, body) => apply(p, arg, Lam1(ps, body))
+  }
 
 
   // Functions that have been suggested by Gidon but are not yet implemented.
@@ -176,177 +195,4 @@ object ProofTermChecker {
   //       (a ==> b) a       == b
   //  case _ => App(fun, arg)
   //}
-}
-
-/**
- * Type inference for the proof checker
- *
- * The algorithm is based on the lecture notes of Uli Schöpp from the lecure
- * "Typsysteme" (summer term 2018).
- */
-object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
-
-  import scala.util.Try
-
-  // this type is used to represent type checking/inference context, equations
-  // assiging types to type variables (used for equation solving and also as
-  // substitutions)
-  type Ctx = Map[Id, Expr]
-
-  /**
-   * TypeVar represents type variables used during type inference.  It relies
-   * on the fact that the parser for ulang does not accept space in
-   * identidiers.  This ensures that the generated variables are distinct from
-   * all user generated identidiers.
-   */
-  object TypeVar extends (() => Id) {
-    // a backspace makes these variables look nice in the output
-    private val name = "ty \u0008"
-    def apply() = Expr.fresh(Id(name))
-    def unapply(id: Expr) = id match {
-      case Id(`name`, index) => index
-      case _ => None
-    }
-  }
-
-  def apply(ctx: Ctx, term: Expr) = simple(ctx, term)
-
-  case class InferenceError(error: String) extends Throwable {
-    override def toString = error
-  }
-
-  def simple(ctx: Ctx, term: Expr): Either[String, Expr] =
-    Try(simple_(ctx, term)).toEither.left.map(_.toString)
-  def simple_(ctx: Ctx, term: Expr): Expr =
-    term match {
-      case id: Id =>
-        if (ctx contains id) ctx(id)
-        else if (context.lemmas contains id) context.lemmas(id)
-        else if (context.funs contains id) simple_(ctx, Lam(context.funs(id)))
-        else throw InferenceError( s"Not in current type inference context: $id")
-      case Pair(a, b) =>
-        And(simple_(ctx, a), simple_(ctx, b))
-      case LeftE(a) =>
-        Or(simple_(ctx, a), ulang.Wildcard)
-      case RightE(a) =>
-        Or(ulang.Wildcard, simple_(ctx, a))
-      case LamId(v, body) =>
-        val v_ = Expr.fresh(v)
-        // FIXME: Gidon uses "All(v_ ..." here?
-        All(v, Imp(v, simple_(ctx + (v -> v), body)))
-      case Lam(List(Case(List(pat), body))) =>
-        val xs = pat.free.toList
-        val as = xs map Expr.fresh
-        val re = xs zip as
-        val ctx_ = ctx ++ re
-        val patT = simple_(ctx, pat)
-        val bodyT = simple_(ctx, body)
-        All(as, Imp(patT, bodyT))
-      case App(fun, arg) =>
-        val t1 = simple_(ctx, fun)
-        val t2 = simple_(ctx, arg)
-        t1 match {
-          case Imp(`t2`, result) => result
-          case All(x, matrix) => (matrix.subst(Map(x -> arg)))
-          case _ =>  throw InferenceError("Don't know how to apply to a " + t1)
-        }
-      case _ =>
-        throw InferenceError("Type inference for " + term + " is not yet implemented.")
-    }
-  def full(ctx: Ctx, term: Expr) = {
-    val tvar = TypeVar()
-    try {
-      val eqs = solve(build(ctx, term, tvar) toList)
-      val ty1 = eqs(tvar)
-      Right(ty1.free.filter {
-        case TypeVar(_) => true
-        case _ => false
-      }.foldLeft(ty1)((term: Expr, v: Id) => term.subst(Map(v -> Wildcard))))
-    } catch {
-      case InferenceError(err) => Left(err)
-    }
-  }
-
-  def build(ctx: Ctx, term: Expr, tvar: Id): Map[Expr, Expr] = term match {
-    case id: Id =>
-      val t: Expr = tvar
-      ctx get id map ((e: Expr) => Map(t -> e)) getOrElse
-        (throw InferenceError(s"Not in current type inference context: $id"))
-    case Pair(a, b) =>
-      val ta = TypeVar()
-      val tb = TypeVar()
-      build(ctx, a, ta) ++ build(ctx, b, tb) + (tvar -> And(ta, tb))
-      // TODO should I try to construct this as exists if what happens?
-    case LeftE(a) =>
-      val ta = TypeVar()
-      val tb = TypeVar()
-      build(ctx, a, ta) + (tvar -> Or(ta, tb))
-    case RightE(b) =>
-      val ta = TypeVar()
-      val tb = TypeVar()
-      build(ctx, b, tb) + (tvar -> Or(ta, tb))
-
-    case Lam(List(Case(List(pat), body))) =>
-      // this is let-polimorphism?
-      val ta = TypeVar()
-      val tb = TypeVar()
-      val eqs1 = build(ctx, pat, ta)
-      val eqs2 = build(ctx, pat, tb)
-      //  eqs <- solve(eqs1 ++ eqs2 toList)
-      //  ty = eqs(tvar)
-      //  xs = ty.free.toList
-      //  ts = xs map Expr.fresh
-
-      //} yield eqs1 ++ eqs2 + (tvar -> All(ts, ty))
-      eqs1 ++ eqs2 + (tvar -> Imp(ta, tb))
-
-    case LamId(arg, body) =>
-      val ta = TypeVar()
-      val tb = TypeVar()
-      val eqs1 = build(ctx, arg, ta)
-      val eqs2 = build(ctx + (arg -> ta), body, tb)
-      eqs1 ++ eqs2 + (tvar -> Imp(ta, tb))
-      // forall free(p). p ==> e
-    //case Lam(List(Case(List(arg), body))) =>
-      //val ta = TypeVar()
-      //val tb = TypeVar()
-      //for {
-      //  eqs1 <- build(ctx, arg, ta)
-      //  // TODO here I need type inference for pattern matching:
-      //  //                   v
-      //  eqs2 <- build(ctx + (arg -> ta), body, tb)
-      //} yield eqs2 => eqs1++eqs2+(tvar -> Imp(ta, tb))
-      // TODO should I try to construct this as forall if ta is an Id?
-    case App(fun, arg) =>
-      val ta = TypeVar()
-      val tb = TypeVar()
-      val eqs1 = build(ctx, fun, tb)
-      val eqs2 = build(ctx, arg, ta)
-      eqs1 ++ eqs2 + (tb -> Imp(ta, tvar))
-    case _ => throw InferenceError("Type inference for " + term + " is not yet implemented.")
-  }
-
-  /**
-   * Generate a uifying substitution for a list of type equations
-   */
-  def solve(equations: List[(Expr, Expr)], subst: Ctx = Map()): Ctx =
-    equations match {
-      case Nil => subst
-      case (a, b)::rest if a == b => solve(rest, subst)
-      case (a@TypeVar(_), b)::rest if !b.free.contains(a.asInstanceOf[Id]) =>
-        val a_ = a.asInstanceOf[Id]
-        val update = Map(a_ -> b)
-        val eqs = equations.map(eq => (eq._1 subst update, eq._2 subst update))
-        val subst_ = subst.map((kv: (Id, Expr)) => if (a_ == kv._2) (kv._1 -> b) else kv) ++ update
-        solve(eqs, subst_)
-      case (a: Id, b@TypeVar(_))::rest => solve((b, a)::rest, subst)
-      case (Imp(a, b), Imp(c, d))::rest => solve((a, c)::(b, d)::rest, subst)
-      case (And(a, b), And(c, d))::rest => solve((a, c)::(b, d)::rest, subst)
-      case (Or(a, b), Or(c, d))::rest => solve((a, c)::(b, d)::rest, subst)
-      // FIXME do I need to compare the bound variable somehow?
-      case (All(x, matrix1), All(y, matrix2))::rest => solve((matrix1, matrix2)::rest, subst)
-      case (Ex(x, matrix1), Ex(y, matrix2))::rest => solve((matrix1, matrix2)::rest, subst)
-      case _ => throw InferenceError("TODO")
-    }
-
 }

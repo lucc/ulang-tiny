@@ -115,6 +115,24 @@ class Binary(val op: Id) {
   }
 }
 
+class Ternery(val op: Id) {
+  def this(name: String) = this(Id(name))
+
+  def unapply(e: Expr) = e match {
+    case App(App(App(`op`, arg1), arg2), arg3) => Some((arg1, arg2, arg3))
+    case _ => None
+  }
+
+  def unapply(v: Val) = v match {
+    case Obj(Obj(Obj(`op`, arg1), arg2), arg3) => Some((arg1, arg2, arg3))
+    case _ => None
+  }
+
+  def apply(arg1: Expr, arg2: Expr, arg3: Expr): Expr = {
+    App(App(App(op, arg1), arg2), arg3)
+  }
+}
+
 object Eq extends Binary("==") {
   def zip(left: List[Expr], right: List[Expr]): List[Expr] = {
     if (left.length != right.length)
@@ -174,7 +192,6 @@ object Imp extends Binary("==>") {
 
 object Eqv extends Binary("<=>")
 object Pair extends Binary(",")
-object Witness extends Binary("Witness")
 object LeftE extends Unary("Left")
 object RightE extends Unary("Right")
 object Assumption extends Id("Assumption")
@@ -183,3 +200,14 @@ object Assumption extends Id("Assumption")
 // predicates
 object intro extends Binary("intro")
 object elim extends Unary("elim")
+
+object Inst extends Ternery("Inst")
+object Witness extends Ternery("Witness") {
+  def apply(x: Id, wit: Expr, body: Expr) =
+    App(App(App(Id("Witness"), x), wit), body)
+  override def unapply(e: Expr): Option[(Id, Expr, Expr)] = e match {
+    case App(App(App(Id("Witness", None), x: Id), arg2), arg3) =>
+      Some((x, arg2, arg3))
+    case _ => None
+  }
+}
