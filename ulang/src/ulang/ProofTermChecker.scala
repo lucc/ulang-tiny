@@ -117,30 +117,25 @@ object ProofTermChecker {
             }.foldLeft(None: Option[String])((a,o) => a orElse o)
         }
 
-      case (App(f: Id, arg), _) if ctx.contains(f) || context.lemmas.contains(f) =>
-        val t1 = ctx.getOrElse(f, context.lemmas(f))
-        val t2 = infer(ctx, arg) match { case Right(t) => t
-                                         case Left(err) => return Some(err) }
-        t1 match {
-          case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal => None
-          case Imp(`t2`, `goal`) => None
-          case _ => Some(f"Can not apply $t2 to $t1")
-        }
-
-      case (App(f: Id, arg), _) if context.funs contains f =>
+      // Defined functions are shadowed by assumptions from the context and
+      // lemas but these are checked in the case below.
+      case (App(f: Id, arg), _) if context.funs.contains(f)
+                                && !ctx.contains(f)
+                                && !context.lemmas.contains(f) =>
         // defined functions are checked like lambda terms
         check(ctx, App(Lam(context.funs(f)), arg), goal)
 
       // general applications need type inference for either the left or the
       // right side.  We use the left side for now.
       case (App(f, arg), _) =>
-        infer(ctx, arg) match {
-          case Right(ty) => check(ctx, f, Imp(ty, goal))
-          case Left(err1) =>
-            infer(ctx, f) match {
-              case Right(Imp(a, `goal`)) => check(ctx, a, arg)
-              case Left(err2) => Some(err1 + "\n" + err2)
-            }
+        val t1 = infer(ctx, f) match { case Right(t) => t
+                                       case Left(err) => return Some(err) }
+        val t2 = infer(ctx, arg) match { case Right(t) => t
+                                         case Left(err) => return Some(err) }
+        t1 match {
+          case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal => None
+          case Imp(`t2`, `goal`) => None
+          case _ => Some(f"Can not apply $t2 to $t1")
         }
 
       // match expressions can be converted to function applications
