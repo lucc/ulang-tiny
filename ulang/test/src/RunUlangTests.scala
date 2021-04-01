@@ -31,23 +31,27 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
   }
 
   describe("pending snippets") {
-    val snippets = List(
-      // proofs with match expressions
-      // symmetry of \/
-      """show a \/ b ==> b \/ a;
-         proof term lambda ant -> match ant with (Left x) -> Right x
-                                               | (Right x) -> Left x;""",
-      // Schwichtenberg page 13
-      """show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
-      proof term lambda (Witness x w p) -> lambda fa -> p (Inst fa w lambda x -> x);""",
-      """show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
-      proof term lambda f -> forall x. lambda ha -> f (Witness x x ha);""",
-      //a -> f (Witness Term (Inst fa Term lambda x -> x));
-      """//show (not (not (not a))) ==> not a;
+    def e = eval(_, pending=true)
+    // proofs with match expressions
+    // symmetry of \/
+    e("""show a \/ b ==> b \/ a;
+      proof term lambda ant -> match ant with (Left x) -> Right x
+      | (Right x) -> Left x;""")
+    // Schwichtenberg page 13
+    e("""show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
+      proof term lambda (Witness x w p) -> lambda fa -> p (Inst fa w lambda x -> x);""")
+    e("""show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
+      proof term lambda f -> forall x. lambda ha -> f (Witness x x ha);""")
+    //a -> f (Witness Term (Inst fa Term lambda x -> x));
+    e("""//show (not (not (not a))) ==> not a;
       show (((a ==> False) ==> False) ==> False) ==> a ==> False;
-      proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""",
-    )
-    for (snippet <- snippets) eval(snippet, pending=true)
+      proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""")
+    // weak disjunction from Schwichtenberg
+    // TODO can we use a function to compute the formula to be proven?
+    e("""define WDis a b := (a ==> False) /\ (b ==> False) ==> False;
+      show a \/ b ==> (a ==> False) /\ (b ==> False) ==> False;
+      proof term lambda hd (hna,hnb) -> (lambda (Left ha) -> hna ha
+                                              | (Right hb) -> hnb hb) hd;""")
   }
 
   describe("working snippets") {
@@ -92,6 +96,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
             proof term lambda ha haf -> haf ha;""")
     // testing automatic forall instantiation
     eval("show a t ==> (forall x. a x ==> b x) ==> b t; proof term lambda ha hfa -> hfa ha;")
+    // weak exists from Schwichtenberg
+    // TODO can we use a function to compute the formula to be proven?
+    eval("""define WEx x phi := (forall x. phi ==> False) ==> False;
+      show (exists x. a x) ==> (forall x. a x ==> False) ==> False;
+      proof term lambda (Witness x w p) fa -> fa p;
+      """)
   }
 
   describe("rules") {
