@@ -11,6 +11,7 @@ switchEither (Right x) := Left x;
 
 show a ==> a;                             proof term id;
 show a ==> (b ==> a);                     proof term cons;
-show (b ==> c) ==> (a ==> b) ==> a ==> c; proof term flip;
+show (a ==> b ==> c) ==> b ==> a ==> c;   proof term flip;
+show (b ==> c) ==> (a ==> b) ==> a ==> c; proof term composition;
 show a /\ b ==> b /\ a;                   proof term switchPair;
 show a \/ b ==> b \/ a;                   proof term switchEither;
