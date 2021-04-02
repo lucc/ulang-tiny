@@ -79,11 +79,9 @@ object ProofTermChecker {
         check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
 
       // different cases for modus ponens
-      case (App(LamId(id, body), arg), _) =>
-        check(ctx, body.subst(Map(id -> arg)), goal)
-      // This must have more than one Id because of previous case
       case (App(LamIds(id::ids, body), arg), _) =>
-        check(ctx, LamIds(ids, body).subst(Map(id -> arg)), goal)
+        val body_ = if (ids == Nil) body else LamIds(ids, body)
+        check(ctx, body_.subst(Map(id -> arg)), goal)
       case (App(Lam1(pat, body), arg), _) =>
         // if we can apply the argument to the patterns we do that directly
         try {
