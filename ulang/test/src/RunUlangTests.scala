@@ -103,6 +103,10 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       show (exists x. a x) ==> (forall x. a x ==> False) ==> False;
       proof term lambda (Witness x w p) fa -> fa p;
       """)
+    // Examples where evaluation of an application succeeds but type inference
+    // of the argument would not succeed.
+    eval("show a ==> a; proof term lambda y -> (lambda (New x) -> x) (New y);")
+    eval("show a ==> a; proof term (lambda x y -> y) z;")
   }
 
   describe("rules") {
