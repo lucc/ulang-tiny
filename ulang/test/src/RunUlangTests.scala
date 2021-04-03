@@ -52,6 +52,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       show a \/ b ==> (a ==> False) /\ (b ==> False) ==> False;
       proof term lambda hd (hna,hnb) -> (lambda (Left ha) -> hna ha
                                               | (Right hb) -> hnb hb) hd;""")
+    e("""show forall a. a ==> a; proof term  lambda x -> x;""")
   }
 
   describe("working snippets") {
