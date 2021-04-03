@@ -68,8 +68,11 @@ object ProofTermChecker {
       case (All(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable must not occur free in any open assumption in body.
+        // We allow alpha equivalence here in the same step.  In a stricter
+        // setting the formula must quantify over the free variable without
+        // renameing.
         val openFree = Expr free ctx
-        if (openFree contains id) Some("Capturing variable " + id)
+        if (openFree contains param) Some("Capturing variable " + param)
         else check(ctx, body, matrix.rename(Map(id -> param)))
 
       // TODO predicate logic elimination rules?
