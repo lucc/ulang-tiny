@@ -32,11 +32,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
 
   describe("pending snippets") {
     def e = eval(_, pending=true)
-    // proofs with match expressions
-    // symmetry of \/
-    e("""show a \/ b ==> b \/ a;
-      proof term lambda ant -> match ant with (Left x) -> Right x
-      | (Right x) -> Left x;""")
     // Schwichtenberg page 13
     e("""show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
       proof term lambda (Witness x w p) -> lambda fa -> p (Inst fa w lambda x -> x);""")
@@ -46,12 +41,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     e("""//show (not (not (not a))) ==> not a;
       show (((a ==> False) ==> False) ==> False) ==> a ==> False;
       proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""")
-    // weak disjunction from Schwichtenberg
-    // TODO can we use a function to compute the formula to be proven?
-    e("""define WDis a b := (a ==> False) /\ (b ==> False) ==> False;
-      show a \/ b ==> (a ==> False) /\ (b ==> False) ==> False;
-      proof term lambda hd (hna,hnb) -> (lambda (Left ha) -> hna ha
-                                              | (Right hb) -> hnb hb) hd;""")
     e("""show forall a. a ==> a; proof term  lambda x -> x;""")
   }
 
@@ -67,6 +56,10 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // symmetry of /\
     eval("""show a /\ b ==> b /\ a;
       proof term lambda p -> match p with (x,y) -> (y,x);""")
+    // symmetry of \/
+    eval("""show a \/ b ==> b \/ a;
+      proof term lambda ant -> match ant with (Left x) -> Right x
+                                           | (Right x) -> Left x;""")
     // proof with all quantifier
     eval("show (forall x. p x) ==> p Foo; proof term lambda x -> Inst x Foo lambda x -> x;")
     // proving introduction rules for exists
@@ -103,10 +96,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       show (exists x. a x) ==> (forall x. a x ==> False) ==> False;
       proof term lambda (Witness x w p) fa -> fa p;
       """)
-    // Examples where evaluation of an application succeeds but type inference
-    // of the argument would not succeed.
-    eval("show a ==> a; proof term lambda y -> (lambda (New x) -> x) (New y);")
-    eval("show a ==> a; proof term (lambda x y -> y) z;")
+    // weak disjunction from Schwichtenberg
+    // TODO can we use a function to compute the formula to be proven?
+    eval("""define WDis a b := (a ==> False) /\ (b ==> False) ==> False;
+      show a \/ b ==> (a ==> False) /\ (b ==> False) ==> False;
+      proof term lambda hd (hna,hnb) -> (lambda (Left ha) -> hna ha
+                                              | (Right hb) -> hnb hb) hd;""")
   }
 
   describe("rules") {

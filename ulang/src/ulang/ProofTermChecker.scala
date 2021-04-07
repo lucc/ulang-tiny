@@ -87,39 +87,21 @@ object ProofTermChecker {
         check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
 
       // different cases for modus ponens
-      case (App(LamIds(id::ids, body), arg), _) =>
-        val body_ = if (ids == Nil) body else LamIds(ids, body)
-        check(ctx, body_.subst(Map(id -> arg)), goal)
       case (App(Lam1(pat, body), arg), _) =>
-        // if we can apply the argument to the patterns we do that directly
-        try {
-          pat match {
-            case Nil => throw Error("This should never happen")
-            case List(p) => check(ctx, apply(p, arg, body), goal)
-            case p::ps => check(ctx, apply(p, arg, Lam1(ps, body)), goal)
-          }
-        } catch {
-          // in case that fails (i.e. because the argument was an Id and the
-          // pattern was complex) then we can still try to bind the argument
-          // type to the pattern in the context and leave the body unchanged
-          case _: MatchError =>
-            infer(ctx, arg) match {
-              case Left(err) => throw Error(err)
-              case Right(t) =>
-                pat match {
-                  case Nil => throw Error("This should never happen")
-                  case List(p) => check(bind(ctx, p, t), body, goal)
-                  case p::ps => check(bind(ctx, p, t), Lam1(ps, body), goal)
-                }
+        infer(ctx, arg) match {
+          case Left(err) => throw Error(err)
+          case Right(t) =>
+            pat match {
+              case Nil => throw Error("This should never happen")
+              case List(p) => check(bind(ctx, p, t), body, goal)
+              case p::ps => check(bind(ctx, p, t), Lam1(ps, body), goal)
             }
         }
       case (App(Lam(cases), arg), _) =>
         infer(ctx, arg) match {
           case Left(err) => throw Error(err)
           case Right(t) =>
-            val proofs = apply(cases, arg)
-            val ctxs = bind(ctx, cases, t)
-            ctxs.zip(proofs).map { case (c, p) => check(c, p, goal) }
+            cases map (cs => check(bind(ctx, cs.pats.head, t), cs.body, goal))
         }
 
       // Defined functions are shadowed by assumptions from the context and
@@ -130,8 +112,8 @@ object ProofTermChecker {
         // defined functions are checked like lambda terms
         check(ctx, App(Lam(context.funs(f)), arg), goal)
 
-      // general applications need type inference for either the left or the
-      // right side.  We use the left side for now.
+      // general applications need type inference for both sides to match the
+      // types
       case (App(f, arg), _) =>
         val t1 = infer(ctx, f) match { case Right(t) => t
                                        case Left(err) => throw Error(err) }
