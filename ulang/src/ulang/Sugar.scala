@@ -197,6 +197,8 @@ object LeftE extends Unary("Left")
 object RightE extends Unary("Right")
 object Assumption extends Id("Assumption")
 
+object Cut extends Ternary("Cut")
+
 // Special function names to manage intro and elim axioms of inductive
 // predicates
 object intro extends Binary("intro")

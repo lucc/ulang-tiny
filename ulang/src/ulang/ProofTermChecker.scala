@@ -87,6 +87,11 @@ object ProofTermChecker {
         else
           check(ctx, body, matrix.rename(Map(id -> param)))
 
+      // cut rule
+      case (Cut(phi, pt1, LamId(id, pt2)), _) =>
+        check(ctx, pt1, phi)
+        check(ctx + (id -> phi), pt2, goal)
+
       // TODO predicate logic elimination rules?
 
       case (Inst(pt, t, pt2), _) if cond(infer(ctx, pt)) {case Right(All(_, _)) => true} =>

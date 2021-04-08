@@ -1,20 +1,12 @@
 data 0 +1;
 notation +1 [postfix 10];
 
-// This proof shows the essence what is needed to complete the induction:
-// we want to construct an assumption (forall x. p x ==> q x) which we can apply to x.
-// Which proof term has this type? Can we do it without a cut?
-show
-  ((forall x. p x ==> q x) ==> c) ==> (forall y. p y ==> q y) ==> c;
-proof term
-  lambda x y -> sorry;
-
 show
   (forall p n. (n: Nat) ==> (p 0) ==> (forall m. (m: Nat) ==> p m ==> p (m +1)) ==> p n) ==>
   (0: Nat) ==>
-  (forall m. (m: Nat) ==> (n +1: Nat)) ==>
+  (forall m. (m: Nat) ==> (m +1: Nat)) ==>
   (0: NatInf) ==>
-  (forall m. (m: NatInf) ==> (n +1: NatInf)) ==>
+  (forall m. (m: NatInf) ==> (m +1: NatInf)) ==>
   (k: Nat) ==> (k: NatInf);
 proof term
   lambda i
@@ -28,10 +20,17 @@ proof term
             Inst (lambda x -> z2) (0: Nat)
               (lambda h2 ->
                 (lambda h3 ->
-                    (lambda h4 -> sorry)
-                    (forall m. m))
+                    Cut (forall m. (m : Nat) ==>
+                                   ((m : Nat) ==> (m : NatInf)) ==>
+                                   ((m +1) : Nat) ==> ((m +1) : NatInf))
+                    (forall m. lambda x1 x2 x3 ->
+                      (Inst s2 m (lambda h5 ->
+                          (lambda h6 -> h5 h6) (x2 x1))))
+                    (lambda h4 -> 
+                      (lambda h5 ->
+                        h5 a)
+                        (h3 h4))
+                    )
                 (h1 h2))
             )
           (ipk a)));
-
-

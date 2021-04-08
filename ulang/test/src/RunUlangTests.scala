@@ -75,8 +75,11 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // TODO why do I have to put "var" and not "x" here ----------------------^
 
     // how to construct implications
-    eval("""show ((a ==> b) ==> c) ==> a ==> b ==> c;
-        proof term lambda h p q -> Inst (lambda x -> q) a h;""")
+    eval("""show ((a ==> b) ==> c) ==> b ==> c;
+        proof term lambda h p -> Inst (lambda x -> p) a h;""")
+    // similarly with a cut
+    eval("""show ((a ==> b) ==> c) ==> b ==> c;
+        proof term lambda h q -> Cut (a ==> b) (lambda """)
 
     eval("""show (exists x. a ==> b x) ==> a ==> exists x. b x;
         proof term lambda (Witness x w hab) -> lambda ha -> Witness x w (hab ha);""")
