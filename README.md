@@ -1,5 +1,7 @@
 # ulang
 
+![tests](https://github.com/gernst/ulang-tiny/actions/workflows/test.yml/badge.svg)
+
 ## Compilation
 
 The ulang project can be compiled with [mill](http://www.lihaoyi.com/mill/).
