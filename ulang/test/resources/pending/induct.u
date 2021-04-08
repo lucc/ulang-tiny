@@ -1,0 +1,23 @@
+data 0 +1;
+notation +1 [postfix 10];
+
+  // (forall p n. (n: Nat) ==> (p 0) ==> (forall m. (m: Nat) ==> p m ==> p (m +1)) ==> p n) ==>
+
+show
+  (forall p n. (n: Nat) ==> p n) ==>
+  (0: NatInf) ==>
+  (forall m. (m: NatInf) ==> (n +1: NatInf)) ==>
+  (k: Nat) ==> (k: NatInf);
+proof term
+  lambda i ->
+  lambda z ->
+  lambda r ->
+  lambda a ->
+    Inst i (lambda k -> k: Nat ==> k: NatInf)
+    (lambda ip ->
+      Inst ip k
+      (lambda ipk ->
+         (lambda x ->
+            sorry)
+          (ipk a)));
+

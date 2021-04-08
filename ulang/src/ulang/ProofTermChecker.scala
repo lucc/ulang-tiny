@@ -6,7 +6,7 @@ import ulang.{TypeInference => infer}
 
 object ProofTermChecker {
 
-  case class Error(msg: String) extends Exception
+  case class Error(msg: String) extends Exception(msg)
 
   /** Check a proof
    *
@@ -26,6 +26,13 @@ object ProofTermChecker {
    */
   def check(ctx: Map[Id, Expr], proof: Expr, goal: Expr) {
     (proof, goal) match {
+      case (Sorry, _) =>
+        println("assume")
+        for((id, expr) <- ctx)
+          println(s"  $id := $expr;")
+        println("show")
+          println(s"  $goal")
+          throw Error("Unfinished proof (sorry)")
 
       // Proof by assumption has to be the first case, this makes it possible
       // to match against any goal (even "False").  If the given goal is not
@@ -122,7 +129,7 @@ object ProofTermChecker {
         t1 match {
           case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal =>
           case Imp(`t2`, `goal`) =>
-          case _ => throw Error(f"Can not apply $t2 to $t1")
+          case _ => throw Error(f"Can not apply $t1 to $t2")
         }
 
       // match expressions can be converted to function applications
