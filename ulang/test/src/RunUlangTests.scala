@@ -92,16 +92,19 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     eval("show a t ==> (forall x. a x ==> b x) ==> b t; proof term lambda ha hfa -> hfa ha;")
     // weak exists from Schwichtenberg
     // TODO can we use a function to compute the formula to be proven?
-    eval("""define WEx x phi := (forall x. phi ==> False) ==> False;
+    eval("""define wEx x phi := (forall x. phi ==> False) ==> False;
       show (exists x. a x) ==> (forall x. a x ==> False) ==> False;
       proof term lambda (Witness x w p) fa -> fa p;
       """)
     // weak disjunction from Schwichtenberg
     // TODO can we use a function to compute the formula to be proven?
-    eval("""define WDis a b := (a ==> False) /\ (b ==> False) ==> False;
+    eval("""define wDis a b := (a ==> False) /\ (b ==> False) ==> False;
       show a \/ b ==> (a ==> False) /\ (b ==> False) ==> False;
       proof term lambda hd (hna,hnb) -> (lambda (Left ha) -> hna ha
                                               | (Right hb) -> hnb hb) hd;""")
+    // nested application
+    eval("""show (a ==> b ==> c) ==> (a ==> b) ==> a ==> c;
+          proof term lambda habc hab ha -> habc ha (hab ha);""")
   }
 
   describe("rules") {
