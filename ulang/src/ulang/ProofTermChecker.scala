@@ -1,15 +1,19 @@
 package ulang
 
 import PartialFunction.cond
+import util.Try
 import ulang.{TypeInference => infer}
 
 object ProofTermChecker {
+
+  case class Error(msg: String) extends Exception
 
   /** Check a proof
    *
    *  The proof is assumed to have no global assumptions.
    */
-  def check(proof: Expr, goal: Expr): Option[String] = check(Map(), proof, goal)
+  def check(proof: Expr, goal: Expr): Option[String] =
+    Try(check(Map(), proof, goal)).toEither.swap.map(_.getMessage).toOption
 
   /** Check a proof with context
    *
@@ -20,33 +24,34 @@ object ProofTermChecker {
    *  If a proof should be allowed to use axioms, they need to be present in
    *  the context.
    */
-  def check(ctx: Map[Id, Expr], proof: Expr, goal: Expr): Option[String] =
+  def check(ctx: Map[Id, Expr], proof: Expr, goal: Expr) {
     (proof, goal) match {
 
       // Proof by assumption has to be the first case, this makes it possible
       // to match against any goal (even "False").  If the given goal is not
       // in the context we fall through to the other cases.
       case (id: Id, _) if ctx contains id =>
-        if (ctx(id) == goal) None
-        else Some(f"Assumption $id does not match the goal $goal")
+        if (ctx(id) != goal)
+          throw Error(f"Assumption $id does not match the goal $goal")
       case (id: Id, _) if context.lemmas contains id =>
-        if (context.lemmas(id) == goal) None
-        else Some(f"Lemma $id does not match the goal $goal")
+        if (context.lemmas(id) != goal)
+          throw Error(f"Lemma $id does not match the goal $goal")
       case (id: Id, _) if context.funs contains id =>
         check(ctx, Lam(context.funs(id)), goal)
       case (Id("elim", None), _) =>
-        Some("The special function name 'elim' can only be used in applications.")
+        throw Error("The special function name 'elim' can only be used in applications.")
       case (Id("intro", None), _) =>
-        Some("The special function name 'intro' can only be used in applications.")
+        throw Error("The special function name 'intro' can only be used in applications.")
 
       // special cases
-      case (True, True) => None // we use "True" to represent a trivial proof
-      case (intro(pred, index), _) => Some("Generation of intro axioms is not yet implemented")
-      case (elim(pred), _) => Some("Generation of elim axioms is not yet implemented")
+      case (True, True) =>  // we use "True" to represent a trivial proof
+      case (intro(pred, index), _) => throw Error("Generation of intro axioms is not yet implemented")
+      case (elim(pred), _) => throw Error("Generation of elim axioms is not yet implemented")
 
       // propositional logic: introduction rules
       case (Pair(p1, p2), And(f1, f2)) =>
-        check(ctx, p1, f1) orElse check(ctx, p2, f2)
+        check(ctx, p1, f1)
+        check(ctx, p2, f2)
       case (LeftE(p), Or(f, _)) => check(ctx, p, f)
       case (RightE(p), Or(_, f)) => check(ctx, p, f)
       // special case for lambdas with one pattern only
@@ -57,10 +62,7 @@ object ProofTermChecker {
         check(bind(ctx, pat, ant), Lam1(pats, body), cons)
       // special case for multible cases but with only one pattern each
       case (Lam(cases), Imp(ant, cons)) if cases.forall(_.pats.length == 1) =>
-        val checks = cases.map(c => check(bind(ctx, c.pats.head, ant), c.body, cons))
-        val errs = checks.filter(_.isDefined)
-        if (errs.isEmpty) None
-        else Some(errs map(_.get) mkString "\n")
+        cases.map(c => check(bind(ctx, c.pats.head, ant), c.body, cons))
 
       // predicate logic introduction rules
       case (Witness(id1, witness, p), Ex(id2, matrix)) if id1 == id2 =>
@@ -68,9 +70,15 @@ object ProofTermChecker {
       case (All(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable must not occur free in any open assumption in body.
+        // We allow alpha equivalence here in the same step.  In a stricter
+        // setting the formula must quantify over the free variable without
+        // renameing, and the alpha renameing can be done later on if the new
+        // name does not occur free in the formula.
         val openFree = Expr free ctx
-        if (openFree contains id) Some("Capturing variable " + id)
-        else check(ctx, body, matrix.rename(Map(id -> param)))
+        if (openFree.contains(param) || (id != param && body.free.contains(id)))
+          throw Error("Capturing variable " + param)
+        else
+          check(ctx, body, matrix.rename(Map(id -> param)))
 
       // TODO predicate logic elimination rules?
 
@@ -79,42 +87,21 @@ object ProofTermChecker {
         check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
 
       // different cases for modus ponens
-      case (App(LamId(id, body), arg), _) =>
-        check(ctx, body.subst(Map(id -> arg)), goal)
-      // This must have more than one Id because of previous case
-      case (App(LamIds(id::ids, body), arg), _) =>
-        check(ctx, LamIds(ids, body).subst(Map(id -> arg)), goal)
       case (App(Lam1(pat, body), arg), _) =>
-        // if we can apply the argument to the patterns we do that directly
-        try {
-          pat match {
-            case Nil => throw new Exception("This should never happen")
-            case List(p) => check(ctx, apply(p, arg, body), goal)
-            case p::ps => check(ctx, apply(p, arg, Lam1(ps, body)), goal)
-          }
-        } catch {
-          // in case that fails (i.e. because the argument was an Id and the
-          // pattern was complex) then we can still try to bind the argument
-          // type to the pattern in the context and leave the body unchanged
-          case _: MatchError =>
-            infer(ctx, arg) match {
-              case Left(err) => Some(err)
-              case Right(t) =>
-                pat match {
-                  case Nil => throw new Exception("This should never happen")
-                  case List(p) => check(bind(ctx, p, t), body, goal)
-                  case p::ps => check(bind(ctx, p, t), Lam1(ps, body), goal)
-                }
+        infer(ctx, arg) match {
+          case Left(err) => throw Error(err)
+          case Right(t) =>
+            pat match {
+              case Nil => throw Error("This should never happen")
+              case List(p) => check(bind(ctx, p, t), body, goal)
+              case p::ps => check(bind(ctx, p, t), Lam1(ps, body), goal)
             }
         }
       case (App(Lam(cases), arg), _) =>
         infer(ctx, arg) match {
-          case Left(err) => Some(err)
+          case Left(err) => throw Error(err)
           case Right(t) =>
-            val proofs = apply(cases, arg)
-            val ctxs = bind(ctx, cases, t)
-            ctxs.zip(proofs).map { case (c, p) => check(c, p, goal)
-            }.foldLeft(None: Option[String])((a,o) => a orElse o)
+            cases map (cs => check(bind(ctx, cs.pats.head, t), cs.body, goal))
         }
 
       // Defined functions are shadowed by assumptions from the context and
@@ -125,17 +112,17 @@ object ProofTermChecker {
         // defined functions are checked like lambda terms
         check(ctx, App(Lam(context.funs(f)), arg), goal)
 
-      // general applications need type inference for either the left or the
-      // right side.  We use the left side for now.
+      // general applications need type inference for both sides to match the
+      // types
       case (App(f, arg), _) =>
         val t1 = infer(ctx, f) match { case Right(t) => t
-                                       case Left(err) => return Some(err) }
+                                       case Left(err) => throw Error(err) }
         val t2 = infer(ctx, arg) match { case Right(t) => t
-                                         case Left(err) => return Some(err) }
+                                         case Left(err) => throw Error(err) }
         t1 match {
-          case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal => None
-          case Imp(`t2`, `goal`) => None
-          case _ => Some(f"Can not apply $t2 to $t1")
+          case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal =>
+          case Imp(`t2`, `goal`) =>
+          case _ => throw Error(f"Can not apply $t2 to $t1")
         }
 
       // match expressions can be converted to function applications
@@ -143,8 +130,9 @@ object ProofTermChecker {
         check(ctx, Apps(Lam(cases), args), goal)
 
       // False is implicit here
-      case _ => Some(f"Proof term $proof does not match the formula $goal.")
+      case _ => throw Error(f"Proof term $proof does not match the formula $goal.")
     }
+  }
 
   /**
    * extend a context by binding argument types to parameter variables

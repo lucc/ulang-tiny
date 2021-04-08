@@ -109,7 +109,6 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
       val ta = TypeVar()
       val tb = TypeVar()
       build(ctx, a, ta) ++ build(ctx, b, tb) + (tvar -> And(ta, tb))
-      // TODO should I try to construct this as exists if what happens?
     case LeftE(a) =>
       val ta = TypeVar()
       val tb = TypeVar()
