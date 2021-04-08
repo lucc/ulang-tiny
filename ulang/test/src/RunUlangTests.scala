@@ -79,7 +79,9 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         proof term lambda h p -> Inst (lambda x -> p) a h;""")
     // similarly with a cut
     eval("""show ((a ==> b) ==> c) ==> b ==> c;
-        proof term lambda h q -> Cut (a ==> b) (lambda """)
+        proof term lambda h p -> Cut (a ==> b)
+            (lambda q -> p)
+            (lambda r -> h r);""")
 
     eval("""show (exists x. a ==> b x) ==> a ==> exists x. b x;
         proof term lambda (Witness x w hab) -> lambda ha -> Witness x w (hab ha);""")
