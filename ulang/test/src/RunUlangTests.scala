@@ -41,7 +41,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     e("""//show (not (not (not a))) ==> not a;
       show (((a ==> False) ==> False) ==> False) ==> a ==> False;
       proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""")
-    e("""show forall a. a ==> a; proof term  lambda x -> x;""")
   }
 
   describe("working snippets") {
