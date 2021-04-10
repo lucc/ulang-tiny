@@ -74,7 +74,7 @@ object ProofTermChecker {
         // setting the formula must quantify over the free variable without
         // renameing, and the alpha renameing can be done later on if the new
         // name does not occur free in the formula.
-        val openFree = Expr free ctx
+        val openFree = Expr free ctx.values
         if (openFree.contains(param) || (id != param && body.free.contains(id)))
           throw Error("Capturing variable " + param)
         else
