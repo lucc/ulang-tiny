@@ -13,7 +13,12 @@ object ProofTermChecker {
    *  The proof is assumed to have no global assumptions.
    */
   def check(proof: Expr, goal: Expr): Option[String] =
-    Try(check(Map(), proof, goal)).toEither.swap.map(_.getMessage).toOption
+    try {
+      check(Map(), proof, goal)
+      None
+    } catch {
+      case Error(msg) => Some(msg)
+    }
 
   /** Check a proof with context
    *
