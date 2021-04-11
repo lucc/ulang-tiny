@@ -53,10 +53,8 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
       case RightE(a) =>
         Or(ulang.Wildcard, simple_(ctx, a))
       case Witness(x, w, p) =>
-        throw  InferenceError("Can not yet infer existential types.")
-      //case Witness(x, w, p) =>
-      //  val ty = simple_(ctx, p)
-      //  Ex(x, ty.subst(Map(w -> x)))
+        val ty = simple_(ctx, p)
+        Ex(x, ty.replace(Map(w -> x)))
       case Inst(pt, t, pt2) =>
         val All(x, phi) = simple_(ctx, pt)
         val Imp(ant, cons) = simple_(ctx, pt2)
