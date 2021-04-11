@@ -6,7 +6,7 @@ import ulang.{TypeInference => infer}
 
 object ProofTermChecker {
 
-  case class Error(msg: String) extends Exception
+  case class Error(msg: String) extends Exception(msg)
 
   /** Check a proof
    *
@@ -26,6 +26,13 @@ object ProofTermChecker {
    */
   def check(ctx: Map[Id, Expr], proof: Expr, goal: Expr) {
     (proof, goal) match {
+      case (Sorry, _) =>
+        println("assume")
+        for((id, expr) <- ctx)
+          println(s"  $id := $expr;")
+        println("show")
+          println(s"  $goal")
+          throw Error("Unfinished proof (sorry)")
 
       // Proof by assumption has to be the first case, this makes it possible
       // to match against any goal (even "False").  If the given goal is not
@@ -80,6 +87,11 @@ object ProofTermChecker {
         else
           check(ctx, body, matrix.rename(Map(id -> param)))
 
+      // cut rule
+      case (Cut(phi, pt1, LamId(id, pt2)), _) =>
+        check(ctx, pt1, phi)
+        check(ctx + (id -> phi), pt2, goal)
+
       // TODO predicate logic elimination rules?
 
       case (Inst(pt, t, pt2), _) if cond(infer(ctx, pt)) {case Right(All(_, _)) => true} =>
@@ -122,7 +134,7 @@ object ProofTermChecker {
         t1 match {
           case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal =>
           case Imp(`t2`, `goal`) =>
-          case _ => throw Error(f"Can not apply $t2 to $t1")
+          case _ => throw Error(f"Can not apply $t1 to $t2")
         }
 
       // match expressions can be converted to function applications
@@ -135,11 +147,31 @@ object ProofTermChecker {
   }
 
   /**
+   * not at all general attempt to normalizate formulas before placing these into context,
+   * this code should be merged with apply probably
+   */
+  def simpleBetaReductions(expr: Expr): Expr = {
+    expr match {
+      case App(fun, arg) =>
+        (simpleBetaReductions(fun), simpleBetaReductions(arg)) match {
+          case (LamId(id, body), arg) =>
+            body subst (Map(id -> arg))
+          case (fun, arg) =>
+            App(fun, arg)
+        }
+      case Bind(quant, args, body) =>
+        Bind(quant, args, simpleBetaReductions(body))
+      case _ =>
+        expr
+    }
+  }
+
+  /**
    * extend a context by binding argument types to parameter variables
    */
   def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id,Expr] =
     (pat, assm) match {
-      case (p: Id, _) => ctx + (p -> assm)
+      case (p: Id, _) => ctx + (p -> simpleBetaReductions(assm))
       case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
       case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)

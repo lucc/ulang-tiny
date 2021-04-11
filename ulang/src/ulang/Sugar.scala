@@ -115,7 +115,7 @@ class Binary(val op: Id) {
   }
 }
 
-class Ternery(val op: Id) {
+class Ternary(val op: Id) {
   def this(name: String) = this(Id(name))
 
   def unapply(e: Expr) = e match {
@@ -190,19 +190,22 @@ object Imp extends Binary("==>") {
   }
 }
 
+object Sorry extends Id("sorry")
 object Eqv extends Binary("<=>")
 object Pair extends Binary(",")
 object LeftE extends Unary("Left")
 object RightE extends Unary("Right")
 object Assumption extends Id("Assumption")
 
+object Cut extends Ternary("Cut")
+
 // Special function names to manage intro and elim axioms of inductive
 // predicates
 object intro extends Binary("intro")
 object elim extends Unary("elim")
 
-object Inst extends Ternery("Inst")
-object Witness extends Ternery("Witness") {
+object Inst extends Ternary("Inst")
+object Witness extends Ternary("Witness") {
   def apply(x: Id, wit: Expr, body: Expr) =
     App(App(App(Id("Witness"), x), wit), body)
   override def unapply(e: Expr): Option[(Id, Expr, Expr)] = e match {

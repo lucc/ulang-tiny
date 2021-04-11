@@ -10,6 +10,9 @@ object Print {
   import context._
 
   def print(name: String, args: List[Pretty], fixity: Fixity): String = (args, fixity) match {
+    case (List(arg), _: Prefix) => "(" + name + " " + arg + ")"
+    case (List(arg), _: Postfix) => "(" + arg + " " + name + ")"
+    case (List(arg1, arg2), _: Infix) => "(" + arg1 + " " + name + " " + arg2 + ")"
     case (arg :: rest, _: Prefix) => "((" + name + " " + arg + ") " + rest.mkString(" ") + ")"
     case (arg :: rest, _: Postfix) => "((" + arg + " " + name + ") " + rest.mkString(" ") + ")"
     case (arg1 :: arg2 :: rest, _: Infix) => "((" + arg1 + " " + name + " " + arg2 + ") " + rest.mkString(" ") + ")"
