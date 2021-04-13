@@ -13,24 +13,11 @@ proof term
     z1 s1
     z2 s2
     a ->
-    Inst i (lambda k -> k: Nat ==> k: NatInf)
-    (lambda ip -> Inst ip k
-      (lambda ipk ->
-         (lambda h1 ->
-            Inst (lambda x -> z2) (0: Nat)
-              (lambda h2 ->
-                (lambda h3 ->
-                    Cut (forall m. (m : Nat) ==>
-                                   ((m : Nat) ==> (m : NatInf)) ==>
-                                   ((m +1) : Nat) ==> ((m +1) : NatInf))
-                    (forall m. lambda x1 x2 x3 ->
-                      (Inst s2 m (lambda h5 ->
-                          (lambda h6 -> h5 h6) (x2 x1))))
-                    (lambda h4 -> 
-                      (lambda h5 ->
-                        h5 a)
-                        (h3 h4))
-                    )
-                (h1 h2))
-            )
-          (ipk a)));
+    Inst i (lambda k -> k: NatInf)
+    (lambda ip ->
+    Inst ip k
+      lambda ipk ->
+      Cut (forall m. m: Nat ==> m: NatInf ==> m +1: NatInf)
+          (forall m. lambda h1 h2 -> Inst s2 m lambda h3 -> h3 h2)
+      lambda cut ->
+        ipk a z2 cut);
