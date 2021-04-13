@@ -73,6 +73,7 @@ object ProofTermChecker {
       case (Lam1(pat::pats, body), Imp(ant, cons)) =>
         check(bind(ctx, pat, ant), Lam1(pats, body), cons)
       // special case for multible cases but with only one pattern each
+      // TODO version without the guard
       case (Lam(cases), Imp(ant, cons)) if cases.forall(_.pats.length == 1) =>
         cases.map(c => check(bind(ctx, c.pats.head, ant), c.body, cons))
 
@@ -114,6 +115,8 @@ object ProofTermChecker {
               case p::ps => check(bind(ctx, p, t), Lam1(ps, body), goal)
             }
         }
+      // TODO this should also work with multible patterns per case, currently
+      // only the first pattern is inspected with cs.pats.head
       case (App(Lam(cases), arg), _) =>
         infer(ctx, arg) match {
           case Left(err) => throw Error(err)
