@@ -99,24 +99,12 @@ object ProofTermChecker {
         val Right(All(x, phi)) = infer(ctx, pt)
         check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
 
-      // different cases for modus ponens
-      case (App(Lam1(pat, body), arg), _) =>
+      // modus ponens is checked by infering the type of the argument and then
+      // rerouting the check to Imp introduction.
+      case (App(p@Lam(cases), arg), _) =>
         infer(ctx, arg) match {
           case Left(err) => throw Error(err)
-          case Right(t) =>
-            pat match {
-              case Nil => throw Error("This should never happen")
-              case List(p) => check(bind(ctx, p, t), body, goal)
-              case p::ps => check(bind(ctx, p, t), Lam1(ps, body), goal)
-            }
-        }
-      // TODO this should also work with multible patterns per case, currently
-      // only the first pattern is inspected with cs.pats.head
-      case (App(Lam(cases), arg), _) =>
-        infer(ctx, arg) match {
-          case Left(err) => throw Error(err)
-          case Right(t) =>
-            cases map (cs => check(bind(ctx, cs.pats.head, t), cs.body, goal))
+          case Right(t) => check(ctx, p, Imp(t, goal))
         }
 
       // Defined functions are shadowed by assumptions from the context and
