@@ -66,16 +66,11 @@ object ProofTermChecker {
         check(ctx, p2, f2)
       case (LeftE(p), Or(f, _)) => check(ctx, p, f)
       case (RightE(p), Or(_, f)) => check(ctx, p, f)
-      // special case for lambdas with one pattern only
-      case (Lam1(List(pat), body), Imp(ant, cons)) =>
-        check(bind(ctx, pat, ant), body, cons)
-      // special case for lambdas with one case only
-      case (Lam1(pat::pats, body), Imp(ant, cons)) =>
-        check(bind(ctx, pat, ant), Lam1(pats, body), cons)
-      // special case for multible cases but with only one pattern each
-      // TODO version without the guard
-      case (Lam(cases), Imp(ant, cons)) if cases.forall(_.pats.length == 1) =>
-        cases.map(c => check(bind(ctx, c.pats.head, ant), c.body, cons))
+      case (Lam(cases), Imp(ant, cons)) =>
+        cases map {
+          case Case(List(p), body) => check(bind(ctx, p, ant), body, cons)
+          case Case(p::ps, body) => check(bind(ctx, p, ant), Lam1(ps, body), cons)
+        }
 
       // predicate logic introduction rules
       case (Witness(id1, witness, p), Ex(id2, matrix)) if id1 == id2 =>

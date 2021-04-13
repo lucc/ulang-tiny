@@ -38,12 +38,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     e("""//show (not (not (not a))) ==> not a;
       show (((a ==> False) ==> False) ==> False) ==> a ==> False;
       proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""")
-    // nested implication with multible cases and patterns
-    e("""show a \/ b ==> c \/ d ==> (a /\ c) \/ (a /\ d) \/ (b /\ c) \/ (b \/ d);
-         proof term lambda (Left ha)  (Left hc)  -> Left (ha, hc)
-                         | (Left ha)  (Right hd) -> Right (Left (ha, hd))
-                         | (Right hb) (Left hc)  -> Right (Right (Left (hb, hc)))
-                         | (Right hb) (Right hd) -> Right (Right (Right (Left (hb, hd))));""")
   }
 
   describe("working snippets") {
@@ -119,6 +113,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // nested application
     eval("""show (a ==> b ==> c) ==> (a ==> b) ==> a ==> c;
           proof term lambda habc hab ha -> habc ha (hab ha);""")
+    // nested implication with multible cases and patterns
+    eval("""show a \/ b ==> c \/ d ==> (a /\ c) \/ (a /\ d) \/ (b /\ c) \/ (b /\ d);
+         proof term lambda (Left ha)  (Left hc)  -> Left (ha, hc)
+                         | (Left ha)  (Right hd) -> Right (Left (ha, hd))
+                         | (Right hb) (Left hc)  -> Right (Right (Left (hb, hc)))
+                         | (Right hb) (Right hd) -> Right (Right (Right (hb, hd)));""")
   }
 
   describe("rules") {
