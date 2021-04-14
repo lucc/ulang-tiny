@@ -56,14 +56,10 @@ proof term
     Inst c k lambda c ->
     (Cut (forall n. n: Nat ==>
 		    n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m: Nat))
-	 (forall n.
-	    lambda nNat ->
-	      Inst i (lambda n -> n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m: Nat))
-	      lambda i ->
-	      Inst i n lambda i ->
-	      Inst natCases n lambda natCases ->
-		(lambda (Left hyp) -> Left hyp
-		 | (Right hyp) ->
-		      Right ((lambda (Witness m w (p,q)) -> Witness m w (p, Right q)) hyp))
-		(natCases nNat))
+	 (forall n. lambda nNat ->
+	    Inst natCases n lambda natCases ->
+	      (lambda (Left hyp) -> Left hyp
+	       | (Right hyp) ->
+		    Right ((lambda (Witness m w (p,q)) -> Witness m w (p, Right q)) hyp))
+	      (natCases nNat))
     lambda cut -> c kNat cut);
