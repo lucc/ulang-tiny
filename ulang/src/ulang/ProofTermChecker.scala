@@ -232,17 +232,37 @@ object alphaEqui extends ((Expr, Expr) => Boolean) {
         else if (ctxL.contains(l) || ctxR.contains(r)) false
         // global names, free variables, etc
         else l == r
-      case (LamIds(l::ls, bodyL), LamIds(r::rs, bodyR)) =>
-        val marker = new Object()
-        val bodyL2 = if (ls == Nil) bodyL else LamIds(ls, bodyL)
-        val bodyR2 = if (ls == Nil) bodyR else LamIds(ls, bodyR)
-        eqi(ctxL + (l -> marker), ctxR + (r -> marker), bodyL2, bodyR2)
-      // TODO more general lambda terms
+      case (Lam1(l::ls, bodyL), Lam1(r::rs, bodyR)) =>
+        val bodyL2 = if (ls == Nil) bodyL else Lam1(ls, bodyL)
+        val bodyR2 = if (rs == Nil) bodyR else Lam1(rs, bodyR)
+        bind(l, r) match {
+          case None => false
+          case Some((l, r)) => eqi(ctxL ++ l, ctxR ++ r, bodyL2, bodyR2)
+        }
+      case (Lam(casesL), Lam(casesR)) =>
+        casesL zip casesR forall(p =>
+            eqi(ctxL, ctxR, Lam(List(p._1)), Lam(List(p._2))))
       case (Bind(ql, l, bodyL), Bind(qr, r, bodyR)) if ql == qr =>
         val marker = new Object()
         eqi(ctxL + (l -> marker), ctxR + (r -> marker), bodyL, bodyR)
       case (App(funL, argL), App(funR, argR)) =>
         eqi(ctxL, ctxR, funL, funR) && eqi(ctxL, ctxR, argL, argR)
       case _ => false
+    }
+  def bind(left: Expr, right: Expr): Option[(Ctx, Ctx)] =
+    (left, right) match {
+      case (left: Id, right: Id)
+        if !context.isTag(left) && !context.isTag(right) =>
+          val marker = new Object()
+          Some((Map(left -> marker), Map(right -> marker)))
+      case (App(funL: Id, left), App(funR: Id, right)) =>
+        if (context.isTag(funL) && funL == funR) bind(left, right)
+        else None
+      case (App(funL, argL), App(funR, argR)) =>
+        for {
+          (left1, right1) <- bind(funL, funR)
+          (left2, right2) <- bind(argL, argR)
+        } yield (left1 ++ left2, right1 ++ right2)
+      case _ => None
     }
 }
