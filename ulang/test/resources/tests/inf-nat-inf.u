@@ -7,7 +7,7 @@ show
   // coinduction
   (forall p n.
     p n ==>
-    (forall n. p n ==> n == 0 \/ (exists m. n == m +1 /\ (m: NatInf \/ p m))) ==>
+    (forall n. p n ==> n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ p m)) ==>
     n: NatInf) ==>
   // equality
   (forall x. x == x) ==>
