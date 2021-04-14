@@ -1,0 +1,41 @@
+data 0 +1;
+notation +1 [postfix 10];
+
+define inf := inf +1;
+
+show
+  // coinduction
+  (forall p n.
+    p n ==>
+    (forall n. p n ==> n == 0 \/ (exists m. n == m +1 /\ (m: NatInf \/ p m))) ==>
+    n: NatInf) ==>
+  // equality
+  (forall x. x == x) ==>
+  (forall x y. x == y ==> y == y) ==>
+  (forall x y z. x == y ==> y == z ==> x == z) ==>
+  // defineing equation for inf
+  // TODO this should be extractable from the definition during the proof
+  (inf == inf +1) ==>
+  // theorem
+  inf: NatInf;
+proof term
+  lambda c
+         eqR eqS eqT
+	 infSucc
+  ->
+    Inst c (lambda n -> n == inf) lambda c ->
+      Inst c inf lambda c ->
+        Cut (inf == inf)
+	    (Inst eqR inf lambda x -> x)
+	lambda infEqInf ->
+	Cut (forall n. n == inf ==>
+	       n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m == inf))
+	    (forall n.
+	       lambda nInf ->
+		 Right (Witness m inf
+		   (Inst eqT n lambda t ->
+		     Inst t inf lambda t ->
+		      Inst t (inf +1) lambda t ->
+		       t nInf infSucc,
+		    Right infEqInf)))
+	lambda cut -> c infEqInf cut;
