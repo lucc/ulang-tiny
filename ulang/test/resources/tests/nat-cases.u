@@ -43,5 +43,4 @@ proof term
 					 (Inst eqR (m +1) lambda x -> x, mNat))
         	)
       lambda step ->
-	// TODO does not work because of missing alpha equivalnce!
 	i nNat base step;

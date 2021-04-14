@@ -124,7 +124,8 @@ object ProofTermChecker {
                                          case Left(err) => throw Error(err) }
         t1 match {
           case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal =>
-          case Imp(`t2`, `goal`) =>
+          case Imp(`t2`, `goal`) =>  // term equality
+          case Imp(ant, cons) if (alphaEqui(ant, t2) && alphaEqui(cons, goal)) => // alpha equality
           case _ => throw Error(f"Can not apply $t1 to $t2")
         }
 
@@ -206,4 +207,42 @@ object ProofTermChecker {
   //       (a ==> b) a       == b
   //  case _ => App(fun, arg)
   //}
+}
+
+/**
+ * a simple attempt at alpha equivalence
+ *
+ * We use De Bruijn indices but we do not rewrite the terms.  Instead we
+ * compare the structure of the given Ulang terms and use two contexts to map
+ * variable names in the two terms to "indices".  As indices we use new Scala
+ * Objects ensuring that no two indices compare equal.  Every time we decend
+ * into a binding term constructor we map the two bound names to the same new
+ * Object.
+ */
+object alphaEqui extends ((Expr, Expr) => Boolean) {
+  type Ctx = Map[Id, Object]
+  def apply(left: Expr, right: Expr) = eqi(Map(), Map(), left, right)
+  def eqi(ctxL: Ctx, ctxR: Ctx, left: Expr, right: Expr): Boolean =
+    (left, right) match {
+      case (l: Id, r: Id) =>
+        // if both sides have bound the variable they should have bound it at
+        // the same structural position
+        if (ctxL.contains(l) && ctxR.contains(r)) ctxL(l) == ctxR(r)
+        // if only one side did bind this varialble they are not equal
+        else if (ctxL.contains(l) || ctxR.contains(r)) false
+        // global names, free variables, etc
+        else l == r
+      case (LamIds(l::ls, bodyL), LamIds(r::rs, bodyR)) =>
+        val marker = new Object()
+        val bodyL2 = if (ls == Nil) bodyL else LamIds(ls, bodyL)
+        val bodyR2 = if (ls == Nil) bodyR else LamIds(ls, bodyR)
+        eqi(ctxL + (l -> marker), ctxR + (r -> marker), bodyL2, bodyR2)
+      // TODO more general lambda terms
+      case (Bind(ql, l, bodyL), Bind(qr, r, bodyR)) if ql == qr =>
+        val marker = new Object()
+        eqi(ctxL + (l -> marker), ctxR + (r -> marker), bodyL, bodyR)
+      case (App(funL, argL), App(funR, argR)) =>
+        eqi(ctxL, ctxR, funL, funR) && eqi(ctxL, ctxR, argL, argR)
+      case _ => false
+    }
 }
