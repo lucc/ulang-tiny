@@ -35,13 +35,9 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // Schwichtenberg page 13
     e("""show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
       proof term lambda (Witness x w p) -> lambda fa -> p (Inst fa w lambda x -> x);""")
-    e("""show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
-      proof term lambda f -> forall x. lambda ha -> f (Witness x x ha);""")
-    //a -> f (Witness Term (Inst fa Term lambda x -> x));
     e("""//show (not (not (not a))) ==> not a;
       show (((a ==> False) ==> False) ==> False) ==> a ==> False;
       proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""")
-    e("""show forall a. a ==> a; proof term  lambda x -> x;""")
   }
 
   describe("working snippets") {
@@ -73,6 +69,8 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     eval("""show (a ==> forall x. b x) ==> forall x. a ==> b x;
         proof term lambda f -> forall var. lambda precond -> Inst (f precond) var lambda x -> x;""")
     // TODO why do I have to put "var" and not "x" here ----------------------^
+    eval("""show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
+      proof term lambda f -> forall x. lambda ha -> f (Witness x x ha);""")
 
     // how to construct implications
     eval("""show ((a ==> b) ==> c) ==> b ==> c;
@@ -115,6 +113,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // nested application
     eval("""show (a ==> b ==> c) ==> (a ==> b) ==> a ==> c;
           proof term lambda habc hab ha -> habc ha (hab ha);""")
+    // nested implication with multible cases and patterns
+    eval("""show a \/ b ==> c \/ d ==> (a /\ c) \/ (a /\ d) \/ (b /\ c) \/ (b /\ d);
+         proof term lambda (Left ha)  (Left hc)  -> Left (ha, hc)
+                         | (Left ha)  (Right hd) -> Right (Left (ha, hd))
+                         | (Right hb) (Left hc)  -> Right (Right (Left (hb, hc)))
+                         | (Right hb) (Right hd) -> Right (Right (Right (hb, hd)));""")
   }
 
   describe("rules") {

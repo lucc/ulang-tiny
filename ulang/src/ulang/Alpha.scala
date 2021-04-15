@@ -40,13 +40,13 @@ trait Alpha[E <: Alpha.term[E, V], V <: E with Alpha.x[E, V]] {
     }
 
     def rename(re: Map[V, V]): A = {
-      val xs = context.free(re)
+      val xs = context.free(re.values)
       val alpha = avoid(xs)
       rename(alpha, re -- bound ++ alpha)
     }
 
     def subst(su: Map[V, E]): A = {
-      val xs = context.free(su)
+      val xs = context.free(su.values)
       val alpha = avoid(xs)
       subst(alpha, su -- bound ++ alpha)
     }
@@ -73,10 +73,15 @@ trait Alpha[E <: Alpha.term[E, V], V <: E with Alpha.x[E, V]] {
     ys.toMap
   }
 
-  def free(xs: Map[V, E]): Set[V] = {
-    val ys = xs.values flatMap (_.free)
+  def free(xs: Iterable[E]): Set[V] = {
+    val ys = xs flatMap (_.free)
     ys.toSet
   }
+
+  // def free(xs: Map[V, E]): Set[V] = {
+  //   val ys = xs.values flatMap (_.free)
+  //   ys.toSet
+  // }
 
   def subst[B <: E](xs: (V, B)*): Map[V, B] = {
     xs.toMap
@@ -97,5 +102,14 @@ trait Alpha[E <: Alpha.term[E, V], V <: E with Alpha.x[E, V]] {
       case (x, e) => (x, e subst outer)
     }
     updated ++ outer
+  }
+
+  def avoiding[A](bound: Set[V], su0: Map[E, E])(f: (Map[V, V], Map[E, E]) => A): A = {
+      val su1 = su0 filter { case (k,v) => k.free disjoint bound }
+      val ys = free(su1.values)
+      val captured = bound & ys
+      val re = fresh(captured)
+      val su2 = su1 -- bound ++ re
+      f(re, su2)
   }
 }

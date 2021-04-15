@@ -13,7 +13,12 @@ object ProofTermChecker {
    *  The proof is assumed to have no global assumptions.
    */
   def check(proof: Expr, goal: Expr): Option[String] =
-    Try(check(Map(), proof, goal)).toEither.swap.map(_.getMessage).toOption
+    try {
+      check(Map(), proof, goal)
+      None
+    } catch {
+      case Error(msg) => Some(msg)
+    }
 
   /** Check a proof with context
    *
@@ -61,15 +66,11 @@ object ProofTermChecker {
         check(ctx, p2, f2)
       case (LeftE(p), Or(f, _)) => check(ctx, p, f)
       case (RightE(p), Or(_, f)) => check(ctx, p, f)
-      // special case for lambdas with one pattern only
-      case (Lam1(List(pat), body), Imp(ant, cons)) =>
-        check(bind(ctx, pat, ant), body, cons)
-      // special case for lambdas with one case only
-      case (Lam1(pat::pats, body), Imp(ant, cons)) =>
-        check(bind(ctx, pat, ant), Lam1(pats, body), cons)
-      // special case for multible cases but with only one pattern each
-      case (Lam(cases), Imp(ant, cons)) if cases.forall(_.pats.length == 1) =>
-        cases.map(c => check(bind(ctx, c.pats.head, ant), c.body, cons))
+      case (Lam(cases), Imp(ant, cons)) =>
+        cases map {
+          case Case(List(p), body) => check(bind(ctx, p, ant), body, cons)
+          case Case(p::ps, body) => check(bind(ctx, p, ant), Lam1(ps, body), cons)
+        }
 
       // predicate logic introduction rules
       case (Witness(id1, witness, p), Ex(id2, matrix)) if id1 == id2 =>
@@ -81,7 +82,7 @@ object ProofTermChecker {
         // setting the formula must quantify over the free variable without
         // renameing, and the alpha renameing can be done later on if the new
         // name does not occur free in the formula.
-        val openFree = Expr free ctx
+        val openFree = Expr free ctx.values
         if (openFree.contains(param) || (id != param && body.free.contains(id)))
           throw Error("Capturing variable " + param)
         else
@@ -98,22 +99,12 @@ object ProofTermChecker {
         val Right(All(x, phi)) = infer(ctx, pt)
         check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
 
-      // different cases for modus ponens
-      case (App(Lam1(pat, body), arg), _) =>
+      // modus ponens is checked by infering the type of the argument and then
+      // rerouting the check to Imp introduction.
+      case (App(p@Lam(cases), arg), _) =>
         infer(ctx, arg) match {
           case Left(err) => throw Error(err)
-          case Right(t) =>
-            pat match {
-              case Nil => throw Error("This should never happen")
-              case List(p) => check(bind(ctx, p, t), body, goal)
-              case p::ps => check(bind(ctx, p, t), Lam1(ps, body), goal)
-            }
-        }
-      case (App(Lam(cases), arg), _) =>
-        infer(ctx, arg) match {
-          case Left(err) => throw Error(err)
-          case Right(t) =>
-            cases map (cs => check(bind(ctx, cs.pats.head, t), cs.body, goal))
+          case Right(t) => check(ctx, p, Imp(t, goal))
         }
 
       // Defined functions are shadowed by assumptions from the context and
@@ -133,7 +124,8 @@ object ProofTermChecker {
                                          case Left(err) => throw Error(err) }
         t1 match {
           case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal =>
-          case Imp(`t2`, `goal`) =>
+          case Imp(`t2`, `goal`) =>  // term equality
+          case Imp(ant, cons) if (alphaEqui(ant, t2) && alphaEqui(cons, goal)) => // alpha equality
           case _ => throw Error(f"Can not apply $t1 to $t2")
         }
 
@@ -215,4 +207,62 @@ object ProofTermChecker {
   //       (a ==> b) a       == b
   //  case _ => App(fun, arg)
   //}
+}
+
+/**
+ * a simple attempt at alpha equivalence
+ *
+ * We use De Bruijn indices but we do not rewrite the terms.  Instead we
+ * compare the structure of the given Ulang terms and use two contexts to map
+ * variable names in the two terms to "indices".  As indices we use new Scala
+ * Objects ensuring that no two indices compare equal.  Every time we decend
+ * into a binding term constructor we map the two bound names to the same new
+ * Object.
+ */
+object alphaEqui extends ((Expr, Expr) => Boolean) {
+  type Ctx = Map[Id, Object]
+  def apply(left: Expr, right: Expr) = eqi(Map(), Map(), left, right)
+  def eqi(ctxL: Ctx, ctxR: Ctx, left: Expr, right: Expr): Boolean =
+    (left, right) match {
+      case (l: Id, r: Id) =>
+        // if both sides have bound the variable they should have bound it at
+        // the same structural position
+        if (ctxL.contains(l) && ctxR.contains(r)) ctxL(l) == ctxR(r)
+        // if only one side did bind this varialble they are not equal
+        else if (ctxL.contains(l) || ctxR.contains(r)) false
+        // global names, free variables, etc
+        else l == r
+      case (Lam1(l::ls, bodyL), Lam1(r::rs, bodyR)) =>
+        val bodyL2 = if (ls == Nil) bodyL else Lam1(ls, bodyL)
+        val bodyR2 = if (rs == Nil) bodyR else Lam1(rs, bodyR)
+        bind(l, r) match {
+          case None => false
+          case Some((l, r)) => eqi(ctxL ++ l, ctxR ++ r, bodyL2, bodyR2)
+        }
+      case (Lam(casesL), Lam(casesR)) =>
+        casesL zip casesR forall(p =>
+            eqi(ctxL, ctxR, Lam(List(p._1)), Lam(List(p._2))))
+      case (Bind(ql, l, bodyL), Bind(qr, r, bodyR)) if ql == qr =>
+        val marker = new Object()
+        eqi(ctxL + (l -> marker), ctxR + (r -> marker), bodyL, bodyR)
+      case (App(funL, argL), App(funR, argR)) =>
+        eqi(ctxL, ctxR, funL, funR) && eqi(ctxL, ctxR, argL, argR)
+      case _ => false
+    }
+  def bind(left: Expr, right: Expr): Option[(Ctx, Ctx)] =
+    (left, right) match {
+      case (left: Id, right: Id)
+        if !context.isTag(left) && !context.isTag(right) =>
+          val marker = new Object()
+          Some((Map(left -> marker), Map(right -> marker)))
+      case (App(funL: Id, left), App(funR: Id, right)) =>
+        if (context.isTag(funL) && funL == funR) bind(left, right)
+        else None
+      case (App(funL, argL), App(funR, argR)) =>
+        for {
+          (left1, right1) <- bind(funL, funR)
+          (left2, right2) <- bind(argL, argR)
+        } yield (left1 ++ left2, right1 ++ right2)
+      case _ => None
+    }
 }

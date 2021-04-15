@@ -1,0 +1,39 @@
+data 0 +1;
+notation +1 [postfix 10];
+
+show
+  // induction schema for Nat
+  (forall p n. (n: Nat) ==> (p 0) ==> (forall m. (m: Nat) ==> p m ==> p (m +1)) ==> p n) ==>
+  // intro axioms for natural numbers
+  (0: Nat) ==>
+  (forall m. (m: Nat) ==> (m +1: Nat)) ==>
+  // coinduction schema for NatInf
+  // This is taken from Schwichtenberg p.323 / §7.1.7
+  (forall p n. p n ==>
+    (forall n. (p n) ==> n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ p m)) ==> n: NatInf) ==>
+  // equality
+  (forall x. x == x) ==>
+  // theorem
+  0: NatInf /\ forall k. k: NatInf ==> k +1: NatInf;
+proof term
+  lambda i z s c eqR ->
+  Cut (0: NatInf)
+      (Inst c (lambda n -> n == 0) lambda c ->
+       Inst c 0 lambda c ->
+       Cut (forall n. n == 0 ==> n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m == 0))
+           (forall n. lambda n0 -> Left n0)
+       lambda step ->
+       Inst eqR 0 lambda eq0 ->
+       c eq0 step)
+  lambda zero ->
+  Cut (forall k. k: NatInf ==> k +1: NatInf)
+      (forall k. lambda kNatInf ->
+       Inst c (lambda n -> n == k +1) lambda c ->
+       Inst c (k +1) lambda c ->
+       Inst eqR (k +1) lambda eqk+1 ->
+       Cut (forall n. n == k +1 ==> n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m == k +1))
+           (forall n. lambda n=k1 -> Right (Witness m k (n=k1, Left kNatInf)))
+       lambda step ->
+       c eqk+1 step)
+  lambda succ ->
+  (zero, succ);
