@@ -1,12 +1,13 @@
 data 0 +1;
 notation +1 [postfix 10];
 
+assume
+  (forall p n. (n: Nat) ==> (p 0) ==> (forall m. (m: Nat) ==> p m ==> p (m +1)) ==> p n);
+  (0: Nat);
+  (forall m. (m: Nat) ==> (m +1: Nat));
+  (0: NatInf);
+  (forall m. (m: NatInf) ==> (m +1: NatInf));
 show
-  (forall p n. (n: Nat) ==> (p 0) ==> (forall m. (m: Nat) ==> p m ==> p (m +1)) ==> p n) ==>
-  (0: Nat) ==>
-  (forall m. (m: Nat) ==> (m +1: Nat)) ==>
-  (0: NatInf) ==>
-  (forall m. (m: NatInf) ==> (m +1: NatInf)) ==>
   (k: Nat) ==> (k: NatInf);
 proof term
   lambda i
