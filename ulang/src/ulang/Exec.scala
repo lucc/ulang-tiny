@@ -121,8 +121,8 @@ object Exec {
         println("  " + intro)
       println()
 
-    case Thm(Nil, show, Some(Term(proofterm))) =>
-      ProofTermChecker.check(proofterm, show) match {
+    case Thm(assume, show, Some(Term(proofterm))) =>
+      ProofTermChecker.check(proofterm, Imp(assume, show)) match {
         case None => println(proofterm + " proves " + show)
         case Some(err) => fail(err)
       }
