@@ -9,7 +9,7 @@ show
   (forall m. (m: Nat) ==> (m +1: Nat)) ==>
   // equality
   (forall x. x == x) ==>
-  (forall x y. x == y ==> y == y) ==>
+  (forall x y. x == y ==> y == x) ==>
   (forall x y z. x == y ==> y == z ==> x == z) ==>
   // TODO the injectivity of constructors should be extractable by the system
   (forall x y. x +1 == y +1 ==> x == y) ==>

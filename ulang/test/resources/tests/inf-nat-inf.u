@@ -11,7 +11,7 @@ show
     n: NatInf) ==>
   // equality
   (forall x. x == x) ==>
-  (forall x y. x == y ==> y == y) ==>
+  (forall x y. x == y ==> y == x) ==>
   (forall x y z. x == y ==> y == z ==> x == z) ==>
   // defineing equation for inf
   // TODO this should be extractable from the definition during the proof
