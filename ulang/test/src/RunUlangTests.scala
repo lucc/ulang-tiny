@@ -119,6 +119,9 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
                          | (Left ha)  (Right hd) -> Right (Left (ha, hd))
                          | (Right hb) (Left hc)  -> Right (Right (Left (hb, hc)))
                          | (Right hb) (Right hd) -> Right (Right (Right (hb, hd)));""")
+    // use an assumption with alpha equivalence
+    eval("""show forall p. (forall x. p x) ==> (forall y. p y);
+      proof term forall p. lambda a -> a;""")
   }
 
   describe("rules") {

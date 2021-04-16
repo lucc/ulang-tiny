@@ -43,7 +43,7 @@ object ProofTermChecker {
       // to match against any goal (even "False").  If the given goal is not
       // in the context we fall through to the other cases.
       case (id: Id, _) if ctx contains id =>
-        if (ctx(id) != goal)
+        if (!alphaEqui(ctx(id), goal))
           throw Error(f"Assumption $id does not match the goal $goal")
       case (id: Id, _) if context.lemmas contains id =>
         if (context.lemmas(id) != goal)
