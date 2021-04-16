@@ -11,9 +11,6 @@ show
   // This is taken from Schwichtenberg p.323 / §7.1.7
   (forall p n. p n ==>
     (forall n. (p n) ==> n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ p m)) ==> n: NatInf) ==>
-  // more intro axioms for NatInf?
-  (0: NatInf) ==>
-  (forall m. (m: NatInf) ==> (m +1: NatInf)) ==>
   // equality
   (forall x. x == x) ==>
   (forall x y. x == y ==> y == y) ==>
@@ -24,10 +21,9 @@ show
   // the theorem
   (k: Nat) ==> (k: NatInf);
 proof term
-  lambda i z1 s1
-         c z2 s2
+  lambda i z s c
          eqR eqS eqT
-         inj coInj
+         inj disj
          kNat ->
     Cut (forall n. n: Nat ==> n == 0 \/ exists m. n == m +1 /\ m: Nat)
         (forall n.
@@ -43,10 +39,10 @@ proof term
 			   m +1 == 0 \/ exists m2. (m +1 == m2 +1 /\ m2: Nat))
 		(forall m. lambda mNat ->
 		   lambda (Left ih) -> Right (Witness m2 0
-					      (Inst coInj m lambda coInj ->
-						 Inst coInj 0 lambda coInj ->
-						   coInj ih
-					      , z1))
+					      (Inst disj m lambda disj ->
+						 Inst disj 0 lambda disj ->
+						   disj ih
+					      , z))
 		        | (Right ih) -> Right (Witness m2 m
 					       (Inst eqR (m +1) lambda x -> x
 					       , mNat)))
