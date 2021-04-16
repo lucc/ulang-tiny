@@ -38,6 +38,17 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     e("""//show (not (not (not a))) ==> not a;
       show (((a ==> False) ==> False) ==> False) ==> a ==> False;
       proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""")
+    // automatic forall instantiation with alpha equivalence
+    e("""show (a t /\ exists y. phi y) ==> (forall x. (a x /\ exists y. p y) ==> b x) ==> b t;
+      proof term lambda ha hfa -> hfa ha;""")
+    // completeness check for destruction with lambda terms is still missing
+    it("incomplete pattern match") { pendingUntilFixed {
+      assertThrows {
+        ulang.Exec.run("""show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
+      // this should fail because the Right case is missing
+      proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x);""")
+      }
+    }}
   }
 
   describe("working snippets") {

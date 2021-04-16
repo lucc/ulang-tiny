@@ -123,7 +123,7 @@ object ProofTermChecker {
         val t2 = infer(ctx, arg) match { case Right(t) => t
                                          case Left(err) => throw Error(err) }
         t1 match {
-          case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal =>
+          case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal =>  // TODO alpha equi
           case Imp(`t2`, `goal`) =>  // term equality
           case Imp(ant, cons) if (alphaEqui(ant, t2) && alphaEqui(cons, goal)) => // alpha equality
           case _ => throw Error(f"Can not apply $t1 to $t2")
@@ -181,6 +181,9 @@ object ProofTermChecker {
       case (App(id1: Id, term1), App(id2: Id, term2))
         if context.isTag(id1) && id1 == id2 => apply(term1, term2, body)
       case (App(f1, a1), App(f2, a2)) => apply(a1, a2, apply(f1, f2, body))
+      // TODO apply with apha equivalence
+      //case (Bind(q1, id1, body1), Bind(q2, id2, body2)) if q1 == q2 =>
+      //  throw new RuntimeException("apply can not check alpha equivalence yet")
     }
   def apply(cases: List[Case], arg: Expr): List[Expr] = cases.map {
     case Case(List(p), body) => apply(p, arg, body)
