@@ -51,7 +51,7 @@ object Print {
     case Notation(fixs) => "notation " + fixs.mkString(";") + ";"
     case Evals(exprs) => "eval " + exprs.mkString(";") + ";"
     case Ind(cases, kind) => ???
-    case Thm(assume, show, _) => print(assume, List(show))
+    case Thm(name, assume, show, _) => print(name, assume, List(show))
     case Tests(tests) => "test " + tests.mkString(";") + ";"
   }
 
@@ -77,17 +77,18 @@ object Print {
     suc.mkString("show ", " \\/ ", ";")
   }
 
-  def print(ant: List[Expr], suc: List[Expr]): String = {
-    if (ant.isEmpty)
-      show(suc)
-    else
-      assume(ant) + " " + show(suc)
+  def print(name: Option[Id], ant: List[Expr], suc: List[Expr]): String = {
+    val head = if (name.isDefined) "lemma " + name + " :="
+               else ""
+    val body = if (ant.isEmpty) show(suc)
+               else assume(ant) + " " + show(suc)
+    head + body
   }
 
   def print(goal: Open): String = {
     val ant = goal.pre
     val suc = goal.suc
-    print(ant, suc)
+    print(None, ant, suc)
   }
 
   def format(proof: Proof, indent: String = ""): List[String] = proof match {

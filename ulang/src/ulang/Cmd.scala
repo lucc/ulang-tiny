@@ -47,8 +47,22 @@ case object Least extends Fix
 case object Greatest extends Fix
 
 case class Ind(cases: List[Expr], kind: Fix) extends Cmd
-case class Thm(assume: List[Expr], show: Expr, proof: Option[Tactic]) extends Cmd
-
-object Thm0 extends ((Expr, Option[Tactic]) => Thm) {
-  def apply(show: Expr, proof: Option[Tactic]) = Thm(Nil, show, proof)
+case class Thm(name: Option[Id], assume: List[Expr], show: Expr, proof: Option[Tactic]) extends Cmd
+object Thm {
+  object show0 extends ((Expr, Option[Tactic]) => Thm) {
+    def apply(show: Expr, proof: Option[Tactic]): Thm =
+      Thm(None, Nil, show, proof)
+  }
+  object lem0 extends ((Id, Expr, Option[Tactic]) => Thm) {
+    def apply(name: Id, show: Expr, proof: Option[Tactic]): Thm =
+      Thm(Some(name), Nil, show, proof)
+  }
+  object show_ extends ((List[Expr], Expr, Option[Tactic]) => Thm) {
+    def apply(assume: List[Expr], show: Expr, proof: Option[Tactic]): Thm =
+      Thm(None, assume, show, proof)
+  }
+  object lem extends ((Id, List[Expr], Expr, Option[Tactic]) => Thm) {
+    def apply(name: Id, assume: List[Expr], show: Expr, proof: Option[Tactic]): Thm =
+      Thm(Some(name), assume, show, proof)
+  }
 }
