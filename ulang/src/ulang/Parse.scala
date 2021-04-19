@@ -136,9 +136,8 @@ object Parse {
   val greatest = Ind(section("coinductive", expr) ~ ret(Greatest))
 
   val proof = "proof" ~ tactic ~ ";"
-  val thm = Thm.lem(lemma ~ assume ~ show ~ proof.?) |
-            Thm.lem0(lemma ~ show ~ proof.?) |
-            Thm.show_(assume ~ show ~ proof.?) |
+  val thm = Thm.lem(lemma ~ assume.? ~ show ~ proof.?) |
+            Thm.show(assume ~ show ~ proof.?) |
             Thm.show0(show ~ proof.?)
 
   val script = cmd.*
