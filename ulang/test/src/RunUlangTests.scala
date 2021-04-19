@@ -133,6 +133,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // use an assumption with alpha equivalence
     eval("""show forall p. (forall x. p x) ==> (forall y. p y);
       proof term forall p. lambda a -> a;""")
+    // lambdas that can not be type infered can still be used with a Cut
+    eval("""show (((a ==> False) ==> False) ==> False) ==> a ==> False;
+      proof term lambda h3n ha ->
+        Cut ((a ==> False) ==> False)
+            (lambda h1n -> h1n ha)
+        lambda h2n -> h3n h2n;""")
   }
 
   describe("rules") {
