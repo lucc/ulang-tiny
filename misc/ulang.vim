@@ -11,7 +11,7 @@ let s:cpo_save = &cpo
 set cpo&vim
 
 syntax keyword ulangCommand define eval test data notation inductive coinductive proof
-syntax keyword ulangCommand2 assume show
+syntax keyword ulangCommand2 lemma assume show
 "syntax keyword ulangFixity infix infixr infixl prefix postfix
 syntax keyword ulangTactic induction cases have case
 syntax keyword ulangCommand3 qed use
