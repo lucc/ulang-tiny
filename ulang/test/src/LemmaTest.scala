@@ -2,7 +2,7 @@ import org.scalatest.funspec.AnyFunSpec
 import ulang.Parse.script
 import ulang.Parse.whitespace
 
-class LemmaTest extends AnyFunSpec {
+class LemmaTest extends AnyFunSpec with PreloadLoader {
 
   import ulang.{Id, Imp}
   val a = Id("a")
