@@ -125,9 +125,12 @@ object Exec {
       val goal = Imp(assume, show)
       ProofTermChecker.check(proofterm, goal) match {
         case None =>
-          println(proofterm + " proves " + show)
-          if (name.isDefined)
+          if (name.isDefined) {
             context.lemmas += (name.get -> goal)
+            println("lemma " + name.get + " := " + goal)
+          } else {
+            println(proofterm + " proves " + show)
+          }
         case Some(err) => fail(err)
       }
 
