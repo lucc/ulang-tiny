@@ -8,6 +8,10 @@ class LemmaTest extends AnyFunSpec with PreloadLoader {
   val a = Id("a")
   val foo = Id("foo")
 
+  val mock_stdout = new java.io.ByteArrayOutputStream()
+  def noStdout(test: => Unit) = Console.withOut(mock_stdout)(test)
+  def eval(snippet: String) = noStdout { ulang.Exec.run(snippet) }
+
   describe("starting lemmas") {
     it("with a name and assumptions") {
       script.parse("lemma foo := assume a; show a;")
@@ -25,7 +29,7 @@ class LemmaTest extends AnyFunSpec with PreloadLoader {
   describe("saving lemmas") {
     import ulang.context.lemmas
     it("works") {
-      ulang.Exec.run("lemma foo := show a ==> a; proof term lambda x -> x;")
+      eval("lemma foo := show a ==> a; proof term lambda x -> x;")
       assert(lemmas contains foo)
       assert(lemmas(foo) == Imp(a, a))
     }
@@ -35,7 +39,7 @@ class LemmaTest extends AnyFunSpec with PreloadLoader {
     import ulang.context.lemmas
     it("works") {
       lemmas += (foo -> Imp(a, a))
-      ulang.Exec.run("show a ==> a; proof term foo;")
+      eval("show a ==> a; proof term foo;")
     }
   }
 }
