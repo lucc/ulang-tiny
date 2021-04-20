@@ -95,9 +95,15 @@ object ProofTermChecker {
 
       // TODO predicate logic elimination rules?
 
-      case (Inst(pt, t, pt2), _) if cond(infer(ctx, pt)) {case Right(All(_, _)) => true} =>
-        val Right(All(x, phi)) = infer(ctx, pt)
-        check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
+      case (Inst(pt, t, pt2), _) =>
+        infer(ctx, pt) match {
+          case Right(All(x, phi)) =>
+            check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
+          case Right(t) =>
+            throw Error("Inst needs a forall formula, not " + t)
+          case Left(text) =>
+            throw Error(text)
+        }
 
       // modus ponens is checked by infering the type of the argument and then
       // rerouting the check to Imp introduction.
