@@ -4,7 +4,7 @@ import ulang.Parse.whitespace
 
 class LemmaTest extends AnyFunSpec with PreloadLoader {
 
-  import ulang.{Id, Imp}
+  import ulang.{Id, Imp, All}
   val a = Id("a")
   val foo = Id("foo")
 
@@ -40,6 +40,10 @@ class LemmaTest extends AnyFunSpec with PreloadLoader {
     it("works") {
       lemmas += (foo -> Imp(a, a))
       eval("show a ==> a; proof term foo;")
+    }
+    it("with alpha equivalence") {
+      lemmas += (foo -> All(a, Imp(a, a)))
+      eval("show forall b. b ==> b; proof term foo;")
     }
   }
 }

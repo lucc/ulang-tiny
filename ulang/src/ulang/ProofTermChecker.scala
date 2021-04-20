@@ -46,7 +46,7 @@ object ProofTermChecker {
         if (!alphaEqui(ctx(id), goal))
           throw Error(f"Assumption $id does not match the goal $goal")
       case (id: Id, _) if context.lemmas contains id =>
-        if (context.lemmas(id) != goal)
+        if (!alphaEqui(context.lemmas(id), goal))
           throw Error(f"Lemma $id does not match the goal $goal")
       case (id: Id, _) if context.funs contains id =>
         check(ctx, Lam(context.funs(id)), goal)
