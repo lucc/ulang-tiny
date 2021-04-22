@@ -121,16 +121,24 @@ object Exec {
         println("  " + intro)
       println()
 
-    case Thm(Nil, show, Some(Term(proofterm))) =>
-      ProofTermChecker.check(proofterm, show) match {
-        case None => println(proofterm + " proves " + show)
+    case Thm(name, assume, show, Some(Term(proofterm))) =>
+      val goal = Imp(assume, show)
+      ProofTermChecker.check(proofterm, goal) match {
+        case None =>
+          if (name.isDefined) {
+            context.lemmas += (name.get -> goal)
+            println("lemma " + name.get + " := " + goal)
+          } else {
+            println(proofterm + " proves " + show)
+          }
         case Some(err) => fail(err)
       }
 
-    case Thm(assume, show, tactic) =>
+    case Thm(name, assume, show, tactic) =>
       val proof = Prove.prove(assume, show, tactic)
       for (line <- Print.format(proof))
         println(line)
+      // TODO how to check if the proof succeeded and save the lemma?
 
     case _ =>
   }

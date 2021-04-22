@@ -5,9 +5,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
 
   val mock_stdout = new java.io.ByteArrayOutputStream()
   def noStdout(test: => Unit) = Console.withOut(mock_stdout)(test)
-  def testFiles(folder: String) =
-    new File(getClass.getResource("/"+folder).getFile()).listFiles(
+  def testFiles(folder: String): Array[String] = {
+    val res = getClass.getResource("/"+folder)
+    if (res == null) Array.empty
+    else new File(res.getFile()).listFiles(
       (_, name) => name endsWith ".u").map(_.getAbsolutePath)
+  }
   def run(file: String, pending: Boolean = false) = it(file) {
     if (pending) pendingUntilFixed { ulang.Exec.runFile(file) }
     else noStdout { ulang.Exec.runFile(file) }
@@ -38,6 +41,17 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     e("""//show (not (not (not a))) ==> not a;
       show (((a ==> False) ==> False) ==> False) ==> a ==> False;
       proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""")
+    // automatic forall instantiation with alpha equivalence
+    e("""show (a t /\ exists y. phi y) ==> (forall x. (a x /\ exists y. p y) ==> b x) ==> b t;
+      proof term lambda ha hfa -> hfa ha;""")
+    // completeness check for destruction with lambda terms is still missing
+    it("incomplete pattern match") { pendingUntilFixed {
+      assertThrows {
+        ulang.Exec.run("""show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
+      // this should fail because the Right case is missing
+      proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x);""")
+      }
+    }}
   }
 
   describe("working snippets") {
@@ -119,6 +133,15 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
                          | (Left ha)  (Right hd) -> Right (Left (ha, hd))
                          | (Right hb) (Left hc)  -> Right (Right (Left (hb, hc)))
                          | (Right hb) (Right hd) -> Right (Right (Right (hb, hd)));""")
+    // use an assumption with alpha equivalence
+    eval("""show forall p. (forall x. p x) ==> (forall y. p y);
+      proof term forall p. lambda a -> a;""")
+    // lambdas that can not be type infered can still be used with a Cut
+    eval("""show (((a ==> False) ==> False) ==> False) ==> a ==> False;
+      proof term lambda h3n ha ->
+        Cut ((a ==> False) ==> False)
+            (lambda h1n -> h1n ha)
+        lambda h2n -> h3n h2n;""")
   }
 
   describe("rules") {

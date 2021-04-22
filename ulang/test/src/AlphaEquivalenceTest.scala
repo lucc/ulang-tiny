@@ -29,5 +29,7 @@ class AlphaEquivalenceTest extends AnyFunSpec with PreloadLoader {
     t("forall x. phi x", "forall z. phi z")
     t("exists x. phi x", "exists z. phi z")
     f("forall x. phi x", "exists x. phi x", "different quantors")
+    t("lambda x y -> x y", "lambda a -> lambda b -> a b")
+    t("forall x y. x y", "forall a. forall b. a b")
   }
 }

@@ -2,11 +2,6 @@ data 0 +1;
 notation +1 [postfix 10];
 
 show
-  // induction schema for Nat
-  (forall p n. (n: Nat) ==> (p 0) ==> (forall m. (m: Nat) ==> p m ==> p (m +1)) ==> p n) ==>
-  // intro axioms for natural numbers
-  (0: Nat) ==>
-  (forall m. (m: Nat) ==> (m +1: Nat)) ==>
   // coinduction schema for NatInf
   // This is taken from Schwichtenberg p.323 / §7.1.7
   (forall p n. p n ==>
@@ -16,7 +11,7 @@ show
   // theorem
   0: NatInf /\ forall k. k: NatInf ==> k +1: NatInf;
 proof term
-  lambda i z s c eqR ->
+  lambda c eqR ->
   Cut (0: NatInf)
       (Inst c (lambda n -> n == 0) lambda c ->
        Inst c 0 lambda c ->

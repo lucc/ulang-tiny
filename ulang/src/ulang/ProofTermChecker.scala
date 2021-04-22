@@ -43,10 +43,10 @@ object ProofTermChecker {
       // to match against any goal (even "False").  If the given goal is not
       // in the context we fall through to the other cases.
       case (id: Id, _) if ctx contains id =>
-        if (ctx(id) != goal)
+        if (!alphaEqui(ctx(id), goal))
           throw Error(f"Assumption $id does not match the goal $goal")
       case (id: Id, _) if context.lemmas contains id =>
-        if (context.lemmas(id) != goal)
+        if (!alphaEqui(context.lemmas(id), goal))
           throw Error(f"Lemma $id does not match the goal $goal")
       case (id: Id, _) if context.funs contains id =>
         check(ctx, Lam(context.funs(id)), goal)
@@ -95,9 +95,15 @@ object ProofTermChecker {
 
       // TODO predicate logic elimination rules?
 
-      case (Inst(pt, t, pt2), _) if cond(infer(ctx, pt)) {case Right(All(_, _)) => true} =>
-        val Right(All(x, phi)) = infer(ctx, pt)
-        check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
+      case (Inst(pt, t, pt2), _) =>
+        infer(ctx, pt) match {
+          case Right(All(x, phi)) =>
+            check(ctx, pt2, Imp(phi.subst(Map(x -> t)), goal))
+          case Right(t) =>
+            throw Error("Inst needs a forall formula, not " + t)
+          case Left(text) =>
+            throw Error(text)
+        }
 
       // modus ponens is checked by infering the type of the argument and then
       // rerouting the check to Imp introduction.
@@ -123,7 +129,7 @@ object ProofTermChecker {
         val t2 = infer(ctx, arg) match { case Right(t) => t
                                          case Left(err) => throw Error(err) }
         t1 match {
-          case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal =>
+          case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal =>  // TODO alpha equi
           case Imp(`t2`, `goal`) =>  // term equality
           case Imp(ant, cons) if (alphaEqui(ant, t2) && alphaEqui(cons, goal)) => // alpha equality
           case _ => throw Error(f"Can not apply $t1 to $t2")
@@ -181,6 +187,9 @@ object ProofTermChecker {
       case (App(id1: Id, term1), App(id2: Id, term2))
         if context.isTag(id1) && id1 == id2 => apply(term1, term2, body)
       case (App(f1, a1), App(f2, a2)) => apply(a1, a2, apply(f1, f2, body))
+      // TODO apply with apha equivalence
+      //case (Bind(q1, id1, body1), Bind(q2, id2, body2)) if q1 == q2 =>
+      //  throw new RuntimeException("apply can not check alpha equivalence yet")
     }
   def apply(cases: List[Case], arg: Expr): List[Expr] = cases.map {
     case Case(List(p), body) => apply(p, arg, body)

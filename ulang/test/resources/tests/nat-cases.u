@@ -9,7 +9,7 @@ show
   (forall m. (m: Nat) ==> (m +1: Nat)) ==>
   // equality
   (forall x. x == x) ==>
-  (forall x y. x == y ==> y == y) ==>
+  (forall x y. x == y ==> y == x) ==>
   (forall x y z. x == y ==> y == z ==> x == z) ==>
   // TODO the injectivity of constructors should be extractable by the system
   (forall x y. x +1 == y +1 ==> x == y) ==>
@@ -17,10 +17,9 @@ show
   // the theorem
   (forall n. n: Nat ==> n == 0 \/ exists m. n == m +1 /\ m: Nat);
 proof term
-  lambda i
-    z1 s1
+  lambda i z s
     eqR eqS eqT
-    inj coInj ->
+    inj disj ->
   forall n.
     lambda nNat ->
       Inst i (lambda n -> n == 0 \/ exists m. n == m +1 /\ m: Nat) lambda i ->
@@ -35,10 +34,10 @@ proof term
 		     m +1 == 0 \/ exists m2. (m +1 == m2 +1 /\ m2: Nat))
 	  (forall m. lambda mNat ->
 	     lambda (Left ih) -> Right (Witness m2 0
-					(Inst coInj m lambda coInj ->
-					   Inst coInj 0 lambda coInj ->
-					     coInj ih
-					, z1))
+					(Inst disj m lambda disj ->
+					   Inst disj 0 lambda disj ->
+					     disj ih
+					, z))
 		  | (Right ih) -> Right (Witness m2 m
 					 (Inst eqR (m +1) lambda x -> x, mNat))
         	)

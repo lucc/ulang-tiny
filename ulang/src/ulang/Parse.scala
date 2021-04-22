@@ -16,7 +16,8 @@ object Parse {
   def bracks[A](p: Parser[A]) = "[" ~ p ~ "]"
 
   val keywords = Set(
-    "define", "data", "notation", "eval", "test", "assume", "show", "proof",
+    "define", "data", "notation", "eval", "test",
+    "lemma", "assume", "show", "proof",
     "inductive", "coinductive",
     ";", "(", ")", "{", "}", "[", "]", "->", "|", ":=",
     "if", "then", "else",
@@ -100,6 +101,7 @@ object Parse {
 
   val assume = section("assume", expr)
   val show = "show" ~ expr ~ ";"
+  val lemma = "lemma" ~ id ~ ":="
 
   /**
    * The parser for data blocks has the side effect of storing the defined
@@ -134,7 +136,9 @@ object Parse {
   val greatest = Ind(section("coinductive", expr) ~ ret(Greatest))
 
   val proof = "proof" ~ tactic ~ ";"
-  val thm = Thm(assume ~ show ~ proof.?) | Thm0(show ~ proof.?)
+  val thm = Thm.lem(lemma ~ assume.? ~ show ~ proof.?) |
+            Thm.show(assume ~ show ~ proof.?) |
+            Thm.show0(show ~ proof.?)
 
   val script = cmd.*
 }

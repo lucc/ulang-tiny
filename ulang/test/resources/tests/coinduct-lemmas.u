@@ -1,0 +1,74 @@
+data 0 +1;
+notation +1 [postfix 10];
+
+lemma natCases :=
+assume
+  // induction schema for Nat
+  (forall p n. (n: Nat) ==> (p 0) ==> (forall m. (m: Nat) ==> p m ==> p (m +1)) ==> p n);
+  // intro axioms for natural numbers
+  (0: Nat);
+  (forall m. (m: Nat) ==> (m +1: Nat));
+  // equality
+  (forall x. x == x);
+  // TODO the disjunctivity of constructors should be extractable by the system
+  (forall x y. x == y ==> x +1 == y +1);
+show
+  forall n. n: Nat ==> n == 0 \/ exists m. n == m +1 /\ m: Nat;
+proof term
+  lambda i z s
+         eqR disj ->
+        forall n.
+	  lambda nNat ->
+	  Inst i (lambda n -> n == 0 \/ exists m. n == m +1 /\ m: Nat)
+	  lambda i -> Inst i n
+	  lambda i ->
+	    Cut (0 == 0 \/ exists m. 0 == m +1 /\ m: Nat)
+		(Inst eqR 0 lambda eq0 -> Left eq0)
+	    lambda base ->
+	    Cut (forall m. m: Nat ==>
+			   (m == 0 \/ exists m1. m == m1 +1 /\ m1: Nat) ==>
+			   m +1 == 0 \/ exists m2. (m +1 == m2 +1 /\ m2: Nat))
+		(forall m. lambda mNat ->
+		   lambda (Left ih) -> Right (Witness m2 0
+					      (Inst disj m lambda disj ->
+						 Inst disj 0 lambda disj ->
+						   disj ih
+					      , z))
+		        | (Right ih) -> Right (Witness m2 m
+					       (Inst eqR (m +1) lambda x -> x
+					       , mNat)))
+	    lambda step ->
+	    i nNat base step;
+
+
+assume
+  // induction schema for Nat
+  (forall p n. (n: Nat) ==> (p 0) ==> (forall m. (m: Nat) ==> p m ==> p (m +1)) ==> p n);
+  // intro axioms for natural numbers
+  (0: Nat);
+  (forall m. (m: Nat) ==> (m +1: Nat));
+  // equality
+  (forall x. x == x);
+  // TODO the disjunctivity of constructors should be extractable by the system
+  (forall x y. x == y ==> x +1 == y +1);
+  // coinduction schema for NatInf
+  // This is taken from Schwichtenberg p.323 / §7.1.7
+  (forall p n. p n ==>
+    (forall n. (p n) ==> n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ p m)) ==> n: NatInf);
+show
+  (k: Nat) ==> (k: NatInf);
+proof term
+  lambda i z s
+	 eqR disj ->
+  lambda c kNat ->
+    Inst c (lambda k -> k: Nat) lambda c ->
+    Inst c k lambda c ->
+    Cut (forall n. n: Nat ==>
+        	    n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m: Nat))
+         (forall n. lambda nNat ->
+            Inst (natCases i z s eqR disj) n lambda natCases ->
+              (lambda (Left hyp) -> Left hyp
+               | (Right hyp) ->
+                    Right ((lambda (Witness m w (p,q)) -> Witness m w (p, Right q)) hyp))
+              (natCases nNat))
+    lambda cut -> c kNat cut;
