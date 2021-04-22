@@ -47,14 +47,15 @@ case object Least extends Fix
 case object Greatest extends Fix
 
 case class Ind(cases: List[Expr], kind: Fix) extends Cmd
-case class Thm(name: Option[Id], assume: List[Expr], show: Expr, proof: Option[Tactic]) extends Cmd
+case class Thm(name: Option[Id], assume: List[(Option[Id], Expr)], show: Expr, proof: Option[Tactic]) extends Cmd
+
 object Thm {
   val show0 = (show: Expr, proof: Option[Tactic]) =>
       Thm(None, Nil, show, proof)
   
-  val show = (assume: List[Expr], show: Expr, proof: Option[Tactic]) =>
+  val show = (assume: List[(Option[Id], Expr)], show: Expr, proof: Option[Tactic]) =>
       Thm(None, assume, show, proof)
 
-  val lem = (name: Id, assume: Option[List[Expr]], show: Expr, proof: Option[Tactic]) =>
+  val lem = (name: Id, assume: Option[List[(Option[Id], Expr)]], show: Expr, proof: Option[Tactic]) =>
       Thm(Some(name), assume getOrElse Nil, show, proof)
 }

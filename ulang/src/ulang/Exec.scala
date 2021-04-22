@@ -122,8 +122,14 @@ object Exec {
       println()
 
     case Thm(name, assume, show, Some(Term(proofterm))) =>
-      val goal = Imp(assume, show)
-      ProofTermChecker.check(proofterm, goal) match {
+      val named = assume collect {
+        case (Some(id), expr) => (id, expr)
+      }
+      val prems = assume collect {
+        case (None, expr) => expr
+      }
+      val goal = Imp(prems, show)
+      ProofTermChecker.checkSafe(named.toMap, proofterm, goal) match {
         case None =>
           if (name.isDefined) {
             context.lemmas += (name.get -> goal)
@@ -135,7 +141,7 @@ object Exec {
       }
 
     case Thm(name, assume, show, tactic) =>
-      val proof = Prove.prove(assume, show, tactic)
+      val proof = Prove.prove(assume map (_._2), show, tactic)
       for (line <- Print.format(proof))
         println(line)
       // TODO how to check if the proof succeeded and save the lemma?
