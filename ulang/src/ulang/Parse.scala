@@ -101,7 +101,7 @@ object Parse {
 
   val assume = section("assume", expr)
   val show = "show" ~ expr ~ ";"
-  val lemma = "lemma" ~ id ~ ":="
+  val lemma = "lemma" ~ id ~ ";"
 
   /**
    * The parser for data blocks has the side effect of storing the defined

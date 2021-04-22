@@ -1,7 +1,7 @@
 data 0 +1;
 notation +1 [postfix 10];
 
-lemma natCases :=
+lemma natCases;
 assume
   // induction schema for Nat
   (forall p n. (n: Nat) ==> (p 0) ==> (forall m. (m: Nat) ==> p m ==> p (m +1)) ==> p n);

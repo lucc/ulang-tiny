@@ -14,10 +14,10 @@ class LemmaTest extends AnyFunSpec with PreloadLoader {
 
   describe("starting lemmas") {
     it("with a name and assumptions") {
-      script.parse("lemma foo := assume a; show a;")
+      script.parse("lemma foo; assume a; show a;")
     }
     it("with a name only") {
-      script.parse("lemma foo := show a ==> a;")
+      script.parse("lemma foo; show a ==> a;")
     }
     it("unnamed but with assumptions") {
       script.parse("assume a; show a;")
@@ -29,7 +29,7 @@ class LemmaTest extends AnyFunSpec with PreloadLoader {
   describe("saving lemmas") {
     import ulang.context.lemmas
     it("works") {
-      eval("lemma foo := show a ==> a; proof term lambda x -> x;")
+      eval("lemma foo; show a ==> a; proof term lambda x -> x;")
       assert(lemmas contains foo)
       assert(lemmas(foo) == Imp(a, a))
     }
