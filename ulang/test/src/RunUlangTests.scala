@@ -5,9 +5,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
 
   val mock_stdout = new java.io.ByteArrayOutputStream()
   def noStdout(test: => Unit) = Console.withOut(mock_stdout)(test)
-  def testFiles(folder: String) =
-    new File(getClass.getResource("/"+folder).getFile()).listFiles(
+  def testFiles(folder: String): Array[String] = {
+    val res = getClass.getResource("/"+folder)
+    if (res == null) Array.empty
+    else new File(res.getFile()).listFiles(
       (_, name) => name endsWith ".u").map(_.getAbsolutePath)
+  }
   def run(file: String, pending: Boolean = false) = it(file) {
     if (pending) pendingUntilFixed { ulang.Exec.runFile(file) }
     else noStdout { ulang.Exec.runFile(file) }
