@@ -1,7 +1,7 @@
 // This file defines the standard data constructors and function names for
 // Ulang.
 //
-// All of these recieve special treatment in the interpreter and should not be
+// All of these receive special treatment in the interpreter and should not be
 // changed by user code.
 
 data
