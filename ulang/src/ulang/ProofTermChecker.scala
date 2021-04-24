@@ -70,6 +70,10 @@ object ProofTermChecker {
       case (LeftE(p), Or(f, _)) => check(ctx, p, f)
       case (RightE(p), Or(_, f)) => check(ctx, p, f)
       case (Lam(cases), Imp(ant, cons)) =>
+        // FIXME check that all cases are provided by the proof term.  We need
+        // a test that the given cases fully cover the antecedent.
+        // This could either be done during binding or in an extra step
+        // afterwards.
         cases map {
           case Case(List(p), body) => check(bind(ctx, p, ant), body, cons)
           case Case(p::ps, body) => check(bind(ctx, p, ant), Lam1(ps, body), cons)
@@ -191,6 +195,8 @@ object ProofTermChecker {
    */
   def apply(pat: Expr, arg: Expr, body: Expr): Expr =
     (pat, arg) match {
+      // FIXME in ulang patterns can reuse names, we need to check that they
+      // are equal during application
       case (p: Id, _) => body.subst(Map(p -> arg))
       case (App(id1: Id, term1), App(id2: Id, term2))
         if context.isTag(id1) && id1 == id2 => apply(term1, term2, body)
