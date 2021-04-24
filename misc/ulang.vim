@@ -29,6 +29,7 @@ syntax region  ulangComment    start='//' end='$' contains=ulangTODO
 syntax case ignore
 syntax keyword ulangTODO       contained todo xxx fixme
 syntax case match
+syntax keyword ulangWarning    sorry
 
 highlight link ulangQuantifier Constant
 highlight link ulangIf         ulangInlineConstruct
@@ -52,6 +53,7 @@ highlight link ulangPrecedence          String
 highlight link ulangType                Type
 highlight link ulangComment             Comment
 highlight link ulangTODO                TODO
+highlight link ulangWarning             Error
 
 let b:current_syntax = "ulang"
 
