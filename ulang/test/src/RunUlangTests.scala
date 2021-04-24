@@ -44,6 +44,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // automatic forall instantiation with alpha equivalence
     e("""show (a t /\ exists y. phi y) ==> (forall x. (a x /\ exists y. p y) ==> b x) ==> b t;
       proof term lambda ha hfa -> hfa ha;""")
+    // weak disjunction from Schwichtenberg
+    // TODO can we use a function to compute the formula to be proven?
+    e("""define wDis a b := (a ==> False) /\ (b ==> False) ==> False;
+      show a \/ b ==> wDis a b;
+      proof term lambda hd (hna,hnb) -> (lambda (Left ha) -> hna ha
+                                              | (Right hb) -> hnb hb) hd;""")
     // completeness check for destruction with lambda terms is still missing
     it("incomplete pattern match") { pendingUntilFixed {
       assertThrows {
