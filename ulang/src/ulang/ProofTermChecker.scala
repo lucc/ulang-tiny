@@ -131,7 +131,12 @@ object ProofTermChecker {
         t1 match {
           case All(x, Imp(ant, cons)) if apply(ant, t2, cons) == goal =>  // TODO alpha equi
           case Imp(`t2`, `goal`) =>  // term equality
-          case Imp(ant, cons) if (alphaEqui(ant, t2) && alphaEqui(cons, goal)) => // alpha equality
+          case Imp(ant, cons) =>
+            (alphaEqui(ant, t2), alphaEqui(cons, goal)) match {
+              case (true, true) =>
+              case (true, false) => throw Error(f"$cons does not match $goal")
+              case (false, _) => throw Error(f"Argument $ant does not match $t2")
+            }
           case _ => throw Error(f"Can not apply $t1 to $t2")
         }
 
