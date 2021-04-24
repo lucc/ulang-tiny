@@ -12,9 +12,12 @@ object ProofTermChecker {
    *
    *  The proof is assumed to have no global assumptions.
    */
-  def check(proof: Expr, goal: Expr): Option[String] =
+  def checkSafe(proof: Expr, goal: Expr): Option[String] =
+    checkSafe(Map(), proof, goal)
+
+  def checkSafe(ctx: Map[Id, Expr], proof: Expr, goal: Expr): Option[String] =
     try {
-      check(Map(), proof, goal)
+      check(ctx, proof, goal)
       None
     } catch {
       case Error(msg) => Some(msg)

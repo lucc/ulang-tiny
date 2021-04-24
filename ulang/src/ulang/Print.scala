@@ -69,6 +69,17 @@ object Print {
     case Case1(pat, arg) => pat + " = " + arg
   }
 
+  def assume(ant: (Option[Id], Expr)): String = {
+    ant match {
+      case (None, expr)  => expr.toString
+      case (Some(id), expr) => id + " := " + expr
+    }
+  }
+
+  def assume_(ant: List[(Option[Id], Expr)]): String = {
+    ant.map(assume).mkString("assume ", "; ", ";")
+  }
+
   def assume(ant: List[Expr]): String = {
     ant.mkString("assume ", "; ", ";")
   }
@@ -77,18 +88,18 @@ object Print {
     suc.mkString("show ", " \\/ ", ";")
   }
 
-  def print(name: Option[Id], ant: List[Expr], suc: List[Expr]): String = {
+  def print(name: Option[Id], ant: List[(Option[Id], Expr)], suc: List[Expr]): String = {
     val head = if (name.isDefined) "lemma " + name + " :="
                else ""
     val body = if (ant.isEmpty) show(suc)
-               else assume(ant) + " " + show(suc)
+               else assume_(ant) + " " + show(suc)
     head + body
   }
 
   def print(goal: Open): String = {
     val ant = goal.pre
     val suc = goal.suc
-    print(None, ant, suc)
+    print(None, ant map ((None, _)), suc)
   }
 
   def format(proof: Proof, indent: String = ""): List[String] = proof match {

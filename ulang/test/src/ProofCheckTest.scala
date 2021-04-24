@@ -1,5 +1,5 @@
 import org.scalatest.funspec.AnyFunSpec
-import ulang.ProofTermChecker.check
+import ulang.ProofTermChecker.checkSafe
 import ulang.{True, False, Imp, And, Id, Expr}
 
 class ProofCheckTest extends AnyFunSpec {
@@ -9,7 +9,7 @@ class ProofCheckTest extends AnyFunSpec {
   ulang.Main.loadPrelude()
 
   def assertProves(proof: Expr, goal: Expr) {
-    check(proof, goal) match {
+    checkSafe(proof, goal) match {
       case None => assert(true)
       case Some(err) => assert(false, err)
     }

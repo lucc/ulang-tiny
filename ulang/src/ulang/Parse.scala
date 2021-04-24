@@ -99,7 +99,8 @@ object Parse {
   val fixity: Parser[Fixity] = prefix | postfix | infix
   def fix = name.+ ~ bracks(fixity)
 
-  val assume = section("assume", expr)
+  def some[A](p: Parser[A]) = p map (Some(_))
+  val assume = section("assume", ((some(id) ?~ ":=") | ret(None)) ?~ expr)
   val show = "show" ~ expr ~ ";"
   val lemma = "lemma" ~ id ~ ";"
 

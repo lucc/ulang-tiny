@@ -85,7 +85,7 @@ object Prove {
       val ant_ = ant.foldRight(True: Expr)(And(_, _))
       val suc_ = suc.foldRight(False: Expr)(Or(_, _))
       val goal_ = Imp(ant_, suc_)
-      ProofTermChecker.check(pt, goal_) match {
+      ProofTermChecker.checkSafe(pt, goal_) match {
         case None => Closed
         case Some(err) => fail(err)
       }
