@@ -1,36 +1,33 @@
 import org.scalatest.funspec.AnyFunSpec
 import java.io.File
+import scala.reflect.ClassTag
 
 class RunUlangTests extends AnyFunSpec with PreloadLoader {
 
   val mock_stdout = new java.io.ByteArrayOutputStream()
-  def noStdout(test: => Unit) = Console.withOut(mock_stdout)(test)
   def testFiles(folder: String): Array[String] = {
     val res = getClass.getResource("/"+folder)
     if (res == null) Array.empty
     else new File(res.getFile()).listFiles(
       (_, name) => name endsWith ".u").map(_.getAbsolutePath)
   }
-  def run(file: String, pending: Boolean = false) = it(file) {
-    if (pending) pendingUntilFixed { ulang.Exec.runFile(file) }
-    else noStdout { ulang.Exec.runFile(file) }
-  }
-  def eval(snippet: String, pending: Boolean = false) = it(snippet) {
-    if (pending) pendingUntilFixed { ulang.Exec.run(snippet) }
-    else noStdout { ulang.Exec.run(snippet) }
-  }
+  def mkTest(executor: (String => Any)) =
+    (input: String, pending: Boolean) => it(input) {
+      if (pending) pendingUntilFixed(executor(input))
+      else Console.withOut(mock_stdout)(executor(input))
+    }
+  def run(file: String, pending: Boolean = false) = mkTest(ulang.Exec.runFile)(file, pending)
+  def eval(snippet: String, pending: Boolean = false) = mkTest(ulang.Exec.run)(snippet, pending)
+  def failRun[E <: AnyRef](file: String, pending: Boolean = false)(implicit c: ClassTag[E]) =
+    mkTest(file => assertThrows[E](ulang.Exec.runFile(file)))(file, pending)
+  def failEval[E <: AnyRef](snippet: String, pending: Boolean = false)(implicit c: ClassTag[E]) =
+    mkTest(snippet => assertThrows[E](ulang.Exec.run(snippet)))(snippet, pending)
 
   describe("run file") {
     for (testFile <- testFiles("tests"))   run(testFile)
     for (testFile <- testFiles("pending")) run(testFile, pending=true)
-  }
-
-  describe("special files") {
-    it("the omega term should throw an exception") {
-      assertThrows[java.lang.StackOverflowError] {
-        ulang.Exec.runFile(getClass.getResource("/omega.u").getPath())
-      }
-    }
+    for (testFile <- testFiles("failing/StackOverflowError"))
+      failRun[StackOverflowError](testFile)
   }
 
   describe("pending snippets") {
@@ -183,14 +180,11 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         eval("show a ==> forall x. a; proof term lambda p -> forall x. p;")
         // existential quantifier introduction
         eval("show a t ==> exists x. a x; proof term lambda p -> Witness x t p;" )
-        it("universal quantifier introduction violating variable condition") {
-          // it would work with "a" instead of "a x"
-          val show = "show a x ==> forall x. a x;"
-          val proof = "proof term lambda p -> forall x. p;"
-          assertThrows[RuntimeException] { // Capturing variable x
-            noStdout { ulang.Exec.run(show + proof) }
-          }
-        }
+        // universal quantifier introduction violating variable condition
+        // it would work with "a" instead of "a x"
+        val show = "show a x ==> forall x. a x;"
+        val proof = "proof term lambda p -> forall x. p;"
+        failEval[RuntimeException](show + proof) // Capturing variable x
       }
       describe("elimination rules") {
         // universal quantifier elimination
@@ -199,13 +193,10 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         val exElim = "show (exists x. a x) ==> (forall x. a x ==> b) ==> b;"
         val proof ="proof term lambda (Witness x w p) -> lambda f -> Inst f w lambda ff -> ff p;"
         eval(exElim + " " + proof)
-        it("existential quantifier elimination violating variable condition") {
-          // it would work with "b" instead of "b x"
-          val badExElim = "show (exists x. a x) ==> (forall x. a x ==> b x) ==> b x;"
-          assertThrows[RuntimeException] {
-            noStdout { ulang.Exec.run(badExElim + proof) }
-          }
-        }
+        // existential quantifier elimination violating variable condition
+        // it would work with "b" instead of "b x"
+        val badExElim = "show (exists x. a x) ==> (forall x. a x ==> b x) ==> b x;"
+        failEval[RuntimeException](badExElim + proof)
       }
     }
   }
