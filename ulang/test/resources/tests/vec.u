@@ -1,0 +1,157 @@
+data 0 +1;
+notation +1 [postfix 10];
+
+data [] ::;
+notation :: [infix 10];
+
+lemma vec⊆list;
+assume
+  // induction scheme for lists
+  forall a p xs.
+    xs: List a ==>
+    p [] ==>
+    (forall y ys. y: a ==> ys: List a ==> p ys ==> p (y::ys))
+    ==> p xs;
+  // intro axioms for list
+  []: List a;
+  forall a x xs. x: a ==> xs: List a ==> x::xs: List a;
+  // induction scheme for vec
+  forall a n p xs.
+    xs: Vec a n ==>
+    p [] ==>
+    (forall n y ys. y: a ==> ys: Vec a n ==> p ys ==> p (y::ys))
+    ==> p xs;
+  // intro axioms for vec
+  forall a. []: Vec a 0;
+  forall a n x xs. x: a ==> xs: Vec a n ==> x::xs: Vec a (n +1);
+
+show
+  xs: Vec a n ==> xs: List a;
+
+proof term
+  lambda iL lNil lCons
+	 iV vNil vCons
+	 xsVec ->
+  Inst iV a lambda i ->
+  Inst i n lambda i ->
+  Inst i (lambda xs -> xs: List a) lambda i ->
+  Inst i xs lambda i ->
+  Cut (forall n y ys. y: a ==> ys: Vec a n ==> ys: List a ==> y::ys: List a)
+      (forall m y ys. lambda ya ysVec ysList ->
+		      Inst lCons a lambda lCons ->
+		      Inst lCons y lambda lCons ->
+		      Inst lCons ys lambda lCons -> lCons ya ysList)
+  lambda step ->
+    i xsVec lNil step;
+
+
+lemma list⊆vec1;
+assume
+  // induction scheme for lists
+  forall a p xs.
+    xs: List a ==>
+    p [] ==>
+    (forall y ys. y: a ==> ys: List a ==> p ys ==> p (y::ys))
+    ==> p xs;
+  // intro axioms for list
+  []: List a;
+  forall a x xs. x: a ==> xs: List a ==> x::xs: List a;
+  // induction scheme for vec
+  forall a n p xs.
+    xs: Vec a n ==>
+    p [] ==>
+    (forall n y ys. y: a ==> ys: Vec a n ==> p ys ==> p (y::ys))
+    ==> p xs;
+  // intro axioms for vec
+  forall a. []: Vec a 0;
+  forall a n x xs. x: a ==> xs: Vec a n ==> x::xs: Vec a (n +1);
+
+show
+  xs: List a  ==>  exists n. xs: Vec a n;
+proof term
+  lambda li lnil lcons
+         vi vnil vcons
+	 xsList ->
+  Inst li a lambda li ->
+  Inst li (lambda xs -> exists n. xs: Vec a n) lambda li ->
+  Inst li xs lambda li ->
+  Cut (exists n. ([] : (Vec a n)))
+      (Witness n 0 (Inst vnil a lambda x -> x))
+  lambda exNil ->
+  Cut (forall y ys. y: a ==> ys: List a ==> (exists n. ys: Vec a n) ==> exists n. y::ys: Vec a n)
+      (forall y ys. lambda ya ysList (Witness n n ysVecn) ->
+	    Witness n (n +1) (Inst vcons a lambda vcons ->
+			      Inst vcons n lambda vcons ->
+			      Inst vcons y lambda vcons ->
+			      Inst vcons ys lambda vcons ->
+				vcons ya ysVecn))
+  lambda step ->
+    li xsList exNil step;
+
+
+define
+  len []      := 0;
+  len (x::xs) := (len xs) +1;
+
+lemma list⊆vec2;
+assume
+  // induction scheme for lists
+  forall a p xs.
+    xs: List a ==>
+    p [] ==>
+    (forall y ys. y: a ==> ys: List a ==> p ys ==> p (y::ys))
+    ==> p xs;
+
+  // intro axioms for vec
+  forall a. []: Vec a 0;
+  forall a n x xs. x: a ==> xs: Vec a n ==> x::xs: Vec a (n +1);
+
+  // defineing equations for len
+  len [] == 0;
+  forall x xs. len (x::xs) == (len xs) +1;
+
+  // the subsitution principle
+  forall phi t s. t == s ==> phi t ==> phi s;
+  // equality
+  forall x. x == x;
+  forall x y. x == y ==> y == x;
+  forall x y z. x == y ==> y == z ==> x == z;
+
+show
+  xs: List a  ==>  xs: Vec a (len xs);
+
+proof term
+  lambda li
+         vnil vcons
+	 defNil defCons
+	 subst
+	 eqR eqS eqT
+	 xsList ->
+  Inst li a lambda li ->
+  Inst li (lambda xs -> xs: Vec a (len xs)) lambda li ->
+  Inst li xs lambda li ->
+  Cut ([]: Vec a (len []))
+      (Inst subst (lambda t -> []: Vec a t) lambda subst ->
+       Inst subst 0 lambda subst ->
+       Inst subst (len []) lambda subst ->
+       Inst eqS (len []) lambda eqS ->
+       Inst eqS 0 lambda eqS ->
+       Inst vnil a lambda vnil ->
+	 subst (eqS defNil) vnil)
+  lambda base ->
+  Cut (forall y ys. y: a ==> ys: List a ==> ys: Vec a (len ys) ==> y::ys: Vec a (len (y::ys)))
+      (forall y ys. lambda ya ysList ysVec ->
+       Inst vcons a lambda vcons ->
+       Inst vcons (len ys) lambda vcons ->
+       Inst vcons y lambda vcons ->
+       Inst vcons ys lambda vcons ->
+       Inst subst (lambda t -> y::ys : Vec a t) lambda subst ->
+       Inst subst (len ys +1) lambda subst ->
+       Inst subst (len (y::ys)) lambda subst ->
+       Inst eqS (len (y::ys)) lambda eqS ->
+       Inst eqS (len ys +1) lambda eqS ->
+       Inst defCons y lambda defCons ->
+       Inst defCons ys lambda defCons ->
+	 subst (eqS defCons) (vcons ya ysVec))
+  lambda step ->
+    li xsList base step;
