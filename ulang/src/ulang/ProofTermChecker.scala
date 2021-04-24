@@ -83,7 +83,7 @@ object ProofTermChecker {
         // variable must not occur free in any open assumption in body.
         // We allow alpha equivalence here in the same step.  In a stricter
         // setting the formula must quantify over the free variable without
-        // renameing, and the alpha renameing can be done later on if the new
+        // renaming, and the alpha renaming can be done later on if the new
         // name does not occur free in the formula.
         val openFree = Expr free ctx.values
         if (openFree.contains(param) || (id != param && body.free.contains(id)))
@@ -108,7 +108,7 @@ object ProofTermChecker {
             throw Error(text)
         }
 
-      // modus ponens is checked by infering the type of the argument and then
+      // modus ponens is checked by inferring the type of the argument and then
       // rerouting the check to Imp introduction.
       case (App(p@Lam(cases), arg), _) =>
         infer(ctx, arg) match {
@@ -117,7 +117,7 @@ object ProofTermChecker {
         }
 
       // Defined functions are shadowed by assumptions from the context and
-      // lemas but these are checked in the case below.
+      // lemmas but these are checked in the case below.
       case (App(f: Id, arg), _) if context.funs.contains(f)
                                 && !ctx.contains(f)
                                 && !context.lemmas.contains(f) =>
@@ -153,8 +153,8 @@ object ProofTermChecker {
   }
 
   /**
-   * not at all general attempt to normalizate formulas before placing these into context,
-   * this code should be merged with apply probably
+   * not at all general attempt to normalize formulas before placing these
+   * into context, this code should be merged with apply probably
    */
   def simpleBetaReductions(expr: Expr): Expr = {
     expr match {
@@ -232,7 +232,7 @@ object ProofTermChecker {
  * We use De Bruijn indices but we do not rewrite the terms.  Instead we
  * compare the structure of the given Ulang terms and use two contexts to map
  * variable names in the two terms to "indices".  As indices we use new Scala
- * Objects ensuring that no two indices compare equal.  Every time we decend
+ * Objects ensuring that no two indices compare equal.  Every time we decent
  * into a binding term constructor we map the two bound names to the same new
  * Object.
  */
@@ -245,7 +245,7 @@ object alphaEqui extends ((Expr, Expr) => Boolean) {
         // if both sides have bound the variable they should have bound it at
         // the same structural position
         if (ctxL.contains(l) && ctxR.contains(r)) ctxL(l) == ctxR(r)
-        // if only one side did bind this varialble they are not equal
+        // if only one side did bind this variable they are not equal
         else if (ctxL.contains(l) || ctxR.contains(r)) false
         // global names, free variables, etc
         else l == r
