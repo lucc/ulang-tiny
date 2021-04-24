@@ -1,0 +1,15 @@
+lemma saved-good;
+assume False;
+show False;
+proof term lambda hyp -> hyp;
+
+// If this lemma is saved without the named assumptions we can break
+// consistency in the next lemma.
+lemma saved-bad;
+assume hyp := False;
+show False;
+proof term hyp;
+
+lemma broken;
+show False;
+proof term saved-bad;

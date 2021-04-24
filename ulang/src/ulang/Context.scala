@@ -137,6 +137,7 @@ object context extends Context {
     postfix_ops = Map()
     infix_ops = Map()
     funs = Map()
+    lemmas = Map()
     consts = Map()
     inds = List()
     rewrites = Map()

@@ -132,8 +132,9 @@ object Exec {
       ProofTermChecker.checkSafe(named.toMap, proofterm, goal) match {
         case None =>
           if (name.isDefined) {
-            context.lemmas += (name.get -> goal)
-            println("lemma " + name.get + " := " + goal)
+            val lemma = Imp(assume.map(_._2), show)
+            context.lemmas += (name.get -> lemma)
+            println("lemma " + name.get + " := " + lemma)
           } else {
             println(proofterm + " proves " + show)
           }

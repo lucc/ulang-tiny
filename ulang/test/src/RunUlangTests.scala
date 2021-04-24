@@ -28,6 +28,8 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     for (testFile <- testFiles("pending")) run(testFile, pending=true)
     for (testFile <- testFiles("failing/StackOverflowError"))
       failRun[StackOverflowError](testFile)
+    for (testFile <- testFiles("failing/RuntimeException"))
+      failRun[RuntimeException](testFile)
   }
 
   describe("pending snippets") {
