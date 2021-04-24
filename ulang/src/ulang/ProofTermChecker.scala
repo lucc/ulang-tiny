@@ -142,7 +142,7 @@ object ProofTermChecker {
             (alphaEqui(ant, t2), alphaEqui(cons, goal)) match {
               case (true, true) =>
               case (true, false) => throw Error(f"$cons does not match $goal")
-              case (false, _) => throw Error(f"Argument $ant does not match $t2")
+              case (false, _) => throw Error(f"Argument $t2 does not match the condition $ant")
             }
           case _ => throw Error(f"Can not apply $t1 to $t2")
         }
