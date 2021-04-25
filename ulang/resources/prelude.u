@@ -6,7 +6,7 @@
 
 data
   // These are the logical connectives
-  not /\ \/ ==> <=>
+  /\ \/ ==> <=>
   // equality is build in
   == !=
   ;
@@ -23,6 +23,7 @@ notation
 
 define
   (a <=> b) := ((a ==> b) /\ (b ==> a));
+  not a := a ==> False;
 
 // predefined functions
 notation

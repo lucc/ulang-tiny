@@ -138,6 +138,12 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         Cut ((a ==> False) ==> False)
             (lambda h1n -> h1n ha)
         lambda h2n -> h3n h2n;""")
+    // Unfolding hypotheses
+    eval("""define wDis a b := not (not a /\ not b);
+      show a \/ b ==> wDis a b;
+      proof term
+      lambda (Left a) ->  Unfold (Unfold lambda (Unfold ¬a, Unfold ¬b) -> ¬a a)
+           | (Right b) -> Unfold (Unfold lambda (Unfold ¬a, Unfold ¬b) -> ¬b b);""")
   }
 
   describe("rules") {
