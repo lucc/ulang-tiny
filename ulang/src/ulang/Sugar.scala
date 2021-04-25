@@ -221,3 +221,4 @@ object Unfold extends Unary("Unfold") {
     }
   }
 }
+object DefEq extends Binary("Def")

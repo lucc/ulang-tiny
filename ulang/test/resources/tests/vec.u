@@ -106,10 +106,6 @@ assume
   forall a. []: Vec a 0;
   forall a n x xs. x: a ==> xs: Vec a n ==> x::xs: Vec a (n +1);
 
-  // defineing equations for len
-  len [] == 0;
-  forall x xs. len (x::xs) == (len xs) +1;
-
   // the subsitution principle
   forall phi t s. t == s ==> phi t ==> phi s;
   // equality
@@ -123,7 +119,6 @@ show
 proof term
   lambda li
          vnil vcons
-	 defNil defCons
 	 subst
 	 eqR eqS eqT
 	 xsList ->
@@ -137,6 +132,7 @@ proof term
        Inst eqS (len []) lambda eqS ->
        Inst eqS 0 lambda eqS ->
        Inst vnil a lambda vnil ->
+       Def len lambda (defNil, defCons) ->
 	 subst (eqS defNil) vnil)
   lambda base ->
   Cut (forall y ys. y: a ==> ys: List a ==> ys: Vec a (len ys) ==> y::ys: Vec a (len (y::ys)))
@@ -150,6 +146,7 @@ proof term
        Inst subst (len (y::ys)) lambda subst ->
        Inst eqS (len (y::ys)) lambda eqS ->
        Inst eqS (len ys +1) lambda eqS ->
+       Def len lambda (defNil, defCons) ->
        Inst defCons y lambda defCons ->
        Inst defCons ys lambda defCons ->
 	 subst (eqS defCons) (vcons ya ysVec))

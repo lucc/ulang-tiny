@@ -114,6 +114,11 @@ object ProofTermChecker {
 
       case (Unfold(p), Apps(fun: Id, args)) if Unfold.suitable(fun, args) =>
         check(ctx, p, Unfold.unfold(fun, args))
+      case (DefEq(fun: Id, p), _) if context.funs contains fun =>
+        val axioms = context.funs(fun)
+          .map(c => All(c.pats.free.toList, Eq(Apps(fun, c.pats), c.body)))
+          .reduce(And(_, _))
+        check(ctx, p, Imp(axioms, goal))
 
       // modus ponens is checked by inferring the type of the argument and then
       // rerouting the check to Imp introduction.
