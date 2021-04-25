@@ -43,12 +43,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // automatic forall instantiation with alpha equivalence
     e("""show (a t /\ exists y. phi y) ==> (forall x. (a x /\ exists y. p y) ==> b x) ==> b t;
       proof term lambda ha hfa -> hfa ha;""")
-    // weak disjunction from Schwichtenberg
-    // TODO can we use a function to compute the formula to be proven?
-    e("""define wDis a b := (a ==> False) /\ (b ==> False) ==> False;
-      show a \/ b ==> wDis a b;
-      proof term lambda hd (hna,hnb) -> (lambda (Left ha) -> hna ha
-                                              | (Right hb) -> hnb hb) hd;""")
     // completeness check for destruction with lambda terms is still missing
     it("incomplete pattern match") { pendingUntilFixed {
       assertThrows {
@@ -118,17 +112,14 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // testing automatic forall instantiation
     eval("show a t ==> (forall x. a x ==> b x) ==> b t; proof term lambda ha hfa -> hfa ha;")
     // weak exists from Schwichtenberg
-    // TODO can we use a function to compute the formula to be proven?
-    eval("""define wEx x phi := (forall x. phi ==> False) ==> False;
-      show (exists x. a x) ==> (forall x. a x ==> False) ==> False;
-      proof term lambda (Witness w p) fa -> fa p;
-      """)
+    eval("""define wEx x phi := (forall x. phi x ==> False) ==> False;
+      show (exists x. a x) ==> wEx x a;
+      proof term lambda (Witness w p) -> Unfold lambda fa -> Inst fa w lambda notPhi -> notPhi p;""")
     // weak disjunction from Schwichtenberg
-    // TODO can we use a function to compute the formula to be proven?
     eval("""define wDis a b := (a ==> False) /\ (b ==> False) ==> False;
-      show a \/ b ==> (a ==> False) /\ (b ==> False) ==> False;
-      proof term lambda hd (hna,hnb) -> (lambda (Left ha) -> hna ha
-                                              | (Right hb) -> hnb hb) hd;""")
+      show a \/ b ==> wDis a b;
+      proof term lambda (Left ha) -> Unfold (lambda (nota, notb) -> nota ha)
+                      | (Right hb) -> Unfold lambda (nota, notb) -> notb hb;""")
     // nested application
     eval("""show (a ==> b ==> c) ==> (a ==> b) ==> a ==> c;
           proof term lambda habc hab ha -> habc ha (hab ha);""")

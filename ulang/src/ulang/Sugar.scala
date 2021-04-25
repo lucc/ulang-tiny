@@ -206,3 +206,18 @@ object elim extends Unary("elim")
 
 object Inst extends Ternary("Inst")
 object Witness extends Binary("Witness")
+object Unfold extends Unary("Unfold") {
+  def suitable(fun: Id, args: List[Expr]): Boolean =
+    context.funs.contains(fun) && {
+      val cases = context.funs(fun)
+      cases.length == 1 &&
+      cases.head.pats.length == args.length &&
+      cases.head.pats.forall(_.isInstanceOf[Id])
+    }
+  def unfold(fun: Id, args: List[Expr]): Expr ={
+    val cs = context.funs(fun).head
+    cs.pats.zip(args).foldLeft(cs.body) {
+      case (body, (pat: Id, arg)) => body.subst(Map(pat -> arg))
+    }
+  }
+}

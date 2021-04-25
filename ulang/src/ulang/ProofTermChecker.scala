@@ -112,6 +112,9 @@ object ProofTermChecker {
             throw Error(text)
         }
 
+      case (Unfold(p), Apps(fun: Id, args)) if Unfold.suitable(fun, args) =>
+        check(ctx, p, Unfold.unfold(fun, args))
+
       // modus ponens is checked by inferring the type of the argument and then
       // rerouting the check to Imp introduction.
       case (App(p@Lam(cases), arg), _) =>
@@ -179,7 +182,7 @@ object ProofTermChecker {
   /**
    * extend a context by binding argument types to parameter variables
    */
-  def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id,Expr] =
+  def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id, Expr] =
     (pat, assm) match {
       case (p: Id, _) => ctx + (p -> simpleBetaReductions(assm))
       case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
@@ -187,6 +190,8 @@ object ProofTermChecker {
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)
       case (Witness(w, p), Ex(x, matrix)) =>
         bind(bind(ctx, w, x), p, matrix.subst(Map(x -> w)))
+      case (Unfold(p: Id), Apps(fun: Id, args)) if Unfold.suitable(fun, args) =>
+        ctx + (p -> Unfold.unfold(fun, args))
     }
   def bind(ctx: Map[Id, Expr], cases: List[Case], assm: Expr): List[Map[Id, Expr]] =
     cases.map(c => bind(ctx, c.pats.head, assm))
