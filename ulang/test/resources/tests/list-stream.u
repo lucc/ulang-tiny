@@ -50,7 +50,7 @@ proof term
   Cut (forall ys. ys == x::xs ==> ys == [] \/
 		  exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ zs == x::xs))
       (forall ys. lambda xyEq ->
-	  Right (Witness z x (Witness zs xs (xyEq,Left (hxa,hxs)))))
+	  Right (Witness x (Witness xs (xyEq,Left (hxa,hxs)))))
   lambda cut ->
   c eq cut;
 
@@ -122,7 +122,7 @@ proof term
 	      y::ys == [] \/ exists y₃ ys₄. y::ys == y₃::ys₄ /\ y₃: a /\ ys₄: List a)
       (forall y ys.
 	 lambda ya ysList hyp ->
-	   Right (Witness y₃ y (Witness ys₄ ys (Inst eqR (y::ys) lambda x -> x, (ya, ysList)))))
+	   Right (Witness y (Witness ys (Inst eqR (y::ys) lambda x -> x, (ya, ysList)))))
   lambda step ->
   i xsList base step;
 
@@ -178,8 +178,8 @@ proof term
        Cut (forall x. (x == [] \/ exists z ys. x == z::ys /\ z: a /\ ys: List a)
 		   ==> x == [] \/ exists z zs. x == z::zs /\ (z: a /\ zs: Stream a \/ zs: List a))
            (forall x. lambda (Left nil) -> Left nil
-	                   | (Right (Witness z z (Witness ys ys (eq, za, ysList))))
-			      -> Right (Witness z z (Witness zs ys (eq, Right ysList))))
+	                   | (Right (Witness z (Witness ys (eq, za, ysList))))
+			      -> Right (Witness z (Witness ys (eq, Right ysList))))
        lambda cut ->
 	 Inst cut y lambda cut ->
 	 cut listCases)

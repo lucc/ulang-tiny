@@ -33,12 +33,12 @@ proof term
 		     (m == 0 \/ exists m1. m == m1 +1 /\ m1: Nat) ==>
 		     m +1 == 0 \/ exists m2. (m +1 == m2 +1 /\ m2: Nat))
 	  (forall m. lambda mNat ->
-	     lambda (Left ih) -> Right (Witness m2 0
+	     lambda (Left ih) -> Right (Witness 0
 					(Inst disj m lambda disj ->
 					   Inst disj 0 lambda disj ->
 					     disj ih
 					, z))
-		  | (Right ih) -> Right (Witness m2 m
+		  | (Right ih) -> Right (Witness m
 					 (Inst eqR (m +1) lambda x -> x, mNat))
         	)
       lambda step ->

@@ -52,8 +52,9 @@ object TypeInference extends ((Map[Id, Expr], Expr) => Either[String, Expr]) {
         Or(simple_(ctx, a), ulang.Wildcard)
       case RightE(a) =>
         Or(ulang.Wildcard, simple_(ctx, a))
-      case Witness(x, w, p) =>
+      case Witness(w, p) =>
         val ty = simple_(ctx, p)
+        val x = Expr.fresh(Id("x"))
         Ex(x, ty.replace(Map(w -> x)))
       case Inst(pt, t, pt2) =>
         val All(x, phi) = simple_(ctx, pt)

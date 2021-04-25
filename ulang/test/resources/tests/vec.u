@@ -76,15 +76,15 @@ proof term
   Inst li (lambda xs -> exists n. xs: Vec a n) lambda li ->
   Inst li xs lambda li ->
   Cut (exists n. ([] : (Vec a n)))
-      (Witness n 0 (Inst vnil a lambda x -> x))
+      (Witness 0 (Inst vnil a lambda x -> x))
   lambda exNil ->
   Cut (forall y ys. y: a ==> ys: List a ==> (exists n. ys: Vec a n) ==> exists n. y::ys: Vec a n)
-      (forall y ys. lambda ya ysList (Witness n n ysVecn) ->
-	    Witness n (n +1) (Inst vcons a lambda vcons ->
-			      Inst vcons n lambda vcons ->
-			      Inst vcons y lambda vcons ->
-			      Inst vcons ys lambda vcons ->
-				vcons ya ysVecn))
+      (forall y ys. lambda ya ysList (Witness n ysVecn) ->
+	    Witness (n +1) (Inst vcons a lambda vcons ->
+			    Inst vcons n lambda vcons ->
+			    Inst vcons y lambda vcons ->
+			    Inst vcons ys lambda vcons ->
+			      vcons ya ysVecn))
   lambda step ->
     li xsList exNil step;
 

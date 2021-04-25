@@ -27,7 +27,7 @@ proof term
        Inst c (k +1) lambda c ->
        Inst eqR (k +1) lambda eqk+1 ->
        Cut (forall n. n == k +1 ==> n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m == k +1))
-           (forall n. lambda n=k1 -> Right (Witness m k (n=k1, Left kNatInf)))
+           (forall n. lambda n=k1 -> Right (Witness k (n=k1, Left kNatInf)))
        lambda step ->
        c eqk+1 step)
   lambda succ ->

@@ -32,7 +32,7 @@ proof term
 	       n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m == inf))
 	    (forall n.
 	       lambda nInf ->
-		 Right (Witness m inf
+		 Right (Witness inf
 		   (Inst eqT n lambda t ->
 		     Inst t inf lambda t ->
 		      Inst t (inf +1) lambda t ->

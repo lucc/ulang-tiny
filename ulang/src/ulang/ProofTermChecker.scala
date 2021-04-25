@@ -80,8 +80,8 @@ object ProofTermChecker {
         }
 
       // predicate logic introduction rules
-      case (Witness(id1, witness, p), Ex(id2, matrix)) if id1 == id2 =>
-        check(ctx, p, matrix.subst(Map(id1 -> witness)))
+      case (Witness(witness, p), Ex(id, matrix)) =>
+        check(ctx, p, matrix.subst(Map(id -> witness)))
       case (All(param, body), All(id, matrix)) =>
         // For all-introduction there is a variable condition: the bound
         // variable must not occur free in any open assumption in body.
@@ -185,8 +185,8 @@ object ProofTermChecker {
       case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
       case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)
-      case (Witness(x1, w, p), Ex(x2, matrix)) if x1 == x2 =>
-        bind(bind(ctx, w, x1), p, matrix.subst(Map(x1 -> w)))
+      case (Witness(w, p), Ex(x, matrix)) =>
+        bind(bind(ctx, w, x), p, matrix.subst(Map(x -> w)))
     }
   def bind(ctx: Map[Id, Expr], cases: List[Case], assm: Expr): List[Map[Id, Expr]] =
     cases.map(c => bind(ctx, c.pats.head, assm))

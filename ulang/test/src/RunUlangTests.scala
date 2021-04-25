@@ -36,7 +36,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     def e = eval(_, pending=true)
     // Schwichtenberg page 13
     e("""show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
-      proof term lambda (Witness x w p) -> lambda fa -> p (Inst fa w lambda x -> x);""")
+      proof term lambda (Witness w p) -> lambda fa -> p (Inst fa w lambda x -> x);""")
     e("""//show (not (not (not a))) ==> not a;
       show (((a ==> False) ==> False) ==> False) ==> a ==> False;
       proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""")
@@ -78,18 +78,18 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // proof with all quantifier
     eval("show (forall x. p x) ==> p Foo; proof term lambda x -> Inst x Foo lambda x -> x;")
     // proving introduction rules for exists
-    eval("show a ==> exists x. a; proof term (lambda a -> Witness x x a);")
-    eval("show p x ==> exists y. p y; proof term (lambda a -> Witness y x a);")
+    eval("show a ==> exists x. a; proof term (lambda a -> Witness x a);")
+    eval("show p x ==> exists y. p y; proof term (lambda a -> Witness x a);")
     // Schwichtenberg page 13
     eval("""show (forall x.a x ==> b) ==> (exists x. a x) ==> b;
-        proof term lambda fa -> lambda (Witness x w p) -> Inst fa w lambda hab -> hab p;""")
+        proof term lambda fa -> lambda (Witness w p) -> Inst fa w lambda hab -> hab p;""")
     eval("""show (forall x.a ==> b x) ==> a ==> forall x. b x;
         proof term lambda hfa -> lambda ha -> forall var. Inst hfa var lambda hab -> hab ha;""")
     eval("""show (a ==> forall x. b x) ==> forall x. a ==> b x;
         proof term lambda f -> forall var. lambda precond -> Inst (f precond) var lambda x -> x;""")
     // TODO why do I have to put "var" and not "x" here ----------------------^
     eval("""show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
-      proof term lambda f -> forall x. lambda ha -> f (Witness x x ha);""")
+      proof term lambda f -> forall x. lambda ha -> f (Witness x ha);""")
 
     // how to construct implications
     eval("""show ((a ==> b) ==> c) ==> b ==> c;
@@ -101,15 +101,15 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
             (lambda r -> h r);""")
 
     eval("""show (exists x. a ==> b x) ==> a ==> exists x. b x;
-        proof term lambda (Witness x w hab) -> lambda ha -> Witness x w (hab ha);""")
+        proof term lambda (Witness w hab) -> lambda ha -> Witness w (hab ha);""")
 
     // reordering bound variables
     val proof1 = """proof term lambda faxy -> forall y. forall x.
                     Inst faxy x lambda fay -> Inst fay y lambda x -> x;"""
     eval("show (forall x y. a) ==> forall y x. a;"+proof1)
     eval("show (forall x. forall y. a) ==> forall y. forall x. a;"+proof1)
-    val proof2 = """proof term lambda (Witness x w1 (Witness y w2 pt))
-                               -> Witness y w2 (Witness x w1 pt);"""
+    val proof2 = """proof term lambda (Witness w1 (Witness w2 pt))
+                               -> Witness w2 (Witness w1 pt);"""
     eval("show (exists x y. a x y) ==> exists y x. a x y;"+proof2)
     eval("show (exists x. exists y. a x y) ==> exists y. exists x. a x y;"+proof2)
     eval("""// show a ==> not not a;
@@ -121,7 +121,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     // TODO can we use a function to compute the formula to be proven?
     eval("""define wEx x phi := (forall x. phi ==> False) ==> False;
       show (exists x. a x) ==> (forall x. a x ==> False) ==> False;
-      proof term lambda (Witness x w p) fa -> fa p;
+      proof term lambda (Witness w p) fa -> fa p;
       """)
     // weak disjunction from Schwichtenberg
     // TODO can we use a function to compute the formula to be proven?
@@ -181,7 +181,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         // universal quantifier introduction
         eval("show a ==> forall x. a; proof term lambda p -> forall x. p;")
         // existential quantifier introduction
-        eval("show a t ==> exists x. a x; proof term lambda p -> Witness x t p;" )
+        eval("show a t ==> exists x. a x; proof term lambda p -> Witness t p;" )
         // universal quantifier introduction violating variable condition
         // it would work with "a" instead of "a x"
         val show = "show a x ==> forall x. a x;"
@@ -193,7 +193,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         eval("show (forall x. p x) ==> p t; proof term lambda f -> Inst f t (lambda x -> x);")
         // existential quantifier elimination
         val exElim = "show (exists x. a x) ==> (forall x. a x ==> b) ==> b;"
-        val proof ="proof term lambda (Witness x w p) -> lambda f -> Inst f w lambda ff -> ff p;"
+        val proof ="proof term lambda (Witness w p) -> lambda f -> Inst f w lambda ff -> ff p;"
         eval(exElim + " " + proof)
         // existential quantifier elimination violating variable condition
         // it would work with "b" instead of "b x"

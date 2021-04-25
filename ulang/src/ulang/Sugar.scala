@@ -205,12 +205,4 @@ object intro extends Binary("intro")
 object elim extends Unary("elim")
 
 object Inst extends Ternary("Inst")
-object Witness extends Ternary("Witness") {
-  def apply(x: Id, wit: Expr, body: Expr) =
-    App(App(App(Id("Witness"), x), wit), body)
-  override def unapply(e: Expr): Option[(Id, Expr, Expr)] = e match {
-    case App(App(App(Id("Witness", None), x: Id), arg2), arg3) =>
-      Some((x, arg2, arg3))
-    case _ => None
-  }
-}
+object Witness extends Binary("Witness")
