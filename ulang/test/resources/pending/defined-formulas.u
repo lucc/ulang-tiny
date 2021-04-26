@@ -1,0 +1,48 @@
+// Functions can compute formulas
+// "Unfold" can be used to look up the definition
+
+
+lemma negation;
+show not (not (not a)) ==> not a;
+proof term
+  lambda (Unfold h3n) ->
+  Unfold lambda ha ->
+  Cut (not (not a))
+      (Unfold lambda (Unfold h1n) -> h1n ha)
+  lambda h2n ->
+  h3n h2n;
+
+
+define
+  reflexive p := forall x. p x x;
+  symmetric p := forall x y. p x y ==> p y x;
+  transitive p := forall x y z. p x y ==> p y z ==> p x z;
+  global p := forall x. exists y. p x y;
+
+lemma equalities;
+show forall p. global p ==> symmetric p ==> transitive p ==> reflexive p;
+proof term
+  forall p.
+    lambda (Unfold glob) (Unfold sym) (Unfold trans) -> Unfold
+      forall x.
+        Inst glob x lambda (Witness w ex) ->
+	Inst sym x lambda sym ->
+	Inst sym w lambda sym ->
+	Inst trans x lambda trans ->
+	Inst trans w lambda trans ->
+	Inst trans x lambda trans ->
+          trans ex (sym ex);
+
+define
+  reflexive2 p x := p x x;
+  symmetric2 p x := forall y. p x y ==> p y x;
+  transitive2 p x := forall y z. p x y ==> p y z ==> p x z;
+  inhab p x := exists y. p x y;
+
+lemma equalities;
+show forall p x. inhab p x ==> symmetric2 p x ==> transitive2 p x ==> reflexive2 p x;
+proof term
+  forall p x.
+    // TODO we are still missing nested patterns with Unfold.
+    lambda (Unfold (Witness w ex)) (Unfold sym) (Unfold trans) -> Unfold
+      sorry;

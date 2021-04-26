@@ -114,11 +114,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     eval("""define wEx x phi := (forall x. phi x ==> False) ==> False;
       show (exists x. a x) ==> wEx x a;
       proof term lambda (Witness w p) -> Unfold lambda fa -> Inst fa w lambda notPhi -> notPhi p;""")
-    // weak disjunction from Schwichtenberg
-    eval("""define wDis a b := (a ==> False) /\ (b ==> False) ==> False;
-      show a \/ b ==> wDis a b;
-      proof term lambda (Left ha) -> Unfold (lambda (nota, notb) -> nota ha)
-                      | (Right hb) -> Unfold lambda (nota, notb) -> notb hb;""")
     // nested application
     eval("""show (a ==> b ==> c) ==> (a ==> b) ==> a ==> c;
           proof term lambda habc hab ha -> habc ha (hab ha);""")
@@ -137,12 +132,6 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         Cut ((a ==> False) ==> False)
             (lambda h1n -> h1n ha)
         lambda h2n -> h3n h2n;""")
-    // Unfolding hypotheses
-    eval("""define wDis a b := not (not a /\ not b);
-      show a \/ b ==> wDis a b;
-      proof term
-      lambda (Left a) ->  Unfold (Unfold lambda (Unfold ¬a, Unfold ¬b) -> ¬a a)
-           | (Right b) -> Unfold (Unfold lambda (Unfold ¬a, Unfold ¬b) -> ¬b b);""")
   }
 
   describe("rules") {

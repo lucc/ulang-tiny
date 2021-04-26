@@ -1,0 +1,17 @@
+// weak disjunction from Schwichtenberg
+define wDis a b := (a ==> False) /\ (b ==> False) ==> False;
+
+// unfolding a goal formula
+show a \/ b ==> wDis a b;
+proof term
+  lambda (Left ha) -> Unfold (lambda (nota, notb) -> nota ha)
+       | (Right hb) -> Unfold lambda (nota, notb) -> notb hb;
+
+// defining "wDis" with "not"
+define wDis2 a b := not (not a /\ not b);
+
+// Unfolding hypotheses
+show a \/ b ==> wDis2 a b;
+proof term
+lambda (Left a) ->  Unfold (Unfold lambda (Unfold ¬a, Unfold ¬b) -> ¬a a)
+     | (Right b) -> Unfold (Unfold lambda (Unfold ¬a, Unfold ¬b) -> ¬b b);
