@@ -213,12 +213,17 @@ object Unfold extends Unary("Unfold") {
       cases.length == 1 &&
       cases.head.pats.length == args.length &&
       cases.head.pats.forall(_.isInstanceOf[Id])
-    }
-  def unfold(fun: Id, args: List[Expr]): Expr ={
-    val cs = context.funs(fun).head
-    cs.pats.zip(args).foldLeft(cs.body) {
-      case (body, (pat: Id, arg)) => body.subst(Map(pat -> arg))
-    }
+    } /*|| context.consts.contains(fun) && args.length == 0*/
+  def unfold(fun: Id, args: List[Expr]): Expr = {
+  //  if (context.funs contains fun) {
+      val cs = context.funs(fun).head
+      cs.pats.zip(args).foldLeft(cs.body) {
+        case (body, (pat: Id, arg)) => body.subst(Map(pat -> arg))
+      }
+  //  } else {
+  //    FIXME how can I convert a Norm to an Expr?
+  //    context.consts(fun)
+  //  }
   }
 }
 object DefEq extends Binary("Def")
