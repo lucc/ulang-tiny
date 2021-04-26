@@ -80,8 +80,7 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
     eval("""show (forall x.a ==> b x) ==> a ==> forall x. b x;
         proof term lambda hfa -> lambda ha -> forall var. Inst hfa var lambda hab -> hab ha;""")
     eval("""show (a ==> forall x. b x) ==> forall x. a ==> b x;
-        proof term lambda f -> forall var. lambda precond -> Inst (f precond) var lambda x -> x;""")
-    // TODO why do I have to put "var" and not "x" here ----------------------^
+        proof term lambda f -> forall x. lambda precond -> Inst (f precond) x lambda x -> x;""")
     eval("""show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
       proof term lambda f -> forall x. lambda ha -> f (Witness x ha);""")
 

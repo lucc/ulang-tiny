@@ -103,8 +103,6 @@ object ProofTermChecker {
         check(ctx, pt1, phi)
         check(ctx + (id -> phi), pt2, goal)
 
-      // TODO predicate logic elimination rules?
-
       case (Inst(pt, t, pt2), _) =>
         infer(ctx, pt) match {
           case Right(All(x, phi)) =>
