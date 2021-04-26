@@ -1,0 +1,18 @@
+// defining forward references in seperate blocks works
+define
+  f x := g x;
+
+// But using the not yet defined g (implicitly) fails with a
+// RuntimeException: unbound identifier
+test
+  f X == Foo;
+  f Foo == Baz;
+
+define
+  g X := Foo;
+  g Y := Bar;
+  g _ := Baz;
+
+test
+  f X == Foo;
+  f Foo == Baz;

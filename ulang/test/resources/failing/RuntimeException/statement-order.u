@@ -1,3 +1,5 @@
+// the blocks in a file are executed top to bottom so this fails because "1"
+// is not yet defined
 test 1 + 1 == 2;
 
 define

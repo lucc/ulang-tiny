@@ -1,0 +1,18 @@
+// defining forward references in seperate blocks works, as long as they are
+// not used in between.
+define
+  f x := g x;
+
+// This would not work, see failing forward.u
+//test
+//  f X == Foo;
+//  f Foo == Baz;
+
+define
+  g X := Foo;
+  g Y := Bar;
+  g _ := Baz;
+
+test
+  f X == Foo;
+  f Foo == Baz;
