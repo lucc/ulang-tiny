@@ -4,8 +4,8 @@ notation
   ==> [infixr 2];
 
 define
-  (x := y) ==> (x != y) == False ;
-  (x := y) == False ==> (x != y) == True;
+  (x == y) ==> (x != y) := False ;
+  (x == y) == False ==> (x != y) := True;
 
 data
   0 +1;
