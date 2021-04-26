@@ -1,0 +1,12 @@
+// The term that can be introduced from an existential hypothesis should be
+// fresh.
+
+assume
+  forall x. exists y. P x y;
+show
+  forall x. P x x;
+proof term
+  lambda fa ->
+  forall x.
+    Inst fa x lambda (Witness x p) ->  // reusing "x", this must be an error
+      p;
