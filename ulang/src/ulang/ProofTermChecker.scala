@@ -205,14 +205,16 @@ object ProofTermChecker {
     }
   def bind(ctx: Map[Id, Expr], cases: List[Case], assm: Expr): List[Map[Id, Expr]] =
     cases.map(c => bind(ctx, c.pats.head, assm))
+
   /**
    * Bind an argument term to a pattern
+   * FIXME in ulang patterns can reuse names, we need to check that they are
+   * equal during application
    */
   def apply(pat: Expr, arg: Expr, body: Expr): Expr =
     (pat, arg) match {
-      // FIXME in ulang patterns can reuse names, we need to check that they
-      // are equal during application
-      case (p: Id, _) => body.subst(Map(p -> arg))
+      case (p: Id, a: Id) if context.isTag(p) && p == a => body
+      case (p: Id, _) if !context.isTag(p) => body.subst(Map(p -> arg))
       case (App(id1: Id, term1), App(id2: Id, term2))
         if context.isTag(id1) && id1 == id2 => apply(term1, term2, body)
       case (App(f1, a1), App(f2, a2)) => apply(a1, a2, apply(f1, f2, body))
