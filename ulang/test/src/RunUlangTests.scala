@@ -36,11 +36,8 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
 
   describe("pending snippets") {
     def e = eval(_, pending=true)
-    // Schwichtenberg page 13
-    e("""show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
-      proof term lambda (Witness w p) -> lambda fa -> p (Inst fa w lambda x -> x);""")
-    e("""//show (not (not (not a))) ==> not a;
-      show (((a ==> False) ==> False) ==> False) ==> a ==> False;
+    // full type inference is still missing
+    e("""show (((a ==> False) ==> False) ==> False) ==> a ==> False;
       proof term lambda h3n -> lambda ha -> h3n (lambda h1n -> h1n ha);""")
     // automatic forall instantiation with alpha equivalence
     e("""show (a t /\ exists y. phi y) ==> (forall x. (a x /\ exists y. p y) ==> b x) ==> b t;
@@ -85,6 +82,8 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
         proof term lambda f -> forall x. lambda precond -> Inst (f precond) x lambda x -> x;""")
     eval("""show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
       proof term lambda f -> forall x. lambda ha -> f (Witness x ha);""")
+    eval("""show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
+      proof term lambda (Witness w p) -> lambda fa -> Inst fa w lambda aw -> p aw;""")
 
     // how to construct implications
     eval("""show ((a ==> b) ==> c) ==> b ==> c;
