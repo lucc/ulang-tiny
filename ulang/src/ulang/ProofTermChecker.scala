@@ -208,8 +208,8 @@ object ProofTermChecker {
           fail("Capturing variable " + w + " in exists elimination.")
         else
           bind(bind(ctx, w, x), p, matrix.subst(Map(x -> w)))
-      case (Unfold(p: Id), Apps(fun: Id, args)) if Unfold.suitable(fun, args) =>
-        ctx + (p -> Unfold.unfold(fun, args))
+      case (Unfold(p), Apps(fun: Id, args)) if Unfold.suitable(fun, args) =>
+        bind(ctx, p, Unfold.unfold(fun, args))
     }
   def bind(ctx: Map[Id, Expr], cases: List[Case], assm: Expr): List[Map[Id, Expr]] =
     cases.map(c => bind(ctx, c.pats.head, assm))

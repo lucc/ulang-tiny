@@ -2,7 +2,7 @@
 // "Unfold" can be used to look up the definition
 
 
-lemma negation;
+lemma unfold-simple-negation;
 show not (not (not a)) ==> not a;
 proof term
   lambda (Unfold h3n) ->
@@ -19,7 +19,7 @@ define
   transitive p := forall x y z. p x y ==> p y z ==> p x z;
   global p := forall x. exists y. p x y;
 
-lemma equalities;
+lemma unfold-quantifiers;
 show forall p. global p ==> symmetric p ==> transitive p ==> reflexive p;
 proof term
   forall p.
@@ -39,10 +39,13 @@ define
   transitive2 p x := forall y z. p x y ==> p y z ==> p x z;
   inhab p x := exists y. p x y;
 
-lemma equalities;
+lemma unfold-nested-pattern;
 show forall p x. inhab p x ==> symmetric2 p x ==> transitive2 p x ==> reflexive2 p x;
 proof term
   forall p x.
-    // TODO we are still missing nested patterns with Unfold.
-    lambda (Unfold (Witness w ex)) (Unfold sym) (Unfold trans) -> Unfold
-      sorry;
+    lambda (Unfold (Witness w ex)) (Unfold sym) (Unfold trans) ->
+      Unfold (
+	Inst sym w lambda sym ->
+	Inst trans w lambda trans ->
+	Inst trans x lambda trans ->
+	  trans ex (sym ex));
