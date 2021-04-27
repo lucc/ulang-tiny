@@ -151,18 +151,12 @@ assume
     (forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs)) ==>
     xs: Stream a;
 
-  // injectivity of constructors
-  forall x xs y ys. x::xs == y::ys ==> x == y /\ xs == ys;
-  // disjointness of constructors
-  forall x xs y ys. x == y ==> xs == ys ==> x::xs == y:ys;
-
 show
   xs: List a  ==>  xs: Stream a;
 
 proof term
   lambda eqR eqS eqT
-         i nil cons c
-	 inj disj ->
+         i nil cons c ->
   lambda xList ->
   Inst c a lambda c ->
   Inst c (lambda xs -> xs: List a) lambda c ->
