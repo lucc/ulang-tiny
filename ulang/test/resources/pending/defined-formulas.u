@@ -49,3 +49,18 @@ proof term
 	Inst trans w lambda trans ->
 	Inst trans x lambda trans ->
 	  trans ex (sym ex));
+
+
+data : 0 +1;
+notation +1 [postfix 10];
+define
+  zeroNat := 0: Nat;
+  succNat := forall n. n: Nat ==> n +1: Nat;
+
+lemma unfold-axioms;
+show zeroNat ==> succNat ==> 0 +1 +1: Nat;
+proof term
+  lambda (Unfold z) (Unfold s) ->
+  Inst s 0 lambda s0 ->
+  Inst s (0 +1) lambda s1 ->
+  s1 (s0 z);
