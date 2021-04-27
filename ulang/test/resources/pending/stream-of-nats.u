@@ -1,0 +1,106 @@
+data 0 +1;
+notation +1 [postfix 10];
+
+data [] ::;
+notation :: [infix 10];
+
+
+define zeros := 0 :: zeros;
+
+lemma zeros∈StreamNat;
+assume
+  // equality
+  eqR := forall x. x == x;
+  eqS := forall x y. x == y ==> y == x;
+  eqT := forall x y z. x == y ==> y == z ==> x == z;
+  // coinduction scheme for streams
+  c := forall a p xs. p xs ==>
+	(forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs)) ==>
+	xs: Stream a;
+  // defineing equation for nats
+  def := zeros == 0 :: zeros;
+show zeros: Stream Nat;
+proof term
+  Inst c Nat lambda c ->
+  Inst c (lambda xs -> xs == zeros) lambda c ->
+  Inst c zeros lambda c ->
+  Inst eqR zeros lambda eqZ ->
+  Cut (forall ys. ys == zeros
+         ==> (ys == [] \/ exists z zs. ys == z::zs /\ (z: Nat /\ zs: Stream Nat \/ zs == zeros)))
+      (forall ys. lambda ys=zeros
+         -> Right (Witness 0 (Witness zeros (
+	      Inst eqT ys lambda eqT ->
+	      Inst eqT zeros lambda eqT ->
+	      Inst eqT (0::zeros) lambda eqT ->
+	      (eqT ys=zeros def, Right eqZ)))))
+  lambda step -> c eqZ step;
+
+
+// some helper functions on lists / streams
+define
+  map fun []      := [];
+  map fun (x::xs) := fun x :: map fun xs;
+
+  take 0      xs      := [];
+  take _      []      := [];
+  take (n +1) (x::xs) := x :: take n xs;
+
+  drop 0      xs      := xs;
+  drop _      []      := [];
+  drop (n +1) (x::xs) := drop n xs;
+
+  // an infinite stream with all natural numbers
+  nats := 0 :: map (lambda n -> n +1) nats;
+
+// inspect the stream of natural numbers
+eval
+  take (0 +1 +1 +1) nats;
+  take (0 +1 +1) (drop (0 +1 +1 +1 +1 +1) nats);
+
+
+lemma nats∈StreamNat;
+assume
+  // equality
+  eqR := forall x. x == x;
+  eqS := forall x y. x == y ==> y == x;
+  eqT := forall x y z. x == y ==> y == z ==> x == z;
+  // induction scheme for natural numbers
+  i := forall p n. n: Nat ==> p 0 ==> (forall m. m: Nat ==> p m ==> p (m +1)) ==> p n;
+  // intro axioms from Nat
+  z := 0: Nat;
+  s := forall n. n: Nat ==> n +1: Nat;
+  // coinduction scheme for streams
+  c := forall a p xs. p xs ==>
+	(forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs)) ==>
+	xs: Stream a;
+  // defineing equations
+  def := nats == 0 :: map (lambda n -> n +1) nats;
+
+  subst := forall phi x y. x == y ==> phi x ==> phi y;
+
+show
+  nats: Stream Nat;
+
+proof term
+  Inst c Nat lambda c ->
+  Inst c (lambda xs -> xs == nats) lambda c ->
+  Inst c nats lambda c ->
+  Inst eqR nats lambda eqNats ->
+  Cut (forall ys. ys == nats
+        ==> ys == [] \/ exists z zs.
+	                 ys == z::zs /\ (z: Nat /\ zs: Stream Nat \/ zs == nats))
+      (forall ys.
+        lambda ys=nats
+	 -> Right (Witness 0
+		  (Witness (map (lambda n -> n +1) nats)
+		    (Inst eqT ys lambda eqT ->
+		     Inst eqT nats lambda eqT ->
+		     Inst eqT (0 :: map (lambda n -> n +1) nats) lambda eqT ->
+		     eqT ys=nats def
+		    , Left (z, sorry)
+		    //, Right (sorry)
+		    )
+		  ))
+      )
+  lambda step ->
+  c eqNats step;
