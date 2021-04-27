@@ -198,8 +198,16 @@ object ProofTermChecker {
       case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
       case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
       case (RightE(p), Or(_, f)) => bind(ctx, p, f)
-      case (Witness(w, p), Ex(x, matrix)) =>
-        bind(bind(ctx, w, x), p, matrix.subst(Map(x -> w)))
+      // existential elimination must be conservative, i.e. we must use a new
+      // term that is as general as possible, i.e. a fresh variable that is
+      // not referenced in the assumtions or the body of the exists formula.
+      case (Witness(w: Id, p), Ex(x, matrix)) =>
+        val in_context = ctx.values.exists(_.free contains w)
+        val in_assumption = assm.free contains w
+        if (in_context || in_assumption)
+          fail("Capturing variable " + w + " in exists elimination.")
+        else
+          bind(bind(ctx, w, x), p, matrix.subst(Map(x -> w)))
       case (Unfold(p: Id), Apps(fun: Id, args)) if Unfold.suitable(fun, args) =>
         ctx + (p -> Unfold.unfold(fun, args))
     }
