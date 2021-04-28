@@ -3,39 +3,33 @@ notation +1 [postfix 10];
 
 define inf := inf +1;
 
-show
+assume
   // coinduction
-  (forall p n.
-    p n ==>
+  c := forall p n. p n ==>
     (forall n. p n ==> n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ p m)) ==>
-    n: NatInf) ==>
+    n: NatInf;
+
   // equality
-  (forall x. x == x) ==>
-  (forall x y. x == y ==> y == x) ==>
-  (forall x y z. x == y ==> y == z ==> x == z) ==>
-  // defineing equation for inf
-  // TODO this should be extractable from the definition during the proof
-  (inf == inf +1) ==>
-  // theorem
+  eqR := forall x. x == x;
+  eqS := forall x y. x == y ==> y == x;
+  eqT := forall x y z. x == y ==> y == z ==> x == z;
+
+show
   inf: NatInf;
+
 proof term
-  lambda c
-         eqR eqS eqT
-	 infSucc
-  ->
-    Inst c (lambda n -> n == inf) lambda c ->
-      Inst c inf lambda c ->
-        Cut (inf == inf)
-	    (Inst eqR inf lambda x -> x)
-	lambda infEqInf ->
-	Cut (forall n. n == inf ==>
-	       n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m == inf))
-	    (forall n.
-	       lambda nInf ->
-		 Right (Witness inf
-		   (Inst eqT n lambda t ->
-		     Inst t inf lambda t ->
-		      Inst t (inf +1) lambda t ->
-		       t nInf infSucc,
-		    Right infEqInf)))
-	lambda cut -> c infEqInf cut;
+  Inst c (lambda n -> n == inf) lambda c ->
+  Inst c inf lambda c ->
+  Inst eqR inf lambda infEqInf ->
+  Cut (forall n. n == inf ==>
+	 n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m == inf))
+      (forall n.
+	 lambda nInf ->
+	   Right (Witness inf
+	     (Inst eqT n lambda t ->
+	      Inst t inf lambda t ->
+	      Inst t (inf +1) lambda t ->
+	      Def inf lambda infSucc ->
+		t nInf infSucc,
+	      Right infEqInf)))
+  lambda cut -> c infEqInf cut;

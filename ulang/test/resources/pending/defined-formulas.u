@@ -55,9 +55,22 @@ data : 0 +1;
 notation +1 [postfix 10];
 define
   zeroNat := 0: Nat;
+
+lemma unfold-axioms-consts;
+assume
+  s := forall n. n: Nat ==> n +1: Nat;
+  zeroNat;
+show 0 +1 +1: Nat;
+proof term
+  lambda (Unfold z) ->
+  Inst s 0 lambda s0 ->
+  Inst s (0 +1) lambda s1 ->
+  s1 (s0 z);
+
+define
   succNat := forall n. n: Nat ==> n +1: Nat;
 
-lemma unfold-axioms;
+lemma unfold-axioms-unbounded-quantifier;
 show zeroNat ==> succNat ==> 0 +1 +1: Nat;
 proof term
   lambda (Unfold z) (Unfold s) ->
