@@ -15,10 +15,6 @@ case class Def(left: Expr, right: Expr) {
       " can not appear on the left hand side of a define statement.")
   }
   left match {
-    case Id("elim", None) =>
-      fail("elim is a reserved function name that can not be defined manually")
-    case Id("intro", None) =>
-      fail("intro is a reserved function name that can not be defined manually")
     case id: Id if context isTag id =>
       fail("A define left hand side can not be a tag")
     case App(id: Id, _) if context isTag id =>
@@ -52,7 +48,7 @@ case class Thm(name: Option[Id], assume: List[(Option[Id], Expr)], show: Expr, p
 object Thm {
   val show0 = (show: Expr, proof: Option[Tactic]) =>
       Thm(None, Nil, show, proof)
-  
+
   val show = (assume: List[(Option[Id], Expr)], show: Expr, proof: Option[Tactic]) =>
       Thm(None, assume, show, proof)
 

@@ -55,15 +55,9 @@ object ProofTermChecker {
         check(ctx, Lam(context.funs(id)), goal)
       case (id: Id, _) if context.consts contains id =>
         check(ctx, context.consts(id), goal)
-      case (Id("elim", None), _) =>
-        throw Error("The special function name 'elim' can only be used in applications.")
-      case (Id("intro", None), _) =>
-        throw Error("The special function name 'intro' can only be used in applications.")
 
       // special cases
       case (True, True) =>  // we use "True" to represent a trivial proof
-      case (intro(pred, index), _) => throw Error("Generation of intro axioms is not yet implemented")
-      case (elim(pred), _) => throw Error("Generation of elim axioms is not yet implemented")
 
       // propositional logic: introduction rules
       case (Pair(p1, p2), And(f1, f2)) =>
@@ -122,6 +116,9 @@ object ProofTermChecker {
       case (DefEq(fun: Id, p), _) if context.consts contains fun =>
         val axiom = Eq(fun, context.consts(fun))
         check(ctx, p, Imp(axiom, goal))
+      case (DefIntro(term, p), _) => throw new NotImplementedError
+      case (DefInd(term, p), _) => throw new NotImplementedError
+      case (DefCoind(term, p), _) => throw new NotImplementedError
 
       // modus ponens is checked by inferring the type of the argument and then
       // rerouting the check to Imp introduction.

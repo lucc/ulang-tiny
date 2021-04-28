@@ -195,14 +195,8 @@ object Eqv extends Binary("<=>")
 object Pair extends Binary(",")
 object LeftE extends Unary("Left")
 object RightE extends Unary("Right")
-object Assumption extends Id("Assumption")
 
 object Cut extends Ternary("Cut")
-
-// Special function names to manage intro and elim axioms of inductive
-// predicates
-object intro extends Binary("intro")
-object elim extends Unary("elim")
 
 object Inst extends Ternary("Inst")
 object Witness extends Binary("Witness")
@@ -226,3 +220,6 @@ object Unfold extends Unary("Unfold") {
   }
 }
 object DefEq extends Binary("Def")
+object DefIntro extends Binary("Intro")
+object DefInd extends Binary("Ind")
+object DefCoind extends Binary("Coind")
