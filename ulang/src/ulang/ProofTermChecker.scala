@@ -53,9 +53,8 @@ object ProofTermChecker {
           throw Error(f"Lemma $id does not match the goal $goal")
       case (id: Id, _) if context.funs contains id =>
         check(ctx, Lam(context.funs(id)), goal)
-      // FIXME how can I convert a Norm to an Expr?
-      //case (id: Id, _) if context.consts contains id =>
-      //  check(ctx, context.consts(id), goal)
+      case (id: Id, _) if context.consts contains id =>
+        check(ctx, context.consts(id), goal)
       case (Id("elim", None), _) =>
         throw Error("The special function name 'elim' can only be used in applications.")
       case (Id("intro", None), _) =>
@@ -120,10 +119,9 @@ object ProofTermChecker {
           .map(c => All(c.pats.free.toList, Eq(Apps(fun, c.pats), c.body)))
           .reduce(And(_, _))
         check(ctx, p, Imp(axioms, goal))
-      // FIXME how can I convert a Norm to an Expr?
-      //case (DefEq(fun: Id, p), _) if context.consts.contains(fun) =>
-      //  val rhs: Expr = context.consts(fun)
-      //  check(ctx, p, Imp(Eq(fun, rhs), goal))
+      case (DefEq(fun: Id, p), _) if context.consts contains fun =>
+        val axiom = Eq(fun, context.consts(fun))
+        check(ctx, p, Imp(axiom, goal))
 
       // modus ponens is checked by inferring the type of the argument and then
       // rerouting the check to Imp introduction.

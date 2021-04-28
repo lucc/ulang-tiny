@@ -14,6 +14,11 @@ import arse._
  * time.
  */
 class Context extends Syntax[String] {
+
+  case class NormAndExpr(n: Norm, e: Expr)
+  implicit def toNorm(ne: NormAndExpr): Norm = ne.n
+  implicit def toExpr(ne: NormAndExpr): Expr = ne.e
+
   var data: Set[String] = Set()
   var sig: Set[Id] = Set(
     Eq.op, Not.op, And.op, Or.op, Imp.op, Eqv.op)
@@ -30,7 +35,7 @@ class Context extends Syntax[String] {
 
   var funs: Map[Id, List[Case]] = Map()
   var lemmas: Map[Id, Expr] = Map()
-  var consts: Map[Id, Norm] = Map()
+  var consts: Map[Id, NormAndExpr] = Map()
 
   var inds: List[(Expr, Fix, List[Intro])] = List()
   var rewrites: Map[Id, List[Case]] = Map()
@@ -81,7 +86,7 @@ class Context extends Syntax[String] {
     }
   }
 
-  def define(fun: Id, rhs: Norm) {
+  def define(fun: Id, rhs: Norm, original: Expr) {
     ensure(
       sig contains fun,
       "constant not decalred: " + fun)
@@ -89,7 +94,7 @@ class Context extends Syntax[String] {
       consts contains fun,
       "constant already defined: " + fun)
 
-    consts += fun -> rhs
+    consts += fun -> NormAndExpr(rhs, original)
   }
 
   def define(fun: Id, cs: Case) {
