@@ -116,9 +116,15 @@ object ProofTermChecker {
       case (DefEq(fun: Id, p), _) if context.consts contains fun =>
         val axiom = Eq(fun, context.consts(fun))
         check(ctx, p, Imp(axiom, goal))
-      case (DefIntro(term, p), _) => throw new NotImplementedError
-      case (DefInd(term, p), _) => throw new NotImplementedError
-      case (DefCoind(term, p), _) => throw new NotImplementedError
+      case (DefIntro(term, p), _) =>
+        val axiom = InductionAxiomsHelper.intro(term)
+        check(ctx, p, Imp(axiom, goal))
+      case (DefInd(term, p), _) =>
+        val axiom = InductionAxiomsHelper.fix(term, Least)
+        check(ctx, p, Imp(axiom, goal))
+      case (DefCoind(term, p), _) =>
+        val axiom = InductionAxiomsHelper.fix(term, Greatest)
+        check(ctx, p, Imp(axiom, goal))
 
       // modus ponens is checked by inferring the type of the argument and then
       // rerouting the check to Imp introduction.
@@ -308,4 +314,32 @@ object alphaEqui extends ((Expr, Expr) => Boolean) {
         } yield (left1 ++ left2, right1 ++ right2)
       case _ => None
     }
+}
+
+object InductionAxiomsHelper {
+
+  private def intros(term: Expr, fix: Fix): Option[List[Intro]] = {
+    context.inds.find {
+      case (`term`, `fix`, _) => true
+      case _ => false
+    }.map(_._3)
+  }
+
+  def intro(term: Expr): Expr = {
+    val is = intros(term, Least).getOrElse(
+      fail("Introduction axioms can only be generated for inductively defined predicates, not " + term)
+    )
+    is.map { i =>
+      val axiom = (i.cond ++ i.rec ++ List(i.suc)).reduceRight(Imp(_, _))
+      if (axiom.free.isEmpty) axiom
+      else All(axiom.free.toList, axiom)
+    }.reduce(And(_, _))
+  }
+  def fix(term: Expr, fix: Fix): Expr = {
+    val is = intros(term, fix).getOrElse(fail(
+      "Found no definition for a " + (if (fix == Greatest) "co" else "") +
+      "inductive predicate with pattern " + term))
+    fail("Fixpoint axioms are not yet implemented")
+  }
+
 }

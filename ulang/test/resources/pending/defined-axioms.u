@@ -1,0 +1,61 @@
+data : 0 +1;
+notation +1 [postfix 10];
+
+inductive
+  0: Nat;
+  n: Nat ==> n +1: Nat;
+
+lemma intro-nat-zero;
+show 0: Nat;
+proof term Intro (_: Nat) lambda (z, s) -> z;
+
+lemma intro-nat-suc;
+show forall m. m: Nat ==> m +1: Nat;
+proof term Intro (_: Nat) lambda (z, s) -> s;
+
+data [] ::;
+notation :: [infix 10];
+
+inductive
+  []: List a;
+  x: a /\ xs: List a ==> x::xs : List a;
+
+lemma intro-list-nil;
+show forall b. []: List b;
+proof term Intro (_:List _) lambda (nil, cons) -> nil;
+
+lemma intro-list-cons;
+show forall c y ys. y: c ==> ys: List c ==> y::ys : List c;
+// TODO can or should we control the order of quantified variables? Is it
+// stable?
+proof term forall c y. Intro (_:List _) lambda (nil, cons) ->
+	   Inst cons y lambda cons -> Inst cons c lambda cons -> cons;
+
+lemma induct-nat;
+show forall p n. n: Nat ==> p 0 ==> (forall m. m: Nat ==> p m ==> p (m +1)) ==> p n;
+proof term Ind (_: Nat) lambda x -> x;
+
+lemma induct-list;
+show forall a p xs. xs: List a
+	==> p [] ==> (forall y ys. y: a ==> ys: List a ==> p ys ==> p (y::ys))
+	==> p xs;
+proof term Ind (_: List _) lambda x -> x;
+
+coinductive
+  0: NatInf;
+  n: NatInf ==> n +1: NatInf;
+
+coinductive
+  []: Stream a;
+  x: a /\ xs: Stream a ==> x::xs : Stream a;
+
+lemma coinduct-natinf;
+show forall p n. p n ==>
+      (forall n. (p n) ==> n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ p m))
+      ==> n: NatInf;
+proof term Coind (_: NatInf) lambda x -> x;
+lemma coinduct-stream;
+show forall a p xs. p xs ==>
+      (forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs))
+      ==> xs: Stream a;
+proof term Coind (_: Stream _) lambda x -> x;
