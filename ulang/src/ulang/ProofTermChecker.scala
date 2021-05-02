@@ -195,6 +195,7 @@ object ProofTermChecker {
    */
   def bind(ctx: Map[Id, Expr], pat: Expr, assm: Expr): Map[Id, Expr] =
     (pat, assm) match {
+      case (Wildcard, _) => ctx
       case (p: Id, _) => ctx + (p -> simpleBetaReductions(assm))
       case (Pair(p1, p2), And(a1, a2)) => bind(bind(ctx, p1, a1), p2, a2)
       case (LeftE(p), Or(f, _)) => bind(ctx, p, f)
