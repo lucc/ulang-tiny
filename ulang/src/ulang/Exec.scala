@@ -81,7 +81,7 @@ object Exec {
 
         if (args.isEmpty) {
           val res = Eval.norm(rhs, Env.empty)
-          define(id, res, rhs)
+          define(id, rhs)
         } else {
           val cs = Case(args, rhs)
           define(id, cs)

@@ -94,7 +94,7 @@ object Eval {
     case id: Id if lex contains id =>
       force(lex(id))
     case id: Id if consts contains id =>
-      consts(id)
+      norm(consts(id), Env.empty)
     case id: Id if funs contains id =>
       Curry(funs(id), Nil, Env.empty)
     case id: Id =>
