@@ -29,7 +29,7 @@ syntax region  ulangComment    start='//' end='$' contains=ulangTODO
 syntax case ignore
 syntax keyword ulangTODO       contained todo xxx fixme
 syntax case match
-syntax keyword ulangWarning    sorry
+syntax keyword ulangWarning    sorry axiom
 
 highlight link ulangQuantifier Constant
 highlight link ulangIf         ulangInlineConstruct

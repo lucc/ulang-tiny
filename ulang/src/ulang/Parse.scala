@@ -65,12 +65,13 @@ object Parse {
 
   val mtch = Match("match" ~ expr_arg.+ ~ "with" ~ css)
 
-  val tactic: Parser[Tactic] = P(ind | coind | split | have | term)
+  val tactic: Parser[Tactic] = P(ind | coind | split | have | term | axiom)
   val ind = Induct("induction" ~ expr ~ ret(Least))
   val coind = Induct("induction" ~ expr ~ ret(Greatest))
   val split = Split("cases" ~ expr)
   val have = Have("have" ~ expr)
   val term = Term("term" ~ expr)
+  val axiom = "axiom" ~ ret(Axiom())
 
   // FIXME we need to ensure that there will be no arbitrary expression on the
   // left but only a function definition pattern.

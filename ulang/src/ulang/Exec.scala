@@ -141,6 +141,13 @@ object Exec {
         case Some(err) => fail(err)
       }
 
+    case Thm(Some(name), assume, show, Some(Axiom())) =>
+      val lemma = Imp(assume.map(_._2), show)
+      context.lemmas += (name -> lemma)
+      println("Axiom " + name + " := " + lemma)
+    case Thm(None, assume, show, Some(Axiom())) =>
+      fail("Can not define axioms without a name.")
+
     case Thm(name, assume, show, tactic) =>
       val proof = Prove.prove(assume map (_._2), show, tactic)
       for (line <- Print.format(proof))
