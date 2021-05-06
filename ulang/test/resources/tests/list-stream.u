@@ -4,26 +4,31 @@ notation :: [infix 10];
 //inductive
 //  [] : List a;
 //  x : a  ==> xs : List a  ==>  x::xs : List a;
+//coinductive
+//  [] : Stream a;
+//  x : a  ==> xs : Stream a  ==>  x::xs : Stream a;
+
+lemma coinduction-scheme-for-streams;
+show
+  forall a p xs.  p xs ==>
+    (forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ z: a /\ (zs: Stream a \/ p zs)) ==>
+    xs: Stream a;
+proof axiom;
 
 lemma introStreamNil;
 assume
   // equality
   forall x. x == x;
-  // coinduction scheme for streams
-  forall a p xs.
-    p xs ==>
-    (forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs)) ==>
-    xs: Stream a;
 show
   forall a. []: Stream a;
 proof term
-  lambda eqR c ->
-  forall a. Inst c a lambda c ->
+  lambda eqR ->
+  forall a. Inst coinduction-scheme-for-streams a lambda c ->
 	    Inst c (lambda x -> x == []) lambda c ->
 	    Inst c [] lambda c ->
 	    Cut ([] == []) (Inst eqR [] lambda x -> x) lambda eqNil ->
 	    Cut (forall ys. ys == [] ==> ys == [] \/
-		   exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ zs == []))
+		   exists z zs. ys == z::zs /\ z: a /\ (zs: Stream a \/ zs == []))
 		(forall x. lambda y -> Left y)
 	    lambda stepNil ->
 	    c eqNil stepNil;
@@ -32,25 +37,20 @@ lemma introStreamCons;
 assume
   // equality
   forall x. x == x;
-  // coinduction scheme for streams
-  forall a p xs.
-    p xs ==>
-    (forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs)) ==>
-    xs: Stream a;
 show
   forall a x xs. x: a ==> xs: Stream a ==> x::xs: Stream a;
 proof term
-  lambda eqR c ->
+  lambda eqR ->
   forall a x xs.
   lambda hxa hxs ->
-  Inst c a lambda c ->
+  Inst coinduction-scheme-for-streams a lambda c ->
   Inst c (lambda z -> z == x::xs) lambda c ->
   Inst c (x::xs) lambda c ->
   Inst eqR (x::xs) lambda eq ->
   Cut (forall ys. ys == x::xs ==> ys == [] \/
-		  exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ zs == x::xs))
+		  exists z zs. ys == z::zs /\ z: a /\ (zs: Stream a \/ zs == x::xs))
       (forall ys. lambda xyEq ->
-	  Right (Witness x (Witness xs (xyEq,Left (hxa,hxs)))))
+	  Right (Witness x (Witness xs (xyEq, hxa, Left hxs))))
   lambda cut ->
   c eq cut;
 
@@ -67,25 +67,19 @@ assume
     (forall y ys. y: a ==> ys: List a ==> p ys ==> p (y::ys))
     ==> p xs;
 
-  // coinduction scheme for streams
-  forall a p xs.
-    p xs ==>
-    (forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs)) ==>
-    xs: Stream a;
-
 show
   xs: List a  ==>  xs: Stream a;
 
 proof term
-  lambda eqR i c ->
+  lambda eqR i ->
   lambda h ->
   Inst i a lambda i ->
   Inst i (lambda x -> x: Stream a) lambda i ->
   Inst i xs lambda i ->
-  Inst (introStreamNil eqR c) a lambda base ->
+  Inst (introStreamNil eqR) a lambda base ->
   Cut (forall y ys. y: a ==> ys: List a ==> ys: Stream a ==> y::ys: Stream a)
       (forall y yy. lambda hy hyyl hyys ->
-	 Inst (introStreamCons eqR c) a lambda lem ->
+	 Inst (introStreamCons eqR) a lambda lem ->
 	 Inst lem y lambda lem ->
 	 Inst lem yy lambda lem ->
 	 lem hy hyys
@@ -145,24 +139,18 @@ assume
   forall a. [] : List a;
   forall a x xs. x: a ==> xs: List a ==> x::xs: List a;
 
-  // coinduction scheme for streams
-  forall a p xs.
-    p xs ==>
-    (forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs)) ==>
-    xs: Stream a;
-
 show
   xs: List a  ==>  xs: Stream a;
 
 proof term
   lambda eqR eqS eqT
-         i nil cons c ->
+         i nil cons ->
   lambda xList ->
-  Inst c a lambda c ->
+  Inst coinduction-scheme-for-streams a lambda c ->
   Inst c (lambda xs -> xs: List a) lambda c ->
   Inst c xs lambda c ->
   Cut (forall ys. ys: List a ==>
-         ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ zs: List a))
+         ys == [] \/ exists z zs. ys == z::zs /\ z: a /\ (zs: Stream a \/ zs: List a))
       (forall y. lambda yList ->
        Inst (listCases eqR i) a lambda listCases ->
        Inst listCases y lambda listCases ->
@@ -170,10 +158,10 @@ proof term
            (listCases yList)
        lambda listCases ->
        Cut (forall x. (x == [] \/ exists z ys. x == z::ys /\ z: a /\ ys: List a)
-		   ==> x == [] \/ exists z zs. x == z::zs /\ (z: a /\ zs: Stream a \/ zs: List a))
+        	   ==> x == [] \/ exists z zs. x == z::zs /\ z: a /\ (zs: Stream a \/ zs: List a))
            (forall x. lambda (Left nil) -> Left nil
-	                   | (Right (Witness z (Witness ys (eq, za, ysList))))
-			      -> Right (Witness z (Witness ys (eq, Right ysList))))
+			   | (Right (Witness z (Witness ys (eq, za, ysList))))
+			      -> Right (Witness z (Witness ys (eq, za, Right ysList))))
        lambda cut ->
 	 Inst cut y lambda cut ->
 	 cut listCases)

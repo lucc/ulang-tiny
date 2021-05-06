@@ -4,35 +4,37 @@ notation +1 [postfix 10];
 data [] ::;
 notation :: [infix 10];
 
+lemma coinduction;
+show forall a p xs. p xs ==>
+     (forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ z: a /\ (zs: Stream a \/ p zs)) ==>
+     xs: Stream a;
+proof axiom;
+lemma eqR; show forall x. x == x; proof axiom;
+lemma eqS; show forall x y. x == y ==> y == x; proof axiom;
+lemma eqT; show forall x y z. x == y ==> y == z ==> x == z; proof axiom;
 
 define zeros := 0 :: zeros;
 
 lemma zeros∈StreamNat;
 assume
-  // equality
-  eqR := forall x. x == x;
-  eqS := forall x y. x == y ==> y == x;
-  eqT := forall x y z. x == y ==> y == z ==> x == z;
-  // coinduction scheme for streams
-  c := forall a p xs. p xs ==>
-	(forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs)) ==>
-	xs: Stream a;
   // defineing equation for nats
   def := zeros == 0 :: zeros;
+  z := 0: Nat;
 show zeros: Stream Nat;
 proof term
-  Inst c Nat lambda c ->
+  Inst coinduction Nat lambda c ->
   Inst c (lambda xs -> xs == zeros) lambda c ->
   Inst c zeros lambda c ->
   Inst eqR zeros lambda eqZ ->
   Cut (forall ys. ys == zeros
-         ==> (ys == [] \/ exists z zs. ys == z::zs /\ (z: Nat /\ zs: Stream Nat \/ zs == zeros)))
+         ==> (ys == [] \/ exists z zs. ys == z::zs /\ z: Nat /\ (zs: Stream Nat \/ zs == zeros)))
       (forall ys. lambda ys=zeros
          -> Right (Witness 0 (Witness zeros (
 	      Inst eqT ys lambda eqT ->
 	      Inst eqT zeros lambda eqT ->
 	      Inst eqT (0::zeros) lambda eqT ->
-	      (eqT ys=zeros def, Right eqZ)))))
+	      eqT ys=zeros def , z , Right eqZ
+	      ))))
   lambda step -> c eqZ step;
 
 
@@ -60,19 +62,11 @@ eval
 
 lemma nats∈StreamNat;
 assume
-  // equality
-  eqR := forall x. x == x;
-  eqS := forall x y. x == y ==> y == x;
-  eqT := forall x y z. x == y ==> y == z ==> x == z;
   // induction scheme for natural numbers
   i := forall p n. n: Nat ==> p 0 ==> (forall m. m: Nat ==> p m ==> p (m +1)) ==> p n;
   // intro axioms from Nat
   z := 0: Nat;
   s := forall n. n: Nat ==> n +1: Nat;
-  // coinduction scheme for streams
-  c := forall a p xs. p xs ==>
-	(forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs)) ==>
-	xs: Stream a;
   // defineing equations
   def := nats == 0 :: map (lambda n -> n +1) nats;
 
@@ -82,7 +76,7 @@ show
   nats: Stream Nat;
 
 proof term
-  Inst c Nat lambda c ->
+  Inst coinduction Nat lambda c ->
   Inst c (lambda xs -> xs == nats) lambda c ->
   Inst c nats lambda c ->
   Inst eqR nats lambda eqNats ->

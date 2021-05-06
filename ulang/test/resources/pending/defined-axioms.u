@@ -47,7 +47,7 @@ coinductive
 
 coinductive
   []: Stream a;
-  x: a /\ xs: Stream a ==> x::xs : Stream a;
+  x: a ==> xs: Stream a ==> x::xs : Stream a;
 
 lemma coinduct-natinf;
 show forall p n. p n ==>
@@ -56,6 +56,6 @@ show forall p n. p n ==>
 proof term Coind (_: NatInf) lambda x -> x;
 lemma coinduct-stream;
 show forall a p xs. p xs ==>
-      (forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ (z: a /\ zs: Stream a \/ p zs))
+      (forall ys. p ys ==> ys == [] \/ exists z zs. ys == z::zs /\ z: a /\ (zs: Stream a \/ p zs))
       ==> xs: Stream a;
 proof term Coind (_: Stream _) lambda x -> x;
