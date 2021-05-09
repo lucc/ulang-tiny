@@ -80,7 +80,6 @@ object Exec {
         declare(id)
 
         if (args.isEmpty) {
-          val res = Eval.norm(rhs, Env.empty)
           define(id, rhs)
         } else {
           val cs = Case(args, rhs)

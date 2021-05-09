@@ -1,0 +1,4 @@
+define foo := forall u. Unbounded u;
+
+// the normalizer should complain about an "unbounded quantifier"
+eval foo;
