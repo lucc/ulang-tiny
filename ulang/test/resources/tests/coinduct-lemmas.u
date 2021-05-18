@@ -67,8 +67,7 @@ proof term
         	    n == 0 \/ exists m. n == m +1 /\ (m: NatInf \/ m: Nat))
          (forall n. lambda nNat ->
             Inst (natCases i z s eqR disj) n lambda natCases ->
-              (lambda (Left hyp) -> Left hyp
-               | (Right hyp) ->
-                    Right ((lambda (Witness w (p,q)) -> Witness w (p, Right q)) hyp))
-              (natCases nNat))
+	    match (natCases nNat) with
+	      (Left hyp) -> Left hyp
+	    | (Right (Witness w (p,q))) -> Right (Witness w (p, Right q)))
     lambda cut -> c kNat cut;
