@@ -1,0 +1,5 @@
+define f x x := EQUAL;
+       f x y := DIFF;
+
+test f A A == EQUAL;
+     f A B == DIFF;
