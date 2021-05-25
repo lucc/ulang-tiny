@@ -181,4 +181,24 @@ class ParseTest extends AnyFunSpec {
       }
     }
   }
+
+  describe("parsing backslashes in scala strings") {
+    it("backslashes are identifiers") {
+      val actual = p.id.parse("\\")
+      val expected = ulang.Id("\\")
+      assert(actual == expected)
+    }
+    describe("backslashes can be combined with other chars") {
+      it("wedge") {
+        val actual = p.id.parse("/\\")
+        val expected = ulang.Id("/\\")
+        assert(actual == expected)
+      }
+      it("vee") {
+        val actual = p.id.parse("\\/")
+        val expected = ulang.Id("\\/")
+        assert(actual == expected)
+      }
+    }
+  }
 }
