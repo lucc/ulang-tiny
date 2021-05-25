@@ -1,0 +1,38 @@
+eval
+
+Foo == Foo;
+Foo == Bar;
+Foo != Foo;
+Foo != Bar;
+
+(lambda x -> x) == (lambda x -> x);
+(lambda x -> x) == (lambda y -> y);
+
+define
+
+f Foo Bar := Baz;
+f Bar Baz := Foo;
+f Baz Foo := Bar;
+
+g X := Foo;
+g Y := Bar;
+g Z := Baz;
+
+eval
+
+f Foo Bar == g Z;
+(f Bar Baz) != (g Y);
+
+define
+
+fun1 x := x;
+fun2 x := x;
+fun3 := lambda x -> x;
+fun4 := lambda x -> x;
+
+eval
+
+fun1 == fun2;
+fun3 == fun4;
+fun1 == fun3;
+fun2 == (lambda x -> x);
