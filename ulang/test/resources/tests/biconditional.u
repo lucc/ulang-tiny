@@ -1,0 +1,11 @@
+test (Foo <=> Bar) == ((Foo ==> Bar) /\ (Bar ==> Foo));
+
+show a <=> a;
+proof term Unfold ((lambda x -> x), lambda x -> x);
+
+show a /\ b <=> b /\ a;
+proof term Unfold ((lambda (a,b) -> (b,a)),lambda (a,b) -> (b,a));
+
+show a \/ b <=> b \/ a;
+proof term Unfold ((lambda (Left a) -> Right a | (Right a) -> Left a),
+		   (lambda (Left a) -> Right a | (Right a) -> Left a));

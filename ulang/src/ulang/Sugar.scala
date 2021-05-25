@@ -211,9 +211,10 @@ object Unfold extends Unary("Unfold") {
   def unfold(fun: Id, args: List[Expr]): Expr = {
     if (context.funs contains fun) {
       val cs = context.funs(fun).head
-      cs.pats.zip(args).foldLeft(cs.body) {
-        case (body, (pat: Id, arg)) => body.subst(Map(pat -> arg))
+      val mapping = cs.pats.zip(args).foldLeft(Map.empty[Id, Expr]) {
+        case (m, (pat: Id, arg)) => m + (pat -> arg)
       }
+      cs.body.subst(mapping)
     } else {
       context.consts(fun)
     }

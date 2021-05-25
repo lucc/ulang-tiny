@@ -6,7 +6,7 @@
 
 data
   // These are the logical connectives
-  /\ \/ ==> <=>
+  /\ \/ ==>
   // equality is build in
   == !=
   ;
