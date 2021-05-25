@@ -87,3 +87,7 @@ proof term lambda x -> x;
 /////////////////////////////
 show a /\ b ==> b /\ a;
 proof term lambda (x,y) -> (y,x);
+
+// modus tollens
+show (a ==> b) ==> not b ==> not a;
+proof term lambda hyp (Unfold ¬b) -> Unfold lambda a -> ¬b (hyp a);

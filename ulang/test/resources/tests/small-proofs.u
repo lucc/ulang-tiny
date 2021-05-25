@@ -1,0 +1,93 @@
+// proving or elimination
+show a \/ b ==> (a ==> c) ==> (b ==> c) ==> c;
+proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x)
+		| (Right x) -> (lambda p1 -> lambda p2 -> p2 x);
+
+// symmetry of \/
+show a \/ b ==> b \/ a;
+proof term lambda (Left x) -> Right x | (Right x) -> Left x;
+
+// proofs with match expressions
+// symmetry of /\
+show a /\ b ==> b /\ a;
+proof term lambda p -> match p with (x,y) -> (y,x);
+// symmetry of \/
+show a \/ b ==> b \/ a;
+proof term lambda ant -> match ant with (Left x) -> Right x
+				      | (Right x) -> Left x;
+
+// proof with all quantifier
+show (forall x. p x) ==> p Foo;
+proof term lambda x -> Inst x Foo lambda x -> x;
+
+// proving introduction rules for exists
+show a ==> exists x. a; proof term (lambda a -> Witness x a);
+show p x ==> exists y. p y; proof term (lambda a -> Witness x a);
+
+// Schwichtenberg page 13
+show (forall x.a x ==> b) ==> (exists x. a x) ==> b;
+proof term lambda fa -> lambda (Witness w p) -> Inst fa w lambda hab -> hab p;
+show (forall x.a ==> b x) ==> a ==> forall x. b x;
+proof term lambda hfa -> lambda ha -> forall var. Inst hfa var lambda hab -> hab ha;
+show (a ==> forall x. b x) ==> forall x. a ==> b x;
+proof term lambda f -> forall x. lambda precond -> Inst (f precond) x lambda x -> x;
+show ((exists x. a x) ==> b) ==> forall x.a x ==> b;
+proof term lambda f -> forall x. lambda ha -> f (Witness x ha);
+show (exists x. a x ==> b) ==> (forall x. a x) ==> b;
+proof term lambda (Witness w p) -> lambda fa -> Inst fa w lambda aw -> p aw;
+
+// how to construct implications
+show ((a ==> b) ==> c) ==> b ==> c;
+proof term lambda h p -> Inst (lambda x -> p) a h;
+// similarly with a cut
+show ((a ==> b) ==> c) ==> b ==> c;
+proof term lambda h p -> Cut (a ==> b) (lambda q -> p)
+		         (lambda r -> h r);
+
+show (exists x. a ==> b x) ==> a ==> exists x. b x;
+proof term lambda (Witness w hab) -> lambda ha -> Witness w (hab ha);
+
+// reordering bound variables
+define proof1 := lambda faxy -> forall y. forall x.  Inst faxy x lambda fay -> Inst fay y lambda x -> x;
+show (forall x y. a) ==> forall y x. a;
+proof term proof1;
+show (forall x. forall y. a) ==> forall y. forall x. a;
+proof term proof1;
+define proof2 := lambda (Witness w1 (Witness w2 pt)) -> Witness w2 (Witness w1 pt);
+show (exists x y. a x y) ==> exists y x. a x y; proof term proof2;
+show (exists x. exists y. a x y) ==> exists y. exists x. a x y; proof term proof2;
+
+show a ==> (a ==> False) ==> False;
+proof term lambda ha haf -> haf ha;
+show a ==> not not a;
+proof term lambda ha -> Unfold lambda (Unfold haf) -> haf ha;
+
+// testing automatic forall instantiation
+show a t ==> (forall x. a x ==> b x) ==> b t; proof term lambda ha hfa -> hfa ha;
+
+// weak exists from Schwichtenberg
+define wEx x phi := (forall x. phi x ==> False) ==> False;
+show (exists x. a x) ==> wEx x a;
+proof term lambda (Witness w p) -> Unfold lambda fa -> Inst fa w lambda notPhi -> notPhi p;
+
+// nested application
+show (a ==> b ==> c) ==> (a ==> b) ==> a ==> c;
+proof term lambda habc hab ha -> habc ha (hab ha);
+
+// nested implication with multible cases and patterns
+show a \/ b ==> c \/ d ==> (a /\ c) \/ (a /\ d) \/ (b /\ c) \/ (b /\ d);
+ proof term lambda (Left ha)  (Left hc)  -> Left (ha, hc)
+		 | (Left ha)  (Right hd) -> Right (Left (ha, hd))
+		 | (Right hb) (Left hc)  -> Right (Right (Left (hb, hc)))
+		 | (Right hb) (Right hd) -> Right (Right (Right (hb, hd)));
+
+// use an assumption with alpha equivalence
+show forall p. (forall x. p x) ==> (forall y. p y);
+proof term forall p. lambda a -> a;
+
+// lambdas that can not be type infered can still be used with a Cut
+show (((a ==> False) ==> False) ==> False) ==> a ==> False;
+proof term lambda h3n ha ->
+  Cut ((a ==> False) ==> False)
+      (lambda h1n -> h1n ha)
+  lambda h2n -> h3n h2n;
