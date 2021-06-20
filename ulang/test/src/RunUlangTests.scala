@@ -50,6 +50,16 @@ class RunUlangTests extends AnyFunSpec with PreloadLoader {
       proof term lambda (Left x)  -> (lambda p1 -> lambda p2 -> p1 x);""")
       }
     }}
+    it("let bindings should not reduce lazyness") {
+      pendingUntilFixed {
+        eval("""test
+        (let skip := lambda x y -> y;
+            self := lambda x -> x x
+        in let omega := self self
+        in skip omega Foo) == Foo;
+      """)
+      }
+    }
   }
 
   describe("working snippets") {

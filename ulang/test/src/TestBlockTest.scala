@@ -18,19 +18,19 @@ class TestBlockTest extends AnyFunSpec with PreloadLoader {
       val neg = u"not foo"
       assert(split(neg) == (Id("foo"), ulang.False))
     }
-    it("other application terms are return with True") {
+    it("other application terms are returned with True") {
       val other = u"other application"
       assert(split(other) == (other, ulang.True))
     }
-    it("let terms are return with True") {
+    it("let terms are returned with True") {
       val other = u"let x := X in x x"
       assert(split(other) == (other, ulang.True))
     }
-    it("match terms are return with True") {
+    it("match terms are returned with True") {
       val other = u"match x with True -> False | False -> True"
       assert(split(other) == (other, ulang.True))
     }
-    it("lamdba terms are return with True") {
+    it("lamdba terms are returned with True") {
       val other = u"lambda x -> x x"
       assert(split(other) == (other, ulang.True))
     }

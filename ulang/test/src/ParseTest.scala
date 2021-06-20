@@ -55,7 +55,7 @@ class ParseTest extends AnyFunSpec {
   }
 
   describe("let expressions") {
-    import ulang.{Let, Case1, Id, App}
+    import ulang.{Let, Case1, Id, App, Lam1}
     it("can define simple bindings") {
       val actual = p.let.parse("let x := y in x")
       assert(actual == Let(List(Case1(Id("x"), Id("y"))), Id("x")))
@@ -79,6 +79,17 @@ class ParseTest extends AnyFunSpec {
                          Let(List(Case1(Id("y"), Id("Z"))),
                              App(Id("x"), Id("y"))))
       assert(actual == expected)
+    }
+    it("can bind lambdas to a name") {
+      val actual = p.let.parse("let id := lambda x -> x in id")
+      val expected = Let(List(Case1(Id("id"), Lam1(List(Id("x")), Id("x")))),
+                         Id("id"))
+      assert(actual == expected)
+    }
+    it("can not define functions with parameters") {
+      assertThrows[arse.Error] {
+        p.let.parse("let id x := x in id")
+      }
     }
   }
 

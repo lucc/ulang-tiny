@@ -1,0 +1,12 @@
+
+define
+
+skip x y := y;
+self x := x x;
+omega := self self;
+
+test
+
+skip omega Foo == Foo;
+
+(lambda x y -> y) ((lambda x -> x x)(lambda x -> x x)) Foo == Foo;
