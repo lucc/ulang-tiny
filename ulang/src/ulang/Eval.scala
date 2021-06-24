@@ -74,6 +74,10 @@ object Eval {
     Defer(expr, lex)
   }
 
+  def defer(exprs: List[Expr], lex: Env): List[Val] = {
+    exprs map (defer(_, lex))
+  }
+
   def const(arg: Val): Data = arg match {
     case lzy: Defer => const(lzy.norm)
     case id: Id if isTag(id) => id
@@ -108,7 +112,7 @@ object Eval {
     case App(fun, arg) =>
       push(norm(fun, lex), defer(arg, lex))
     case let @ Let(_, body) =>
-      norm(body, bind(let.pats, norm(let.args, lex), lex))
+      norm(body, bind(let.pats, defer(let.args, lex), lex))
     case Match(args, cases) =>
       apply(expr, cases, norm(args, lex), lex)
     case Ite(test, left, right) =>
