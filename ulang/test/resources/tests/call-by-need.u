@@ -7,6 +7,17 @@ omega := self self;
 
 test
 
-skip omega Foo == Foo;
+// defined functions are called by need
+skip omega Foo
+== Foo;
 
-(lambda x y -> y) ((lambda x -> x x)(lambda x -> x x)) Foo == Foo;
+// anonymous lambdas are called by need
+(lambda x y -> y) ((lambda x -> x x)(lambda x -> x x)) Foo
+== Foo;
+
+// let bindings should not reduce lazyness
+(let skip := lambda x y -> y;
+     self := lambda x -> x x in
+ let omega := self self in
+skip omega Foo)
+== Foo;
