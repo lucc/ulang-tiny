@@ -1,8 +1,11 @@
 import mill._
 import mill.scalalib._
 
-object ulang extends ScalaModule {
+trait MyScalaModule extends ScalaModule {
     def scalaVersion = "2.12.10"
+}
+
+object ulang extends MyScalaModule {
 
     def unmanagedClasspath = T {
         Agg.from(os.list(millSourcePath / "lib").map(PathRef(_)))
@@ -20,4 +23,10 @@ object ulang extends ScalaModule {
           Agg.from(os.list(millSourcePath / os.up / "lib").map(PathRef(_)))
         }
     }
+
+}
+
+object repl extends MyScalaModule {
+    def moduleDeps = Seq(ulang)
+    def unmanagedClasspath = ulang.unmanagedClasspath
 }
