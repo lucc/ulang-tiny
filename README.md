@@ -8,6 +8,11 @@ The ulang project can be compiled with [mill](http://www.lihaoyi.com/mill/).
 Use `mill ulang.compile` to compile the source code.  Use `mill ulang.run
 some-file.u` to run the interpreter on some ulang file.
 
+There also is a rudimentary REPL. It can be run with `mill -i repl.run`.  It is
+currently lacking all niceties one might expect from a REPL (command line
+editing, history, completion) and also requires the user to type whole Ulang
+blocks (including keyword and terminating semicolon).
+
 ## Overview of the code
 
 The source code in the ulang directory is an interpreter for the ulang language
