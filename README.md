@@ -10,8 +10,9 @@ some-file.u` to run the interpreter on some ulang file.
 
 There also is a rudimentary REPL. It can be run with `mill -i repl.run`.  It is
 currently lacking all niceties one might expect from a REPL (command line
-editing, history, completion) and also requires the user to type whole Ulang
-blocks (including keyword and terminating semicolon).
+editing, history, completion; some of these can be remedied by using
+[rlwrap](https://github.com/hanslub42/rlwrap)) and also requires the user to
+type whole Ulang blocks (including keyword and terminating semicolon).
 
 ## Overview of the code
 
