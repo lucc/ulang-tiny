@@ -20,6 +20,7 @@ object Repl {
       } catch {
         case e: arse.Error => error("Parse error: " + e)
         case e: RuntimeException => error("Error: " + e.getMessage())
+        case e: StackOverflowError => error("Stack overflow!")
       }
       prompt
     }
