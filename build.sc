@@ -3,6 +3,8 @@ import mill.scalalib._
 
 trait MyScalaModule extends ScalaModule {
     def scalaVersion = "2.12.10"
+    //see https://github.com/com-lihaoyi/mill/discussions/1396#discussioncomment-969512
+    override def ammoniteVersion = "2.4.0"
 }
 
 object ulang extends MyScalaModule {
