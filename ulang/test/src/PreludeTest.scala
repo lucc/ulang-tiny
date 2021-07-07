@@ -1,5 +1,4 @@
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.BeforeAndAfter
 import TestHelpers.UlangParser
 import ulang.{App, Pair, Id, And, Eqv, Or}
 

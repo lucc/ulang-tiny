@@ -1,9 +1,9 @@
 import org.scalatest.funspec.AnyFunSpec
 import ulang.ProofTermChecker.checkSafe
 import ulang.{True, False, Imp, And, Id, Expr}
+import TestHelpers.UlangParser
 
 class ProofCheckTest extends AnyFunSpec {
-  import TestHelpers.UlangParser
 
   // load the prelude file when initializeing the test suite
   ulang.Main.loadPrelude()
@@ -48,6 +48,39 @@ class ProofCheckTest extends AnyFunSpec {
       val switch1 = u"lambda (x,y) -> (y,x)"
       val sym = u"a /\ b ==> b /\ a"
       assertProves(switch1, sym)
+    }
+  }
+}
+
+class DefinedFunctionAxiomsTest extends AnyFunSpec with PreloadLoader {
+
+  import ulang.DefinedFunctionsAxiomsHelper._
+  import ulang.Eq
+
+  /**
+   * define a ulang function for the tests
+   */
+  private def define(code: String) {
+    //print("define " + code)
+    ulang.Exec.run("define " + code)
+  }
+
+  describe("Def") {
+
+    it("generates equations for defined constants") {
+      define("c := Foo;")
+      assert(constAxiom(Id("c")) == u"c == Foo")
+    }
+
+    it("generates equations for defined functions") {
+      define("""
+        map f NIL := NIL;
+        map f (CONS x xs) := CONS (f x) (map f xs);
+        """)
+      assert(funcAxioms(Id("map")) ==
+        u"""(forall f. map f NIL == NIL)
+            /\
+            forall f x xs. map f (CONS x xs) == CONS (f x) (map f xs)""")
     }
   }
 }

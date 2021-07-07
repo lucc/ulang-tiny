@@ -109,12 +109,10 @@ object ProofTermChecker {
       case (Unfold(p), Apps(fun: Id, args)) if Unfold.suitable(fun, args) =>
         check(ctx, p, Unfold.unfold(fun, args))
       case (DefEq(fun: Id, p), _) if context.funs contains fun =>
-        val axioms = context.funs(fun)
-          .map(c => All(c.pats.free.toList, Eq(Apps(fun, c.pats), c.body)))
-          .reduce(And(_, _))
+        val axioms = DefinedFunctionsAxiomsHelper.funcAxioms(fun)
         check(ctx, p, Imp(axioms, goal))
       case (DefEq(fun: Id, p), _) if context.consts contains fun =>
-        val axiom = Eq(fun, context.consts(fun))
+        val axiom = DefinedFunctionsAxiomsHelper.constAxiom(fun)
         check(ctx, p, Imp(axiom, goal))
       case (DefIntro(term, p), _) =>
         val axiom = InductionAxiomsHelper.intro(term)
@@ -343,4 +341,16 @@ object InductionAxiomsHelper {
     fail("Fixpoint axioms are not yet implemented")
   }
 
+}
+
+/**
+ * Generate the axioms for the defining equations of defined
+ * functions and constants
+ */
+object DefinedFunctionsAxiomsHelper {
+  def funcAxioms(name: Id) =
+    context.funs(name)
+      .map(c => All(c.pats.free.toList, Eq(Apps(name, c.pats), c.body)))
+      .reduce(And(_, _))
+  def constAxiom(name: Id) = Eq(name, context.consts(name))
 }
