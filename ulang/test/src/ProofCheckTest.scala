@@ -84,14 +84,10 @@ class DefinedFunctionAxiomsTest extends AnyFunSpec with PreloadLoader {
     }
 
     it("replaces wildcards with new variables") {
-      pendingUntilFixed {
       define("f _ := X;")
-      assert(
-        // we can not test equality here because we do not know the name of
-        // the generated variable
-        funcAxioms(Id("f")) == u"forall x. f x == X"
-      )
-      }
+      // we can not test equality here because we do not know the name of the
+      // generated variable
+      assert(ulang.alphaEqui(funcAxioms(Id("f")), u"forall x. f x == X"))
     }
 
     it("handles variable reuse in patterns") {

@@ -350,7 +350,16 @@ object InductionAxiomsHelper {
 object DefinedFunctionsAxiomsHelper {
   def funcAxioms(name: Id) =
     context.funs(name)
-      .map(c => All(c.pats.free.toList, Eq(Apps(name, c.pats), c.body)))
+      .map{
+        case Case(pats, body) =>
+          val pats_ = pats map replaceWildcards
+          All(pats_.free.toList, Eq(Apps(name, pats_), body))
+      }
       .reduce(And(_, _))
   def constAxiom(name: Id) = Eq(name, context.consts(name))
+  private def replaceWildcards(e: Expr): Expr = e match {
+    case Wildcard => Expr.fresh(Id("x"))
+    case App(fun, arg) => App(replaceWildcards(fun), replaceWildcards(arg))
+    case _ => e
+  }
 }
