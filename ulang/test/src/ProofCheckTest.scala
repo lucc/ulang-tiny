@@ -82,5 +82,34 @@ class DefinedFunctionAxiomsTest extends AnyFunSpec with PreloadLoader {
             /\
             forall f x xs. map f (CONS x xs) == CONS (f x) (map f xs)""")
     }
+
+    it("replaces wildcards with new variables") {
+      pendingUntilFixed {
+      define("f _ := X;")
+      assert(
+        // we can not test equality here because we do not know the name of
+        // the generated variable
+        funcAxioms(Id("f")) == u"forall x. f x == X"
+      )
+      }
+    }
+
+    it("handles variable reuse in patterns") {
+      pendingUntilFixed {
+      define("""eq x x := True;
+                eq x y := False;""")
+      // TODO what should the axiom actually look like?
+      assert(funcAxioms(Id("eq")) !=
+        u"""(forall x. eq x x == True) /\ forall x y. eq x y == False""")
+      }
+    }
+
+    it("handles overlapping patterns") {
+      pendingUntilFixed {
+      define("f X := Y; f x := Z;")
+      // TODO what should the axiom actually look like?
+      assert(funcAxioms(Id("f")) != u"f X == Y /\ forall x. f x == Z")
+      }
+    }
   }
 }
