@@ -43,6 +43,7 @@ sealed trait Expr extends Expr.term with Pretty {
 object Expr extends Alpha[Expr, Id]
 
 sealed trait Val extends Pretty
+/** representing weak head normal form of Ulang terms */
 sealed trait Norm extends Val
 sealed trait Data extends Norm
 
